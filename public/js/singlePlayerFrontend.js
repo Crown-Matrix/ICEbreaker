@@ -313,7 +313,7 @@
             console.log('animating new round');
 
             // Phase 1+2: all width animations simultaneously
-            for (const element_id of ['breach-time-container', 'window-outside']) {
+            for (const element_id of ['breach-time-container', 'window-outside', 'buffer-container']) {
                 const el = document.getElementById(element_id);
                 el.style.cssText = `transform: scaleX(0); transform-origin: left center;`;
                 setTimeout(() => {
