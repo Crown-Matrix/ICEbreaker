@@ -1,0 +1,718 @@
+@import url(./vibe-cyberpunk.css);
+@import url(./custom-bootstrap-config.css);
+
+
+#timeframe-nav-div {
+    justify-content: flex-end;
+}
+
+
+
+
+
+.timeframe-option {
+    
+    font-weight: 1000;
+    flex: 1;
+    margin: 0 10px;
+    text-align: center;
+    line-height: 125%;
+    cursor: pointer;
+    border-radius: 5px;
+
+    position: relative;
+    z-index: 1;
+
+    transition: color 0s;
+}
+
+.timeframe-option[selected] {
+    color: var(--cy-dark-1);
+    transition: color 0s;
+    transition-delay: 0.15s;
+}
+
+
+.selected-bar {
+    position: absolute;
+    background-color: var(--cy-cyan);
+    transition: none;
+    border-radius: 10px;
+    filter: blur(1px);
+    z-index: 0;
+}
+
+
+
+#timeframe-selection {
+    flex: 1;
+}
+
+#timeframe-label {
+    text-align: center;
+}
+/*adjust this anytime your changing var(--bs-breakpoint-sm)*/
+@media (min-width: 577px) {
+    #title-nav-div,.profile-label {
+        font-size: 2rem;
+    }
+    .score-text-div * {
+        line-height: 1;
+    }
+    .expired-cell {
+        font-size: 2.7cqi;/*to prevent wrapping from the extra wide brackets*/
+    }
+}
+
+@media (max-width: 576px) {
+    #profile {
+        position: absolute;
+        top: 0px;
+        left: 0px;
+        z-index: 1000;
+    }
+    #profile-picture {
+        width: auto;
+        max-width: 2.2rem !important;
+        max-height: 2.2rem !important;
+    }
+    #os-label {
+        position: absolute;
+        top: 2px;
+        left: 32px;
+        z-index: 1000;
+        font-size: 1.2rem;
+    }
+
+    .cy-nav {
+        justify-content: flex-end;
+        padding-bottom: 0 !important;
+        padding-left: 0.5rem !important;
+    }
+    #title-nav-div, .profile-label {
+        font-size: 2rem;
+    }
+    #timeframe-nav-div {
+        position: relative;
+        top: -35px;
+        right: 35px;
+    }
+    #profile-picture {
+        margin: 0 !important;
+    }
+    #title-nav-div {
+        justify-content: flex-start !important;
+    }
+
+    #title-nav-div,.profile-label {
+        font-size: 1.3rem;
+    }
+    .score-card {
+        display: inline-block !important;
+    }
+    .score-card-text * {
+        text-align: center; 
+    }
+    .score-card-pattern {
+        justify-content: center;
+    }
+    .score-card-node {
+        padding: 25% 0 !important;
+        font-size: min(10cqw, 1.3rem);
+
+    }
+    #buffer-text {
+        display: none !important;
+    }
+    #breach-time-label {
+        text-align: center;
+    }
+    .score-card-img {
+        width: 12vw !important;
+        margin-bottom: 0.25vh; /*for between text and img*/
+    }
+    #sequence-top-decoration {
+        width: 30cqw !important;
+    }
+    .score-card-text * {
+    font-size: clamp(0.2vw,15cqi,16px) !important;
+    }
+    .expired-cell {
+        font-size: 2.5cqi;/*to prevent wrapping from the extra wide brackets*/
+    }
+    .cy-horizontal-grid {
+        /*grid-template-columns: repeat(4, 1fr);*/
+        grid-auto-flow: column; /*to prevent the grid from becoming a single row which causes the cells to overflow outside the container instead of wrapping to the next line*/
+    }
+    
+}
+
+/*adjust this anytime your changing var(--bs-breakpoint-md)*/
+@media (min-width: 769px) {
+
+}
+
+@media (max-width: 768px) {
+    #title-nav-div,.profile-label {
+        font-size: 1.5rem;
+    }
+}
+
+
+/*adjust this anytime your changing var(--bs-breakpoint-lg)*/
+@media (min-width: 992px) {
+    #header-spacer {
+        padding: var(--cy-space-sm);
+    }
+    .matrix-cell {
+        font-size: 1.5cqi;
+    }
+    .expired-cell {
+        font-size: 1.2cqi;/*to prevent wrapping from the extra wide brackets*/
+    }
+
+}
+
+@media (max-width: 991px) {
+    #header-spacer {
+        padding: calc(var(--cy-space-sm)*0.15);
+    }
+    #title-nav-div {
+        justify-content: flex-end;
+    }
+    #buffer-container {
+        align-content: center;
+        margin: auto;
+        width: 95% !important;
+    }
+    .buffer-row .buffer-cell {
+         /*todo find a way to force mobile safari to not collapse it without having any content inside*/
+         /*changing the border from dashed to double seems to work, isnt that weird?*/
+         background-color: transparent
+    }
+    #window-outside {
+        margin-bottom: 1rem !important;
+    }
+    .buffer-row {
+        gap: 2cqi;
+    }
+    .buffer-row .buffer-cell {
+        padding: 0 8px;
+        position: static;
+        width: 4cqw;
+        line-height: 1;
+
+    }
+    #terminal-game-row {
+        display: flex;
+        justify-content: center;
+    }
+    #breach-time-label {
+        letter-spacing: 0.08em !important;
+        font-size: 1.1rem !important;
+    }
+    .matrix-cell {
+        font-size: 3.3cqi;
+    }
+    .expired-cell {
+        font-size: 2.5cqi;/*to prevent wrapping from the extra wide brackets*/
+    }
+    .potential-cell {
+       display: none !important;
+    }
+    .ghost {
+        top: 0 !important; /*the 5px correction must be disabled because the display type of the bufferContainer is changed*/
+    }
+
+    .ghost::after {
+        inset: 0.1vw !important; /*glow effect strength, using vw to make it responsive to screen size changes which matters when screen is smaller*/
+    }
+    #buffer-container {
+        height: min-content;
+        padding-left: min(10%, 3vw);
+        padding-right: min(10%, 3vw);
+    }
+    #terminal-content-row {
+        display: flex;
+        flex-direction: column;
+    }
+    #breach-time-bar {
+        width: 100% !important;
+    }
+    #breach-time-value {
+        margin: 0 !important;
+    }
+
+}
+
+
+
+
+
+
+#profile-picture {     
+    width: auto;
+    max-width: 4.5em;
+    max-height: 4.5em;
+    aspect-ratio: 1;
+    margin: -10px 0;
+}
+
+#profile {
+    flex-direction: column;
+}
+
+
+#nettech-logo {
+    width: 100%;
+    height: auto;
+    margin: auto;
+}
+
+#cyberpunk-header {
+    width: 100%;
+    height: auto;
+}
+
+#cy-terminal {
+    border : 2px solid var(--cy-yellow);
+    padding: 1rem;
+}
+
+#cy-terminal::before, #cy-terminal::after, #cy-terminal .cy-hud-frame__br, #cy-terminal .cy-hud-frame__bl {
+    border-color: var(--cy-yellow);
+}
+
+#cy-terminal::before {
+    top: 1px;
+    left: 1px;
+    border-width: 3px 0 0 3px;
+}
+
+#cy-terminal::after {
+    bottom: 1px;
+    right: 1px;
+    border-width: 3px 3px 0 0;
+}
+
+#cy-terminal .cy-hud-frame__br {
+    bottom: 1px;
+    right: 0px;
+    border-width: 0px 1px 1px 0;
+}
+
+#cy-terminal .cy-hud-frame__bl {
+    bottom: 1px;
+    left: 0px;
+    border-width: 0 0 1px 1px;
+}
+
+
+.buffer-cell {
+    text-align: center;
+    border: 1.4px dashed var(--cy-yellow);
+    box-sizing: border-box;
+    width: 3cqw;
+    container-type: inline-size;
+    max-width: 36px;
+    aspect-ratio: 1;
+    border: none;
+    background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3cline x1='0' y1='0' x2='19%25' y2='0' stroke='%23FFDD00' stroke-width='1.4'/%3e%3cline x1='41%25' y1='0' x2='59%25' y2='0' stroke='%23FFDD00' stroke-width='1.4'/%3e%3cline x1='81%25' y1='0' x2='100%25' y2='0' stroke='%23FFDD00' stroke-width='1.4'/%3e%3cline x1='0' y1='100%25' x2='19%25' y2='100%25' stroke='%23FFDD00' stroke-width='1.4'/%3e%3cline x1='41%25' y1='100%25' x2='59%25' y2='100%25' stroke='%23FFDD00' stroke-width='1.4'/%3e%3cline x1='81%25' y1='100%25' x2='100%25' y2='100%25' stroke='%23FFDD00' stroke-width='1.4'/%3e%3cline x1='0' y1='0' x2='0' y2='19%25' stroke='%23FFDD00' stroke-width='1.4'/%3e%3cline x1='0' y1='41%25' x2='0' y2='59%25' stroke='%23FFDD00' stroke-width='1.4'/%3e%3cline x1='0' y1='81%25' x2='0' y2='100%25' stroke='%23FFDD00' stroke-width='1.4'/%3e%3cline x1='100%25' y1='0' x2='100%25' y2='19%25' stroke='%23FFDD00' stroke-width='1.4'/%3e%3cline x1='100%25' y1='41%25' x2='100%25' y2='59%25' stroke='%23FFDD00' stroke-width='1.4'/%3e%3cline x1='100%25' y1='81%25' x2='100%25' y2='100%25' stroke='%23FFDD00' stroke-width='1.4'/%3e%3c%2fsvg%3e");
+;
+
+
+    position: relative;
+    top: 5px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.buffer-cell[filled] {
+    border: 1.4px solid var(--cy-yellow) !important; /*takes priority over non-filled cell*/
+    background-image: none !important;
+}
+
+.buffer-cell .cy-hud-frame__br, .buffer-cell .cy-hud-frame__bl {
+    border-color: var(--cy-yellow) !important;
+    border-style: solid !important;
+}
+
+
+#terminal-content-row { 
+    border: outset 0.5px var(--cy-yellow);
+    padding: 1rem 0 1rem 0;
+    background-color: var(--cy-yellow-ghost)
+    
+}
+
+#buffer-text {
+    margin-left: 10%;
+    margin-bottom: 0.25rem;
+}
+
+#buffer-container {
+    background: var(--cy-dark-3);
+    padding-top: 0.75rem;
+    padding-bottom: 0.75rem;
+    border: double 1.5px var(--cy-yellow);
+    width: fit-content;
+}
+
+
+
+#breach-time-value {
+    border: solid 1px var(--cy-yellow);
+    line-height: 2.5rem;
+    padding: 0.5rem 0.75rem;
+    font-size: 1.3rem;
+    margin-right: 10%;
+}
+
+#breach-time-label {
+    font-size: 1.3rem;
+    font-weight: 1000;
+    letter-spacing: 0.2rem;
+}
+
+#breach-time-bar {
+    margin-top: 0.25rem;
+    height: 10px;
+    background-color: var(--cy-yellow);
+    width: 90%;
+}
+
+
+
+.matrix-cell {
+    aspect-ratio: 1;
+    padding: var(--cy-space-xs);
+    text-align: center;
+    align-content: center;
+    color: rgb(215, 237, 102);
+    container-type: inline-size;
+    width: calc(100% / var(--matrixSize)); /*6-7*/
+}
+
+#matrix-window {
+    flex-direction: column;
+}
+
+#window-header {
+    background-color: rgb(215, 237, 102);
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    padding-left: 0.5rem;
+    gap: 0.5rem;
+    width: 100%;
+}
+
+
+#window-header-h2 {
+    color: var(--cy-dark-1);
+    margin: 0 0 0 0.5rem;
+}
+
+#window-header-logo {
+    width: 2.5rem;
+    height: auto;
+}
+
+#window-outside[data-state="active"] {
+    border: solid 1px var(--cy-yellow);
+}
+#window-outside[data-state="won"] {
+    border: solid 1px var(--cy-completed-green);
+}
+#window-outside[data-state="won"] #window-header {
+    background-color: var(--cy-completed-green);
+}
+
+#window-outside[data-state="lost"] {
+    border: solid 1px var(--cy-red);
+}
+#window-outside[data-state="lost"] #window-header {
+    background-color: var(--cy-red);
+}
+
+#window-outside {
+    padding: 0.5rem;
+}
+
+.potential-cell {
+    background-color: var(--cy-selected-cell);
+    width: 100%;
+}
+
+#matrixEffectImage {
+    width: 100%;
+    height: auto;
+}
+
+.potential-row {
+    background-color: var(--cy-selected-cell);
+}
+
+.potential-col {
+    background-color: var(--cy-selected-cell);
+}
+
+.counter-highlight {
+    background-color: var(--cy-counter-cell);
+}
+
+.selectable-cell {
+    position: relative; /*to enable z-index*/
+    z-index: 1; /*to keep the edge cells from being overlapped by the extra highlight cells on the edge*/
+    
+    outline: var(--cy-space-xs) double var(--cy-cyan);
+    box-sizing: border-box !important;
+}
+
+#button-container {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    color: var(--cy-dark-1);
+    gap: 0.5rem;
+    margin-right: 0.5rem;
+}
+
+
+
+.extra-highlight {
+    aspect-ratio: 1;
+    width: 100% !important;
+    pointer-events: none;
+}
+
+#fullScreenButton {
+    position: fixed;
+    top: 10px;
+    right: 10px;
+    z-index: 1000;
+    color: var(--cy-cyan);
+    padding: 0.25rem 0.5rem;
+    border: none;
+}
+
+#sequences-wrapper {
+    background-color: var(--cy-dark-2);
+    border: solid 1px var(--cy-yellow);
+    padding-bottom: 0.5rem;
+    max-height: 50vh;
+}
+
+
+.sequence-row {
+    display: flex;
+    flex-direction: row;
+}
+
+
+#sequence-decoration {
+    height: 2rem;
+    margin: auto;
+}
+
+#sequence-header {
+    gap: 0.3rem;
+    flex-direction: row;
+    padding-left: 0.25rem;
+    container-type: inline-size;
+}
+
+#sequence-header-div {
+    border-bottom: 1px solid var(--cy-yellow); /* min() in case browser doesnt support 0.5px*/
+    border-bottom: 0.5px solid var(--cy-yellow); /* min() in case browser doesnt support 0.5px*/
+}
+
+#upload-sequence-header {
+    font-size: 3.8cqw;
+    margin: auto;
+}
+
+.score-text-div {
+    display: flex;
+    flex-direction: column;
+    flex: 1;
+}
+.score-card {
+    display: flex;
+    flex-direction: row;
+    gap: 0.5rem;
+    align-items: center;
+}
+
+
+
+.score-card-img {
+    width: 2.5rem;
+    height: auto;
+}
+
+
+.score-card-text {
+    align-items: flex-start;
+    container-type: inline-size;
+}
+
+.score-card-text * {
+    font-size: clamp(0.2vw,11cqi,16px);
+    margin: 0;
+    
+}
+
+
+.score-card-pattern {
+    display: flex;
+    flex-direction: row;
+    gap: 6cqi;
+    justify-content: flex-start;
+}
+
+.score-card-pattern * {
+    max-width: min-content;
+    line-height: 1;
+}
+
+
+.score-card-node {
+    position: relative; 
+    padding: 2px 1px;
+    text-align: center;
+    font-size: min(9.5cqw, 1.3rem);
+    /*TODO
+    add blur effect to background only
+    */
+    isolation: isolate; /* creates its own stacking context */
+    overflow-y: hidden;
+}
+
+.score-card-node[filled]::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-color: var(--cy-dark-4);
+    filter: blur(5px);
+    z-index: -1;
+}
+
+#sequence-bottom-decoration {
+    width: 30%;
+}
+
+#sequence-top-decoration {
+    width: 100cqw;
+}
+
+#top-sequence-img-container {
+    display: flex;
+    align-items: end;
+    container-type: inline-size;
+    justify-content: center;
+}
+
+.expired-cell {
+    color: rgb(82, 72, 102);
+    outline: none !important;
+}
+
+
+.sequence-list-row[installed] {
+    background-color: #1fdb83 !important;
+}
+
+.sequence-list-row[failed] {
+    background-color: var(--cy-red) !important;
+}
+
+.sequence-list-row[installed] * {
+    color: black !important;
+}
+
+.sequence-list-row[failed] * {
+    color: black !important;
+}
+
+.sequence-list-row[installed] .score-card-img {
+    /*filter: hue-rotate(45deg);*/
+    filter: url("#installed-filter") !important;
+}
+.sequence-list-row[failed] .score-card-img {
+    filter: url("#failed-filter") !important;
+}
+
+.installed-div {
+    text-align: center;
+    align-content: center;
+    /*height: 100%;*/
+    text-transform: uppercase;
+}
+
+.failed-div {
+    text-align: center;
+    align-content: center;
+    /*height: 100%;*/
+    text-transform: uppercase;
+}
+
+.sequence-list-row[installed] .installed-div {
+    display: block !important;
+}
+
+.sequence-list-row[installed] .score-card-pattern {
+    display: none !important;
+}
+
+.sequence-list-row[failed] {
+    background-color: var(--cy-red) !important;
+}
+
+.sequence-list-row[failed] .failed-div {
+    display: block !important;
+}
+
+.sequence-list-row[failed] .score-card-pattern {
+    display: none !important;
+}
+
+
+.hovered-current-node {
+    position: relative;
+    overflow-y: visible !important; /*to allow the glow effect to be visible outside the node*/
+}
+.hovered-current-node .score-card-node-text-span, .ghost {
+    outline: 2px double var(--cy-cyan);
+    position: relative;
+    isolation: isolate;
+    background-color: var(--cy-dark-2);
+    color: cyan;
+    background-image: none;
+}
+
+.hovered-current-node .score-card-node-text-span::after, .ghost::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    z-index: -1;
+    background-color: var(--cy-cyan);
+    filter: blur(8px);
+    border-radius: 4px;
+}
+
+
+.ghost {
+    border-color: transparent !important;
+    border-style: solid !important;
+    position: relative !important;
+}
+
+.ghost::after {
+    inset: 5px; /*glow effect strength*/
+    /*TODO:
+    animate this to pulse
+    */
+}

@@ -1,0 +1,15 @@
+{
+  "dependencies": {
+    "bcrypt": "^6.0.0",
+    "better-sqlite3": "^12.10.0",
+    "bootstrap": "^5.3.8",
+    "express": "^5.2.1",
+    "socket.io": "^4.8.3"
+  },
+  "scripts": {
+    "singlePlayer": "node private/singlePlayer/singlePlayerServer.cjs",
+    "sqlite": "node private/admin-js/SQL.cjs",
+    "map": "bash personal/filemap.sh"
+  },
+  "type": "module"
+}

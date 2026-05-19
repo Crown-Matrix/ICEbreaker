@@ -1,0 +1,382 @@
+================================================================
+VIBE-CYBERPYNK.CSS — COMPLETE CLASS REFERENCE
+================================================================
+
+
+----------------------------------------------------------------
+TYPOGRAPHY CLASSES
+----------------------------------------------------------------
+
+.cy-display
+  --cy-font-display, --cy-cyan
+  Modifiers:
+    .cy-display--magenta  -->  --cy-magenta
+    .cy-display--yellow   -->  --cy-yellow
+
+h1 / .cy-h1
+  --cy-font-display, --cy-cyan
+
+h2 / .cy-h2
+  --cy-font-display, --cy-text-primary
+
+h3 / .cy-h3
+  --cy-font-body, --cy-text-secondary
+
+p / .cy-body
+  --cy-font-body, --cy-text-secondary
+
+.cy-mono
+  --cy-font-mono, --cy-text-secondary
+
+.cy-label
+  --cy-font-mono, --cy-text-muted
+
+Text color utilities:
+  .cy-text-cyan     -->  --cy-cyan
+  .cy-text-magenta  -->  --cy-magenta
+  .cy-text-yellow   -->  --cy-yellow
+  .cy-text-green    -->  --cy-green
+  .cy-text-muted    -->  --cy-text-muted
+
+
+----------------------------------------------------------------
+LAYOUT CLASSES
+----------------------------------------------------------------
+
+.cy-container
+  --cy-space-lg
+
+.cy-grid
+  --cy-space-md
+  Modifiers:
+    .cy-grid--2     -->  2 columns
+    .cy-grid--3     -->  3 columns
+    .cy-grid--4     -->  4 columns
+    .cy-grid--auto  -->  auto-fit columns
+
+.cy-horizontal-grid
+  --cy-space-md
+
+
+.cy-flex
+  No variables
+
+.cy-flex--center
+  No variables
+
+.cy-flex--between
+  No variables
+
+.cy-flex--gap-sm
+  --cy-space-sm
+
+.cy-flex--gap-md
+  --cy-space-md
+
+
+----------------------------------------------------------------
+CARD CLASSES
+----------------------------------------------------------------
+
+.cy-card
+  --cy-card, --cy-border, --cy-radius-sm, --cy-transition-base,
+  --cy-cyan-deep, --cy-card-hover
+  ::before  -->  --cy-cyan (top accent line)
+  Modifiers:
+    .cy-card--magenta   -->  ::before uses --cy-magenta
+    .cy-card--yellow    -->  ::before uses --cy-yellow
+    .cy-card--green     -->  ::before uses --cy-green
+    .cy-card--cut       -->  clips corners at 12px
+    .cy-card--cut-lg    -->  clips corners at 20px
+
+.cy-stat-card
+  --cy-card, --cy-border, --cy-radius-sm, --cy-space-md
+
+.cy-stat-card__label
+  --cy-font-mono, --cy-text-muted, --cy-space-sm
+
+.cy-stat-card__value
+  --cy-font-display, --cy-cyan
+
+.cy-stat-card__sub
+  --cy-font-mono, --cy-text-muted, --cy-space-xs
+
+
+----------------------------------------------------------------
+BUTTON CLASSES
+----------------------------------------------------------------
+
+.cy-btn
+  --cy-font-mono, --cy-space-sm, --cy-cyan, --cy-radius-sm,
+  --cy-transition-fast
+  :hover  -->  --cy-cyan-ghost, --cy-glow-cyan
+  Modifiers:
+    .cy-btn--magenta  -->  --cy-magenta
+                          :hover uses --cy-magenta-ghost, --cy-glow-magenta
+    .cy-btn--yellow   -->  --cy-yellow
+                          :hover uses --cy-yellow-ghost, --cy-glow-yellow
+    .cy-btn--solid    -->  --cy-cyan, --cy-void
+                          :hover uses --cy-cyan-dim, --cy-glow-cyan
+    .cy-btn--ghost    -->  --cy-border, --cy-text-secondary
+                          :hover uses --cy-cyan-deep, --cy-cyan, --cy-cyan-ghost
+    .cy-btn--sm       -->  no variables, smaller padding
+    .cy-btn--lg       -->  no variables, larger padding
+
+
+----------------------------------------------------------------
+FORM CLASSES
+----------------------------------------------------------------
+
+.cy-input / .cy-select / .cy-textarea
+  --cy-font-mono, --cy-text-primary, --cy-dark-3, --cy-border,
+  --cy-radius-sm, --cy-transition-fast
+  ::placeholder  -->  --cy-text-muted
+  :hover         -->  --cy-cyan-deep
+  :focus         -->  --cy-cyan
+  .cy-input--error  -->  --cy-magenta
+
+
+.cy-selected
+ --cy-cyan
+ --cy-magenta
+
+.cy-form-group
+  No variables
+
+.cy-form-label
+  --cy-font-mono, --cy-text-muted
+
+.cy-form-hint
+  --cy-font-mono, --cy-text-muted
+
+.cy-form-error
+  --cy-font-mono, --cy-magenta
+
+
+----------------------------------------------------------------
+BADGE CLASSES
+----------------------------------------------------------------
+
+.cy-badge
+  --cy-font-mono, --cy-radius-sm
+  Modifiers:
+    .cy-badge--cyan     -->  --cy-cyan, --cy-cyan-ghost
+    .cy-badge--magenta  -->  --cy-magenta, --cy-magenta-ghost
+    .cy-badge--yellow   -->  --cy-yellow, --cy-yellow-ghost
+    .cy-badge--green    -->  --cy-green, --cy-green-ghost
+    .cy-badge--muted    -->  --cy-text-muted, --cy-border
+
+
+----------------------------------------------------------------
+PROGRESS CLASSES
+----------------------------------------------------------------
+
+.cy-progress
+  --cy-space-md
+
+.cy-progress__label
+  --cy-font-mono, --cy-text-secondary
+
+.cy-progress__track
+  --cy-border
+
+.cy-progress__fill
+  --cy-cyan, --cy-transition-slow
+  Modifiers:
+    .cy-progress__fill--magenta  -->  --cy-magenta
+    .cy-progress__fill--yellow   -->  --cy-yellow
+    .cy-progress__fill--green    -->  --cy-green
+
+.cy-progress__val
+  --cy-font-mono, --cy-text-secondary
+
+
+----------------------------------------------------------------
+CONSOLE CLASSES
+----------------------------------------------------------------
+
+.cy-console
+  --cy-border, --cy-radius-sm, --cy-space-md, --cy-font-mono
+
+.cy-console__line
+  No variables
+
+.cy-console__prompt
+  --cy-magenta
+
+.cy-console__cmd
+  --cy-cyan
+
+.cy-console__arg
+  --cy-text-muted
+
+.cy-console__ok
+  --cy-green
+
+.cy-console__warn
+  --cy-yellow
+
+.cy-console__error
+  --cy-magenta
+
+.cy-console__cursor
+  --cy-cyan
+  Animation: blink 1s step-end infinite
+
+
+----------------------------------------------------------------
+DIVIDER CLASSES
+----------------------------------------------------------------
+
+.cy-divider
+  --cy-border, --cy-space-lg
+  Modifiers:
+    .cy-divider--cyan     -->  --cy-cyan-deep
+    .cy-divider--magenta  -->  --cy-magenta-deep
+
+.cy-section-label
+  --cy-font-mono, --cy-text-muted, --cy-space-md, --cy-text-ghost
+  ::before  -->  adds "// " prefix using --cy-text-ghost
+
+
+----------------------------------------------------------------
+NAV CLASSES
+----------------------------------------------------------------
+
+.cy-nav
+  --cy-space-md, --cy-space-lg, --cy-dark-2, --cy-border
+  ::after  -->  --cy-cyan gradient underline
+
+.cy-nav__logo
+  --cy-font-display, --cy-cyan
+
+.cy-nav__links
+  --cy-space-lg
+
+.cy-nav__link
+  --cy-font-mono, --cy-text-secondary, --cy-transition-fast
+  :hover / .cy-nav__link--active  -->  --cy-cyan
+
+
+----------------------------------------------------------------
+HUD FRAME CLASSES
+----------------------------------------------------------------
+
+.cy-hud-frame
+  --cy-space-md, --cy-cyan
+  ::before          -->  top-left corner bracket
+  ::after           -->  top-right corner bracket
+  .cy-hud-frame__br -->  bottom-right corner bracket (child element)
+  .cy-hud-frame__bl -->  bottom-left corner bracket (child element)
+
+  Usage:
+    <div class="cy-hud-frame">
+        <div class="cy-hud-frame__br"></div>
+        <div class="cy-hud-frame__bl"></div>
+        Your content here
+    </div>
+
+
+----------------------------------------------------------------
+SCANLINES
+----------------------------------------------------------------
+
+.cy-scanlines
+  --cy-z-overlay
+  ::after  -->  repeating scanline gradient overlay, pointer-events: none
+
+
+----------------------------------------------------------------
+ANIMATION CLASSES
+----------------------------------------------------------------
+
+.cy-anim-blink
+  Keyframe: blink
+  Fades between opacity 1 and 0
+  1s step-end infinite
+
+.cy-anim-pulse
+  Keyframe: pulse-cyan
+  Pulses --cy-glow-cyan box shadow
+  2s ease-in-out infinite
+
+.cy-anim-flicker
+  Keyframe: flicker
+  Random opacity drops simulating a broken screen
+  6s linear infinite
+
+.cy-anim-boot
+  Keyframe: boot-in
+  Fades in and slides up 8px on load
+  0.4s ease both
+
+.cy-scan-sweep
+  Keyframe: scan-h
+  Horizontal scanning line using --cy-cyan
+  3s linear infinite
+
+.cy-glitch
+  Requires: data-text="your text" attribute on the element
+  ::before  -->  --cy-magenta, keyframe glitch 3s infinite linear alternate-reverse
+  ::after   -->  --cy-cyan,    keyframe glitch 2s infinite linear alternate
+
+  Usage:
+    <h1 class="cy-glitch" data-text="ICEbreaker">ICEbreaker</h1>
+
+
+----------------------------------------------------------------
+UTILITY — SPACING
+----------------------------------------------------------------
+
+Margin top:
+  .cy-mt-xs  -->  --cy-space-xs
+  .cy-mt-sm  -->  --cy-space-sm
+  .cy-mt-md  -->  --cy-space-md
+  .cy-mt-lg  -->  --cy-space-lg
+  .cy-mt-xl  -->  --cy-space-xl
+
+Margin bottom:
+  .cy-mb-xs  -->  --cy-space-xs
+  .cy-mb-sm  -->  --cy-space-sm
+  .cy-mb-md  -->  --cy-space-md
+  .cy-mb-lg  -->  --cy-space-lg
+  .cy-mb-xl  -->  --cy-space-xl
+
+Padding:
+  .cy-p-sm   -->  --cy-space-sm
+  .cy-p-md   -->  --cy-space-md
+  .cy-p-lg   -->  --cy-space-lg
+
+
+----------------------------------------------------------------
+UTILITY — BORDERS
+----------------------------------------------------------------
+
+.cy-border-cyan      -->  --cy-cyan-deep (1px border)
+.cy-border-magenta   -->  --cy-magenta-deep (1px border)
+.cy-border-l-cyan    -->  --cy-cyan, --cy-space-md (2px left border)
+.cy-border-l-magenta -->  --cy-magenta, --cy-space-md (2px left border)
+
+
+----------------------------------------------------------------
+BASE / GLOBAL PSEUDO-ELEMENTS
+----------------------------------------------------------------
+
+::selection
+  background  -->  --cy-cyan
+  color       -->  --cy-void
+
+::-webkit-scrollbar
+  width/height: 6px
+
+::-webkit-scrollbar-track
+  --cy-border-dim
+
+::-webkit-scrollbar-thumb
+  --cy-cyan-deep
+  :hover  -->  --cy-cyan
+
+
+================================================================
+END OF REFERENCE
+================================================================
