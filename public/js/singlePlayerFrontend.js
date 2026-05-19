@@ -583,11 +583,20 @@
                 cell.style.transform = 'scaleX(0)';
             }
 
+            //here is outside of the timeout
+
             setTimeout(() => {
 
                 //TODO - as of now, the images and #buffer-text appear automatically without an animation
+                // this is happening to:
+                //#matrixEffectImage
+                //#sequence-bottom-decoration
+                //#buffer-text
+                //#cyberpunk-header
+                //#nettech-logo
 
-
+                //plan
+                //edit the 'instant cleanup' to exclude the affected elements and add an animation for the elements outside of the timeout
 
                 // then do the existing instant cleanup
                 let matrixWindow = document.querySelector('#window-outside');
