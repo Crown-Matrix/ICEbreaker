@@ -204,7 +204,6 @@
             });
             await animateRoundEnd('won',resultType);
             setTimeout(async () => {
-                console.log('checking session time', Date.now(), sessionEndTime, Date.now() < sessionEndTime);
                 if (Date.now() < sessionEndTime) {
                     await unAnimateRoundEnd();
                     this.newRound();
@@ -219,7 +218,6 @@
             });
             await animateRoundEnd('lost',resultType);
             setTimeout(async () => {
-                console.log('checking session time', Date.now(), sessionEndTime, Date.now() < sessionEndTime);
                 if (Date.now() < sessionEndTime) {
                     await unAnimateRoundEnd();
                     this.newRound();
@@ -310,10 +308,9 @@
         matrixWindow.setAttribute('data-state', 'active');
         
         return new Promise((resolve) => {
-            console.log('animating new round');
 
             // Phase 1+2: all width animations simultaneously
-            for (const element_id of ['breach-time-container', 'window-outside', 'buffer-container']) {
+            for (const element_id of ['breach-time-container', 'window-outside', 'buffer-container','breach-time-bar']) {
                 const el = document.getElementById(element_id);
                 el.style.cssText = `transform: scaleX(0); transform-origin: left center;`;
                 setTimeout(() => {
@@ -564,16 +561,15 @@
 
     function unAnimateRoundEnd() {
         return new Promise((resolve) => {
-            console.log('un-animating round end');
             // collapse everything simultaneously
-            for (const element_id of ['breach-time-container', 'window-outside']) {
+            for (const element_id of ['breach-time-container', 'window-outside','breach-time-bar','buffer-text']) {
                 const el = document.getElementById(element_id);
                 el.style.transformOrigin = 'left center';
                 el.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
                 el.style.transform = 'scaleX(0)';
             }
 
-            for (const element_id of ['sequences-wrapper', 'buffer-container', 'buffer-text', 'matrixEffectImage', 'sequence-bottom-decoration', 'nettech-logo', 'cyberpunk-header']) {
+            for (const element_id of ['sequences-wrapper', 'buffer-container', 'matrixEffectImage', 'sequence-bottom-decoration', 'nettech-logo', 'cyberpunk-header']) {
                 const el = document.getElementById(element_id);
                 if (!el) continue;
                 el.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
@@ -587,8 +583,12 @@
                 cell.style.transform = 'scaleX(0)';
             }
 
-            console.log('Starting un-animation');
             setTimeout(() => {
+
+                //TODO - as of now, the images and #buffer-text appear automatically without an animation
+
+
+
                 // then do the existing instant cleanup
                 let matrixWindow = document.querySelector('#window-outside');
                 let terminal = document.getElementById('cy-terminal');
