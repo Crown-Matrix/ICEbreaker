@@ -203,10 +203,10 @@ class SinglePlayerFrontend {
             audioHandler.playSound('close', this.FXVolume);
         });
         await animateRoundEnd('won',resultType);
-        setTimeout(() => {
+        setTimeout(async () => {
+            console.log('checking session time', Date.now(), sessionEndTime, Date.now() < sessionEndTime);
             if (Date.now() < sessionEndTime) {
-
-                unAnimateRoundEnd();
+                await unAnimateRoundEnd();
                 this.newRound();
             }
         }, 1000); // match the animation duration
@@ -218,9 +218,10 @@ class SinglePlayerFrontend {
             audioHandler.playSound('close', this.FXVolume);
         });
         await animateRoundEnd('lost',resultType);
-        setTimeout(() => {
+        setTimeout(async () => {
+            console.log('checking session time', Date.now(), sessionEndTime, Date.now() < sessionEndTime);
             if (Date.now() < sessionEndTime) {
-                unAnimateRoundEnd();
+                await unAnimateRoundEnd();
                 this.newRound();
             }
         }, 1000); // match the animation duration
@@ -562,67 +563,72 @@ function animateRoundEnd(roundResult,resultType) {
 
 
 function unAnimateRoundEnd() {
-    let matrixWindow = document.querySelector('#window-outside');
-    let terminal = document.getElementById('cy-terminal');
-    let mainMatrixCol = document.querySelector('.main-matrix-col');
-    Array.from(mainMatrixCol.childNodes).filter(node => node.nodeType === Node.TEXT_NODE).forEach(node => node.remove());
-    mainMatrixCol.classList.add('pt-3');
+    return new Promise((resolve) => {
+        console.log('un-animating round end');
+        // collapse everything simultaneously
+        for (const element_id of ['breach-time-container', 'matrix-window']) {
+            const el = document.getElementById(element_id);
+            el.style.transition = 'transform 1.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            el.style.transform = 'scaleX(0)';
+        }
 
+        for (const element_id of ['sequences-wrapper', 'buffer-container', 'buffer-text', 'matrixEffectImage', 'sequence-bottom-decoration', 'nettech-logo', 'cyberpunk-header']) {
+            const el = document.getElementById(element_id);
+            if (!el) continue;
+            el.style.transition = 'transform 1.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            el.style.transform = 'scaleX(0)';
+        }
 
+        const rowsContainer = document.getElementById('sequence-rows-container');
+        rowsContainer.style.transition = 'max-height 1.3s cubic-bezier(0.4, 0, 0.2, 1)';
+        rowsContainer.style.maxHeight = '0px';
 
-    //clears any text nodes in mainMatrixCol which would be the round end animation text
+        for (const cell of document.querySelectorAll('.buffer-cell')) {
+            cell.style.transition = 'transform 1.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            cell.style.transform = 'scaleX(0)';
+        }
 
-    //add back header
-    if (frontEndHandler.savedMatrixHtml) {
-        mainMatrixCol.innerHTML = frontEndHandler.savedMatrixHtml;
-    }
-    document.getElementById('code-matrix-header').innerHTML = ''
-    let header = matrixWindow.querySelector('#window-header');
+        console.log('Starting un-animation');
+        setTimeout(() => {
+            // then do the existing instant cleanup
+            let matrixWindow = document.querySelector('#window-outside');
+            let terminal = document.getElementById('cy-terminal');
+            let mainMatrixCol = document.querySelector('.main-matrix-col');
+            Array.from(mainMatrixCol.childNodes).filter(node => node.nodeType === Node.TEXT_NODE).forEach(node => node.remove());
+            mainMatrixCol.classList.add('pt-3');
 
-    // restore data-state
-    matrixWindow.removeAttribute('data-state');
-    matrixWindow.setAttribute('data-state', 'active');
+            if (frontEndHandler.savedMatrixHtml) {
+                mainMatrixCol.innerHTML = frontEndHandler.savedMatrixHtml;
+            }
+            document.getElementById('code-matrix-header').innerHTML = '';
+            let header = matrixWindow.querySelector('#window-header');
 
-    // restore matrixWindow styles
-    matrixWindow.style.removeProperty('height');
-    matrixWindow.style.removeProperty('background-color');
-    matrixWindow.style.removeProperty('transition');
-    matrixWindow.style.removeProperty('border');
-    matrixWindow.style.removeProperty('min-height');
+            matrixWindow.removeAttribute('data-state');
+            matrixWindow.setAttribute('data-state', 'active');
+            matrixWindow.style.removeProperty('height');
+            matrixWindow.style.removeProperty('background-color');
+            matrixWindow.style.removeProperty('transition');
+            matrixWindow.style.removeProperty('border');
+            matrixWindow.style.removeProperty('min-height');
+            terminal.style.removeProperty('height');
+            header.style.cssText = '';
+            header.querySelector('#window-header-h2').style.removeProperty('display');
+            header.querySelector('#button-container').style.removeProperty('display');
+            matrixWindow.querySelector('#window-header-logo').style.opacity = '1';
+            matrixWindow.querySelector('#window-header-logo').style.removeProperty('transition');
+            matrixWindow.querySelector('#code-matrix-header')?.style.removeProperty('display');
+            matrixWindow.querySelectorAll('.matrix-row').forEach(row => row.style.removeProperty('display'));
+            matrixWindow.querySelectorAll('.side-matrix-col').forEach(col => col.style.removeProperty('display'));
+            document.querySelector('#matrix-window').style.removeProperty('height');
+            document.querySelector('#matrix-window > .container-fluid').style.removeProperty('height');
+            document.querySelector('#matrix-window > .container-fluid > .row').style.removeProperty('height');
+            mainMatrixCol.style.cssText = `width: ${frontEndHandler.savedMainColWidth};`;
+            document.getElementById('matrix-animation-footer')?.remove();
+            frontEndHandler.animating = false;
 
-    // restore terminal height
-    terminal.style.removeProperty('height');
-
-    // restore header styles
-    header.style.cssText = '';
-
-    // restore header children visibility
-    header.querySelector('#window-header-h2').style.removeProperty('display');
-    header.querySelector('#button-container').style.removeProperty('display');
-    matrixWindow.querySelector('#window-header-logo').style.opacity = '1';
-    matrixWindow.querySelector('#window-header-logo').style.removeProperty('transition');
-
-    // restore matrix header
-    matrixWindow.querySelector('#code-matrix-header')?.style.removeProperty('display');
-
-    // restore matrix rows
-    matrixWindow.querySelectorAll('.matrix-row').forEach(row => row.style.removeProperty('display'));
-
-    // restore side columns
-    matrixWindow.querySelectorAll('.side-matrix-col').forEach(col => col.style.removeProperty('display'));
-
-    // restore matrix window inner heights
-    document.querySelector('#matrix-window').style.removeProperty('height');
-    document.querySelector('#matrix-window > .container-fluid').style.removeProperty('height');
-    document.querySelector('#matrix-window > .container-fluid > .row').style.removeProperty('height');
-
-    // restore mainMatrixCol
-    mainMatrixCol.style.cssText = `width: ${frontEndHandler.savedMainColWidth};`;
-
-    // remove footer if it exists
-    document.getElementById('matrix-animation-footer')?.remove();
-
-    frontEndHandler.animating = false;
+            resolve();
+        }, 1300);
+    });
 }
 
 document.addEventListener('click', (event) => {
