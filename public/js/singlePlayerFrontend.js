@@ -313,7 +313,7 @@
             console.log('animating new round');
 
             // Phase 1+2: all width animations simultaneously
-            for (const element_id of ['breach-time-container', 'breach-time-container', 'matrix-window']) {
+            for (const element_id of ['breach-time-container', 'window-outside']) {
                 const el = document.getElementById(element_id);
                 el.style.cssText = `transform: scaleX(0); transform-origin: left center;`;
                 setTimeout(() => {
@@ -322,7 +322,7 @@
                 }, 100);
             }
 
-            const sw = document.getElementById('sequences-wrapper');
+        const sw = document.getElementById('sequences-wrapper');
         setTimeout(() => {
                 sw.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
                 sw.style.transform = 'scaleX(1) scaleY(1)'; // wrapper just does width, rows do height
