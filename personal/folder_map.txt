@@ -1,100 +1,89 @@
 .
-  .vscode
-    settings.json
   personal
-    filemap.sh
     folder_map.txt
-    idea.txt
-  package.json
+    filemap.sh
+  .DS_Store
+  node_modules
+  README.md
   public
+    audios
+      .DS_Store
+      main
+        closeRound.mp3
+        cellClick.mp3
+        bgMusicStart2.mp3
+        bgMusicStart1.mp3
+        coverMusic.mp3
+        bgMusicStart.mp3
+        cellHover.mp3
+        win.mp3
+        raw.mp3
+        lose.mp3
+      extras
+        Cash Transfer.mp3
+        Resuming the Game.mp3
+        Pausing the Game.mp3
+        Flatlined.mp3
+        Escaping from NCPD.mp3
+        Public Announcer Tone 1.mp3
+        shortClick.mp3
+        Breaching.mp3
+        Outgoing Call.mp3
+        Public Announcer Tone 2.mp3
+        Opening Phone Contacts.mp3
+        Public Announcer Tone 3.mp3
+        Combat.mp3
+        Summoning Vehicle.mp3
+        Shitpost.mp3
+        Job Complete.mp3
+        Healing Up.mp3
+        Skill Advancing.mp3
+        Wanted by NCPD.mp3
+        V's Phone (New Message).mp3
+        V's Phone (Ringtone).mp3
+        Closing Phone Contacts.mp3
+        Biochip Malfunctioning.mp3
+    .DS_Store
     css
       bootstrap.min.css
+      vibe-cyberpunk-specs.txt
       custom-bootstrap-config.css
       vibe-cyberpunk.css
       singlePlayerStyles.css
-      vibe-cyberpunk-specs.txt
-    singlePlayer
-      singlePlayerIndex.html
-    audios
-      extras
-        Resuming the Game.mp3
-        Public Announcer Tone 2.mp3
-        Combat.mp3
-        Flatlined.mp3
-        Biochip Malfunctioning.mp3
-        Opening Phone Contacts.mp3
-        Wanted by NCPD.mp3
-        V's Phone (New Message).mp3
-        Public Announcer Tone 1.mp3
-        Outgoing Call.mp3
-        Closing Phone Contacts.mp3
-        Shitpost.mp3
-        Breaching.mp3
-        V's Phone (Ringtone).mp3
-        Public Announcer Tone 3.mp3
-        Healing Up.mp3
-        Pausing the Game.mp3
-        shortClick.mp3
-        Job Complete.mp3
-        Cash Transfer.mp3
-        Skill Advancing.mp3
-        Escaping from NCPD.mp3
-        Summoning Vehicle.mp3
-      main
-        win.mp3
-        cellClick.mp3
-        coverMusic.mp3
-        bgMusicStart2.mp3
-        raw.mp3
-        cellHover.mp3
-        lose.mp3
-        bgMusicStart.mp3
-        bgMusicStart1.mp3
-    multiplayer
-    js
-      audio.js
-      singlePlayerFrontend.js
-      bootstrap.bundle.min.js
-      codeMatrix.js
-      offlineSinglePlayerFrontend.js
     imgs
+      sequence-top-decoration.png
+      cyberpunk-header.png
+      profile-placeholder.png
+      medium-cell-decoration.png
+      nettech.png
+      matrixEffectWithoutBackground.png
       blueSquare.png
       hard-cell-decoration.png
       sequence-bottom-decoration.png
-      sequence-top-decoration.png
-      cyberpunk-cursor.png
-      cyberpunk-header.png
-      matrixEffectWithoutBackground.png
-      source-examples
-        source-example-vid2.mp4
-        source-example-vid1.mp4
-        source-example2.png
-        source-example1.png
-        source-example6.png
-        source-example4.png
-        source-example5.png
-        source-example3.png
-      nettech.png
-      sequence_decoration.png
-      easy-cell-decoration.png
       matrixEffectWithBackground.png
-      medium-cell-decoration.png
-      raw-nettech.png
-      favicon_preview.ico
-      profile-placeholder.png
+      easy-cell-decoration.png
       matrix.png
+      cyberpunk-cursor.png
+      sequence_decoration.png
+      favicon_preview.ico
+      raw-nettech.png
+    js
+      codeMatrix.js
+      singlePlayerFrontend.js
+      bootstrap.bundle.min.js
+      audio.js
+      offlineSinglePlayerFrontend.js
+    singlePlayer
+      .DS_Store
+      singlePlayerIndex.html
   .gitignore
-  node_modules
   package-lock.json
-  .env
-  README.md
+  package.json
   private
     admin-js
       SQL.cjs
-    singlePlayer
-      singlePlayerServer.cjs
     multiplayer
       multiPlayerServer.js
-    database
-      ICEbreaker.db
+    singlePlayer
+      singlePlayerServer.cjs
   .git
