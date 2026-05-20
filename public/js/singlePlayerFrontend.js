@@ -583,6 +583,11 @@
                 cell.style.transform = 'scaleX(0)';
             }
 
+            for (const elem of ['buffer-text', 'matrixEffectImage', 'sequence-bottom-decoration', 'nettech-logo', 'cyberpunk-header']) {
+                const el = document.getElementById(elem);
+                el.style.transformOrigin = 'center left'
+                el.style.transform = 'scaleX(0)'
+            }
             //here is outside of the timeout
 
             setTimeout(() => {
@@ -633,7 +638,7 @@
                 mainMatrixCol.style.cssText = `width: ${frontEndHandler.savedMainColWidth};`;
                 document.getElementById('matrix-animation-footer')?.remove();
                 // reset all animated elements back to full width
-                for (const element_id of ['breach-time-container', 'window-outside', 'sequences-wrapper', 'buffer-container', 'buffer-text', 'matrixEffectImage', 'sequence-bottom-decoration', 'nettech-logo', 'cyberpunk-header']) {
+                for (const element_id of ['breach-time-container', 'window-outside', 'sequences-wrapper', 'buffer-container']) {
                     const el = document.getElementById(element_id);
                     if (!el) continue;
                     el.style.transition = 'none';
@@ -644,6 +649,13 @@
                     cell.style.transition = 'none';
                     cell.style.transform = '';
                 });
+
+                for (const elem of ['buffer-text', 'matrixEffectImage', 'sequence-bottom-decoration', 'nettech-logo', 'cyberpunk-header']) {
+                    const el = document.getElementById(elem);
+                    el.style.transformOrigin = 'center left'
+                    el.style.transform = 'scaleX(1)'
+                }
+
                 frontEndHandler.animating = false;
 
                 resolve();
