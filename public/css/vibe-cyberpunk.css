@@ -15,60 +15,98 @@
 
   /* --- core palette --- */
   --cy-cyan:        #00FFFF;
+  --cy-cyan-rgb:    0, 255, 255;
   --cy-cyan-dim:    #00CCDD;
+  --cy-cyan-dim-rgb: 0, 204, 221;
   --cy-cyan-deep:   #008899;
+  --cy-cyan-deep-rgb: 0, 136, 153;
   --cy-cyan-ghost:  rgba(0, 255, 255, 0.08);
 
   --cy-magenta:     #FF2D78;
+  --cy-magenta-rgb: 255, 45, 120;
   --cy-magenta-dim: #CC1155;
-  --cy-magenta-deep:#880033;
+  --cy-magenta-dim-rgb: 204, 17, 85;
+  --cy-magenta-deep: #880033;
+  --cy-magenta-deep-rgb: 136, 0, 51;
   --cy-magenta-ghost: rgba(255, 45, 120, 0.08);
 
   --cy-red:         #ff4739;
+  --cy-red-rgb:     255, 71, 57;
   --cy-red-dark:    #a61712;
+  --cy-red-dark-rgb: 166, 23, 18;
   --cy-red-darker:  #300504;
+  --cy-red-darker-rgb: 48, 5, 4;
   --cy-red-glow:    #ff645c;
+  --cy-red-glow-rgb: 255, 100, 92;
   --cy-red-dim:     #ff7369;
+  --cy-red-dim-rgb: 255, 115, 105;
   --cy-red-ghost:   rgba(255, 115, 105, 0.08);
 
   --cy-yellow:      #FFE600;
+  --cy-yellow-rgb:  255, 230, 0;
   --cy-yellow-dim:  #CCB800;
+  --cy-yellow-dim-rgb: 204, 184, 0;
   --cy-yellow-ghost: rgba(255, 230, 0, 0.08);
 
   --cy-green:       #00FF88;
+  --cy-green-rgb:   0, 255, 136;
   --cy-green-dark:  #189959;
-  --cy-green-darker:#14291f;
+  --cy-green-dark-rgb: 24, 153, 89;
+  --cy-green-darker: #14291f;
+  --cy-green-darker-rgb: 20, 41, 31;
   --cy-green-glow:  #1ddb82;
+  --cy-green-glow-rgb: 29, 219, 130;
   --cy-green-dim:   #00CC66;
+  --cy-green-dim-rgb: 0, 204, 102;
   --cy-green-ghost: rgba(0, 255, 136, 0.08);
   --cy-completed-green: #1fdb83;
+  --cy-completed-green-rgb: 31, 219, 131;
 
   --cy-purple:      #9D00FF;
+  --cy-purple-rgb:  157, 0, 255;
   --cy-purple-dim:  #7700CC;
+  --cy-purple-dim-rgb: 119, 0, 204;
   --cy-purple-ghost: rgba(157, 0, 255, 0.08);
 
-  --cy-white:     #E0E8FF;
-  --cy-white-dim: #777e9b;
+  --cy-white:       #E0E8FF;
+  --cy-white-rgb:   224, 232, 255;
+  --cy-white-dim:   #777e9b;
+  --cy-white-dim-rgb: 119, 126, 155;
   --cy-white-ghost: rgba(224, 232, 255, 0.08);
 
   /* --- void backgrounds --- */
   --cy-void:          #050509;
+  --cy-void-rgb:      5, 5, 9;
   --cy-dark-1:        #0A0A12;
+  --cy-dark-1-rgb:    10, 10, 18;
   --cy-dark-2:        #0D0D1A;
+  --cy-dark-2-rgb:    13, 13, 26;
   --cy-dark-3:        #111122;
+  --cy-dark-3-rgb:    17, 17, 34;
   --cy-dark-4:        #14142A;
+  --cy-dark-4-rgb:    20, 20, 42;
   --cy-card:          #12121E;
+  --cy-card-rgb:      18, 18, 30;
   --cy-card-hover:    #161626;
+  --cy-card-hover-rgb: 22, 22, 38;
   --cy-border:        #1E1E32;
+  --cy-border-rgb:    30, 30, 50;
   --cy-border-dim:    #15152A;
+  --cy-border-dim-rgb: 21, 21, 42;
   --cy-selected-cell: #3A3B4A;
+  --cy-selected-cell-rgb: 58, 59, 74;
   --cy-counter-cell:  #24261d;
+  --cy-counter-cell-rgb: 36, 38, 29;
 
   /* --- text --- */
-  --cy-text-primary:   #E0E8FF;
-  --cy-text-secondary: #8888AA;
-  --cy-text-muted:     #444466;
-  --cy-text-ghost:     #2A2A44;
+  --cy-text-primary:       #E0E8FF;
+  --cy-text-primary-rgb:   224, 232, 255;
+  --cy-text-secondary:     #8888AA;
+  --cy-text-secondary-rgb: 136, 136, 170;
+  --cy-text-muted:         #444466;
+  --cy-text-muted-rgb:     68, 68, 102;
+  --cy-text-ghost:         #2A2A44;
+  --cy-text-ghost-rgb:     42, 42, 68;
 
   /* --- typography --- */
   --cy-font-display: 'Orbitron', monospace;
@@ -133,7 +171,7 @@ body {
 }
 
 
-* {cursor: none !important;}
+* {cursor: none;}
 
 
 
