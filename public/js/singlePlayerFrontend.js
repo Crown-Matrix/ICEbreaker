@@ -833,7 +833,7 @@ function attachImageCursor(imgSrc, size = 32) {
         cursor.style.top = `${e.clientY}px`;
     });
 
-    return cursor; // return ref in case you need to remove/resize it later
+    return cursor; // return ref to be able to remove/resize it later
 }
 
 document.body.style.cssText += `cursor: none !important;`;
@@ -1363,10 +1363,8 @@ function sequenceProgressHandler(solution, testSubject, rowElement) {
     } else {
         showAllNodes(rowElement);
     }
-
     decorateCurrentNodeAtIndex(matchedNodes.length, rowElement);
 }
-
 
 document.addEventListener('keydown', (event) => {
     if (event.key === 'F11') {
@@ -1374,9 +1372,6 @@ document.addEventListener('keydown', (event) => {
         toggleFullscreen();
     }
 });
-
-
-
 
 //web socket
 
@@ -1399,8 +1394,8 @@ socket.on('initialization_error', (data) => {
 
 socket.on('initialization_success', (data) => {
     console.log('Initialization success from server:', data.message);
+    frontEndHandler.newRound() //start new round instantly
 });
-
 
 const testing_exports = {
     frontEndHandler,

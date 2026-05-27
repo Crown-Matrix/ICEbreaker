@@ -194,7 +194,6 @@ io.on('connection', async (socket) => {
     );
 
   try {
-
     await Promise.race([
       // Wait for initialize_data
       new Promise((resolve) => {
@@ -260,7 +259,6 @@ io.on('connection', async (socket) => {
             const isDifferent = objectKeys.has(key)
               ? JSON.stringify(incomingVal) !== JSON.stringify(trustedVal)
               : incomingVal !== trustedVal;
-
             if (isDifferent) {
               console.warn(`Tampering attempt detected for key "${key}" from socket ID: ${socket.id}.`);
             }
@@ -273,6 +271,7 @@ io.on('connection', async (socket) => {
           if (data.frontEndHandler) {
             backEndHandlerInstance.frontEndHandler = data.frontEndHandler;
           } else {
+            console.warn('Invalid front end handler update received for socket ID:', socket.id);
           }
         });
 
@@ -292,7 +291,6 @@ io.on('connection', async (socket) => {
           }
         });
       }
-
       gameLoopInit();
     } else {
 
@@ -320,9 +318,31 @@ app.get('/', (req, res) => {
 });
 
 app.get('/singlePlayer', (req, res) => {
+  const userIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
+  const queries = req.query;
+  const testing_mode = queries.testing === 'true'; // Access the testing query parameter, e.g., /singlePlayer?testing=true
   // Serve singlePlayer html
-  res.status(200).sendFile('singlePlayer/singlePlayerIndex.html', { root: "./public" });
+  if (testing_mode) {
+    res.status(200).sendFile('singlePlayer/singlePlayerIndex.html', { root: "./public" });
+  } else {
+    res.status(200).sendFile('singlePlayer/singlePlayerReference.html', { root: "./public" }, (err) => {
+      if (err) {
+        console.error('Error sending singlePlayerTitle.html:', err);
+        res.status(500).send('Internal Server Error');
+      } else {
+        //console.log('singlePlayerTitle.html sent successfully to IP:', userIp);
+      }
+    });
+  }
 });
+
+app.get('/singlePlayer/reference', (req, res) => {
+  res.status(200).sendFile('singlePlayer/singlePlayerReference.html', { root: "./public" });
+});
+app.get('/singlePlayer/admin', (req, res) => {
+  res.status(418).send('COFFEE REQUEST RECEIVED...  CHECK CONSOLE');
+});
+
 
 // Start the server
 const PORT = 3000;
