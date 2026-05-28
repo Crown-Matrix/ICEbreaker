@@ -3,11 +3,17 @@ const buffers = {};
 
 let audioUnlocked = false;
 
-document.addEventListener('click', () => {
+function unlockAudio() {
   ctx.resume();
   audioUnlocked = true;
   console.log('Audio unlocked');
-}, { once: true });
+
+  document.removeEventListener('click', unlockAudio);
+  document.removeEventListener('keydown', unlockAudio);
+}
+
+document.addEventListener('click', unlockAudio);
+document.addEventListener('keydown', unlockAudio);
 
 // ─── BG Music State ───────────────────────────────────────────────────────────
 let bgMusicBuffer = null;
