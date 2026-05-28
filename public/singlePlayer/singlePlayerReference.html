@@ -620,7 +620,6 @@ function removeImageCursor() {
         });
     }
     function handleKeydown(event) {
-      console.log('Key pressed:', event.key);
       if (['Control', 'Shift', 'Alt', 'Meta', 'Escape', 'CapsLock', 'Tab'].includes(event.key) || event.key[0] === 'F') {
         return; // ignore modifier keys
       }
@@ -628,7 +627,7 @@ function removeImageCursor() {
       audioModule.stopCover();
       goToPage('/singlePlayer/singlePlayerIndex.html');
     }
-      document.addEventListener('keydown', handleKeydown);
+    document.addEventListener('keydown', handleKeydown);
 
 
   </script>
