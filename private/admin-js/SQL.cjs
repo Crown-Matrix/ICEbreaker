@@ -85,6 +85,8 @@ const deleteUser = protected_sql((username) => {
 
 
 
+
+
 module.exports = {
     initializeUserTable,
     getAllUsers,

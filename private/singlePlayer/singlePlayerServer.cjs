@@ -21,6 +21,18 @@ const difficultyValues = {
       'hard': 500
 }
 
+
+class SQLManager {
+  constructor() {
+    let mySQL = require('../admin-js/SQL.cjs');
+    for (const [key, value] of Object.entries(mySQL)) {
+      this[key] = value;
+    }
+  }
+}
+
+const SQL_Manager_Instance = new SQLManager();
+
 class backEndAdmin {
   constructor() {
     this.activeSessions = new Map(); // Map of sessionId to backEndHandler instances
@@ -31,6 +43,16 @@ class backEndAdmin {
   removeSession(sessionId) {
     this.activeSessions.delete(sessionId);
   }
+
+  summary() {
+    //construct new map with only sessionId and frontEndHandler.gameState
+    let summaryMap = new Map();
+    this.activeSessions.forEach((handlerInstance, sessionId) => {
+      summaryMap.set(sessionId, handlerInstance.frontEndHandler ? handlerInstance.frontEndHandler.gameState : 'no frontEndHandler');
+    });
+    return summaryMap;
+  }
+
 }
 let backEndAdminInstance = new backEndAdmin();
 
@@ -214,6 +236,31 @@ io.on('connection', async (socket) => {
 
     if (backEndHandlerInstance.frontEndHandler) {
       backEndAdminInstance.addSession(backEndHandlerInstance);
+      socket.on('disconnect', (reason) => {
+
+        const clientSides = ['transport close', 'transport error', 'ping timeout'];
+        const serverSides = ['server namespace disconnect', 'forced server close', 'server shutting down'];
+        
+        backEndAdminInstance.removeSession(socket.id);
+        if (clientSides.includes(reason)) {
+          console.log(`Client side disconnect for socket ${socket.id}. Reason: ${reason}`);
+        } else if (serverSides.includes(reason)) {
+          console.log(`Server side disconnect for socket ${socket.id}. Reason: ${reason}`);
+        } else {
+          console.log(`Unknown disconnect reason for socket ${socket.id}. Reason: ${reason}`);
+        }
+
+        // any other cleanup, e.g. saving score, clearing timers, etc.
+      });
+  // client side disconnect reasons //
+//    transport close — user closed the tab, navigated away, or lost connectiontransport close — user closed the tab, navigated away, or lost connection
+//    transport error — network error / connection dropped
+//    ping timeout — client stopped responding to heartbeat pings
+  //server side disconnect reason //
+
+//    server namespace disconnect — you called socket.disconnect(true)
+//    forced server close — server shut down or crashed
+//    server shutting down — server is closing all connections
 
       socket.emit('initialization_success', { message: 'FrontEndHandler successfully initialized.' });
       console.log(
@@ -312,10 +359,14 @@ io.on('connection', async (socket) => {
   }
 });
 
+
+
 app.get('/', (req, res) => {
   //temp redirect to single player page for testing
   res.redirect('/singlePlayer');
 });
+
+
 
 app.get('/singlePlayer', (req, res) => {
   const userIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
@@ -362,3 +413,9 @@ server.listen(PORT, () => {
 //Player leaves/disconnects
 //        ↓
 //Session destroyed
+
+//if this file is being required(), return the backend admin isntance
+module.exports = {
+  backEndAdminInstance,
+  SQL_Manager_Instance
+};
