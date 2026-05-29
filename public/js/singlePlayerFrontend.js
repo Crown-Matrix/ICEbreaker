@@ -172,7 +172,10 @@ class SinglePlayerFrontend {
     }
 
     endRound() {
-        if (this.gameState !== 'active') return;
+        if (this.gameState !== 'active') {
+            console.log('guard rail hit');
+            return;
+        };
         this.gameState = 'ending'; // prevent re-entry before server responds
 
         //add failed attribute to any unsolved solutions
@@ -204,9 +207,12 @@ class SinglePlayerFrontend {
         });
         await animateRoundEnd('won', resultType);
         setTimeout(async () => {
+            await unAnimateRoundEnd();
+            debugger
             if (Date.now() < sessionEndTime) {
-                await unAnimateRoundEnd();
                 this.newRound();
+            } else {
+                console.log('Session has ended. Not starting new round.');
             }
         }, 1000); // match the animation duration
     }
@@ -218,9 +224,12 @@ class SinglePlayerFrontend {
         });
         await animateRoundEnd('lost', resultType);
         setTimeout(async () => {
+            await unAnimateRoundEnd();
+            debugger
             if (Date.now() < sessionEndTime) {
-                await unAnimateRoundEnd();
                 this.newRound();
+            } else {
+                console.log('Session has ended. Not starting new round.');
             }
         }, 1000); // match the animation duration
     }
@@ -308,6 +317,13 @@ function animateNewRound() {
     matrixWindow.setAttribute('data-state', 'active');
 
     return new Promise((resolve) => {
+
+        for (const elem of ['buffer-text', 'matrixEffectImage', 'sequence-bottom-decoration', 'nettech-logo', 'cyberpunk-header']) {
+                const el = document.getElementById(elem);
+                if (!el) continue;
+                el.style.transformOrigin = 'center left';
+                el.style.transform = 'scaleX(1)';
+            }
 
         // Phase 1+2: all width animations simultaneously
         for (const element_id of ['breach-time-container', 'window-outside', 'buffer-container', 'breach-time-bar']) {
@@ -645,12 +661,7 @@ function unAnimateRoundEnd() {
                 cell.style.transformOrigin = 'left center';
             });
 
-            for (const elem of ['buffer-text', 'matrixEffectImage', 'sequence-bottom-decoration', 'nettech-logo', 'cyberpunk-header']) {
-                const el = document.getElementById(elem);
-                if (!el) continue;
-                el.style.transformOrigin = 'center left';
-                el.style.transform = 'scaleX(1)';
-            }
+            
             instantFixes();
             frontEndHandler.animating = false;
             resolve();

@@ -10,10 +10,7 @@ if (!fs.existsSync(databasePath)) {
 
 singlePlayer = require('../singlePlayer/singlePlayerServer.cjs')
 //multiPlayer = require('../multiPlayer/multiPlayerServer.cjs')
-
-setInterval(() => {
-    console.log('singlePlayerAdmin:', singlePlayer.backEndAdminInstance);
-}, 2000)
+singlePlayerAdminInstance = singlePlayer.backEndAdminInstance;
 
 
 
