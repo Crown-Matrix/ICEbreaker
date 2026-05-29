@@ -8,8 +8,8 @@
   },
   "scripts": {
     "singlePlayer": "node private/singlePlayer/singlePlayerServer.cjs",
-    "sqlite": "node private/admin-js/SQL.cjs",
-    "map": "bash personal/filemap.sh"
+    "map": "bash personal/filemap.sh",
+    "main": "node private/admin-js/main.cjs"
   },
   "type": "module"
 }

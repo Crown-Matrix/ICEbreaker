@@ -1048,9 +1048,6 @@ function populateBuffer() {
     }
 }
 
-
-
-
 function openFullscreen() {
     const elem = document.documentElement; // Targets the whole page
 
@@ -1374,7 +1371,6 @@ document.addEventListener('keydown', (event) => {
 });
 
 //web socket
-
 const socket = io(window.location.origin, {
     path: "/singlePlayer/socket"
 }); // Connect to the Socket.IO server at the specified path
