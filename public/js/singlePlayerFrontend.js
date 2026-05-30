@@ -324,7 +324,6 @@ function animateNewRound() {
                 el.style.transformOrigin = 'center left';
                 el.style.transform = 'scaleX(1)';
             }
-
         // Phase 1+2: all width animations simultaneously
         for (const element_id of ['breach-time-container', 'window-outside', 'buffer-container', 'breach-time-bar']) {
             const el = document.getElementById(element_id);
