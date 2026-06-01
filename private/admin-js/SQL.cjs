@@ -121,6 +121,8 @@ const incrementGame = protected_sql( (username) => {
 })
 
 
+
+
 if (false) { //
 module.exports = {
     initializeUserTable,
@@ -131,5 +133,4 @@ module.exports = {
     deleteUser,
     updateGameStats,
     incrementGame
-}
-}
+}}
