@@ -11,36 +11,36 @@ db.pragma('journal_mode = WAL');
 
 function hashPassword(password) {
 
-    function bcrypt_hash(data) {
-        let hash = bcrypt.hashSync(data, 12);
-        return hash;
-    }
-
-    const bytes = bcrypt_hash(password);
-    return bytes
+    let hash = bcrypt.hashSync(password, 12);
+    return hash
 }
 
+//name convention
 
+//ooo_Oooo
+//standard js convention but with an underscore
 function initializeUserTable() {
     const createTableStmt = `
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
             username TEXT UNIQUE NOT NULL,
             password TEXT NOT NULL,
-            Account_UUID_8 TEXT UNIQUE NOT NULL,
-            Games_Played INTEGER DEFAULT 0,
-            Games_Won INTEGER DEFAULT 0,
-            Games_Finished INTEGER DEFAULT 0,
-            Account_Creation_Date TEXT DEFAULT CURRENT_TIMESTAMP,
-            Average_Score REAL DEFAULT NULL,
-            Last_Login_Date TEXT DEFAULT CURRENT_TIMESTAMP,
-            Premium_Account INTEGER DEFAULT 0,
-            Friend_List TEXT DEFAULT '[]'
+            account_UUID TEXT UNIQUE NOT NULL,
+            games_Played INTEGER DEFAULT 0,
+            games_Won INTEGER DEFAULT 0,
+            games_Finished INTEGER DEFAULT 0,
+            account_Creation_Date TEXT DEFAULT CURRENT_TIMESTAMP,
+            average_Score REAL DEFAULT NULL,
+            last_Login_Date TEXT DEFAULT CURRENT_TIMESTAMP,
+            premium_Account INTEGER DEFAULT 0,  
+            friend_List TEXT DEFAULT '[]'
         )
     `
     db.prepare(createTableStmt).run()
 }
 
+//max username length: 64
+//max password length: 64
 
 
 function protected_sql(func) {
@@ -62,9 +62,14 @@ const getUserByUsername = (username) => db.prepare('SELECT * FROM users WHERE us
 
 // needs transaction — read then write
 const createUser = protected_sql((username, password) => {
+    if (username.length > 64) {
+        throw new Error('Max name length exceeded')
+    } else if (password.length > 64) {
+        throw new Error('Max password length exceeded')
+    }
     const existing = getUserByUsername(username);
     if (existing) throw new Error('Username already taken');
-    const info = db.prepare('INSERT INTO users (username, password, Account_UUID_8) VALUES (?, ?, ?)')
+    const info = db.prepare('INSERT INTO users (username, password, account_UUID) VALUES (?, ?, ?)')
         .run(username, hashPassword(password), randomUUID());
     return info.lastInsertRowid;
 });
@@ -84,14 +89,47 @@ const deleteUser = protected_sql((username) => {
 });
 
 
+const updateGameStats = protected_sql((username,appended_score, gameWon) => {
+    
+    const query = db.prepare('SELECT average_Score,games_Finished FROM users WHERE username = ?').get(username)
+    if (!query) {
+        throw new Error('User not found');
+    }
+    const avg_score = query.average_Score
+    const gamesFinished = query.games_Finished
+    const new_avg_score = avg_score !== null
+        ? (avg_score * gamesFinished + appended_score) / (gamesFinished + 1)
+        : appended_score;
+        //update average score
+    db.prepare('UPDATE users SET average_Score = ?, games_Won = games_Won + ?, games_Finished = games_Finished + 1 WHERE username = ?')
+    .run(
+        new_avg_score
+        , gameWon ? 1 : 0
+        , username
+    )
+    return true
+})
 
 
 
+const incrementGame = protected_sql( (username) => {
+        const query = db.prepare('UPDATE users SET games_Played = games_Played + 1 WHERE username = ?').run(username)
+        if (query.changes === 0) {
+            throw new Error('User not found');
+        }
+        return true
+})
+
+
+if (false) { //
 module.exports = {
     initializeUserTable,
     getAllUsers,
     getUserByUsername,
     createUser,
     passwordMatch,
-    deleteUser
+    deleteUser,
+    updateGameStats,
+    incrementGame
+}
 }
