@@ -200,7 +200,6 @@ class backEndHandler {
 app.use(express.static('public'));
 process.env
 
-
 io.on('connection', async (socket) => {
 
   console.log('USER CONNECTED TO SINGLE PLAYER - ID:', socket.id);
@@ -312,7 +311,7 @@ io.on('connection', async (socket) => {
             data.frontEndHandler[key] = trustedVal; // always overwrite with trusted value regardless
           });
           clientOnlyKeys.forEach(key => {
-            delete data.frontEndHandler[key]; //less work for server, also avoids accidentally overwriting user preferencesc
+            delete data.frontEndHandler[key]; //less work for server, also avoids accidentally overwriting user preferences
           });
 
           if (data.frontEndHandler) {
@@ -359,14 +358,10 @@ io.on('connection', async (socket) => {
   }
 });
 
-
-
 app.get('/', (req, res) => {
   //temp redirect to single player page for testing
   res.redirect('/singlePlayer');
 });
-
-
 
 app.get('/singlePlayer', (req, res) => {
   const userIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
@@ -394,6 +389,10 @@ app.get('/singlePlayer/admin', (req, res) => {
   res.status(418).send('COFFEE REQUEST RECEIVED...  CHECK CONSOLE');
 });
 
+app.get('/singlePlayer/result', (req, res) => {
+  res.status(200).sendFile('singlePlayer/singlePlayerResult.html', { root: "./public" });
+});
+
 
 // Start the server
 const PORT = 3000;
@@ -419,3 +418,7 @@ module.exports = {
   backEndAdminInstance,
   SQL_Manager_Instance
 };
+
+
+
+

@@ -2,9 +2,7 @@
 @import url(./custom-bootstrap-config.css);
 
 
-#timeframe-nav-div {
-    justify-content: flex-end;
-}
+
 
 .timeframe-option {
     
@@ -87,11 +85,6 @@
     }
     #title-nav-div, .profile-label {
         font-size: 2rem;
-    }
-    #timeframe-nav-div {
-        position: relative;
-        top: -35px;
-        right: 35px;
     }
     #profile-picture {
         margin: 0 !important;
