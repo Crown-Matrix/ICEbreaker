@@ -5,7 +5,7 @@
 
 
 .timeframe-option {
-    
+
     font-weight: 1000;
     flex: 1;
     margin: 0 10px;
@@ -45,16 +45,22 @@
 #timeframe-label {
     text-align: center;
 }
+
 /*adjust this anytime your changing var(--bs-breakpoint-sm)*/
 @media (min-width: 577px) {
-    #title-nav-div,.profile-label {
+
+    #title-nav-div,
+    .profile-label {
         font-size: 2rem;
     }
+
     .score-text-div * {
         line-height: 1;
     }
+
     .expired-cell {
-        font-size: 2.7cqi;/*to prevent wrapping from the extra wide brackets*/
+        font-size: 2.7cqi;
+        /*to prevent wrapping from the extra wide brackets*/
     }
 }
 
@@ -65,11 +71,13 @@
         left: 0px;
         z-index: 1000;
     }
+
     #profile-picture {
         width: auto;
         max-width: 2.2rem !important;
         max-height: 2.2rem !important;
     }
+
     #os-label {
         position: absolute;
         top: 2px;
@@ -83,66 +91,85 @@
         padding-bottom: 0 !important;
         padding-left: 0.5rem !important;
     }
-    #title-nav-div, .profile-label {
+
+    #title-nav-div,
+    .profile-label {
         font-size: 2rem;
     }
+
     #profile-picture {
         margin: 0 !important;
     }
+
     #title-nav-div {
         justify-content: flex-start !important;
     }
 
-    #title-nav-div,.profile-label {
+    #title-nav-div,
+    .profile-label {
         font-size: 1.3rem;
     }
+
     .score-card {
         display: inline-block !important;
     }
+
     .score-card-text * {
-        text-align: center; 
+        text-align: center;
     }
+
     .score-card-pattern {
         justify-content: center;
     }
+
     .score-card-node {
         padding: 25% 0 !important;
         font-size: min(10cqw, 1.3rem);
 
     }
+
     #buffer-text {
         display: none !important;
     }
+
     #breach-time-label {
         text-align: center;
     }
+
     .score-card-img {
         width: 12vw !important;
-        margin-bottom: 0.25vh; /*for between text and img*/
+        margin-bottom: 0.25vh;
+        /*for between text and img*/
     }
+
     #sequence-top-decoration {
         width: 30cqw !important;
     }
+
     .score-card-text * {
-    font-size: clamp(0.2vw,15cqi,16px) !important;
+        font-size: clamp(0.2vw, 15cqi, 16px) !important;
     }
+
     .expired-cell {
-        font-size: 2.5cqi;/*to prevent wrapping from the extra wide brackets*/
+        font-size: 2.5cqi;
+        /*to prevent wrapping from the extra wide brackets*/
     }
+
     .cy-horizontal-grid {
         /*grid-template-columns: repeat(4, 1fr);*/
-        grid-auto-flow: column; /*to prevent the grid from becoming a single row which causes the cells to overflow outside the container instead of wrapping to the next line*/
+        grid-auto-flow: column;
+        /*to prevent the grid from becoming a single row which causes the cells to overflow outside the container instead of wrapping to the next line*/
     }
-    
+
 }
 
 /*adjust this anytime your changing var(--bs-breakpoint-md)*/
-@media (min-width: 769px) {
-
-}
+@media (min-width: 769px) {}
 
 @media (max-width: 768px) {
-    #title-nav-div,.profile-label {
+
+    #title-nav-div,
+    .profile-label {
         font-size: 1.5rem;
     }
 }
@@ -153,11 +180,14 @@
     #header-spacer {
         padding: var(--cy-space-sm);
     }
+
     .matrix-cell {
         font-size: 1.5cqi;
     }
+
     .expired-cell {
-        font-size: 1.2cqi;/*to prevent wrapping from the extra wide brackets*/
+        font-size: 1.2cqi;
+        /*to prevent wrapping from the extra wide brackets*/
     }
 
 }
@@ -166,25 +196,31 @@
     #header-spacer {
         padding: calc(var(--cy-space-sm)*0.15);
     }
+
     #title-nav-div {
         justify-content: flex-end;
     }
+
     #buffer-container {
         align-content: center;
         margin: auto;
         width: 95% !important;
     }
+
     .buffer-row .buffer-cell {
-         /*todo find a way to force mobile safari to not collapse it without having any content inside*/
-         /*changing the border from dashed to double seems to work, isnt that weird?*/
-         background-color: transparent
+        /*todo find a way to force mobile safari to not collapse it without having any content inside*/
+        /*changing the border from dashed to double seems to work, isnt that weird?*/
+        background-color: transparent
     }
+
     #window-outside {
         margin-bottom: 1rem !important;
     }
+
     .buffer-row {
         gap: 2cqi;
     }
+
     .buffer-row .buffer-cell {
         padding: 0 8px;
         position: static;
@@ -192,42 +228,55 @@
         line-height: 1;
 
     }
+
     #terminal-game-row {
         display: flex;
         justify-content: center;
     }
+
     #breach-time-label {
         letter-spacing: 0.08em !important;
         font-size: 1.1rem !important;
     }
+
     .matrix-cell {
         font-size: 3.3cqi;
     }
+
     .expired-cell {
-        font-size: 2.5cqi;/*to prevent wrapping from the extra wide brackets*/
+        font-size: 2.5cqi;
+        /*to prevent wrapping from the extra wide brackets*/
     }
+
     .potential-cell {
-       display: none !important;
+        display: none !important;
     }
+
     .ghost {
-        top: 0 !important; /*the 5px correction must be disabled because the display type of the bufferContainer is changed*/
+        top: 0 !important;
+        /*the 5px correction must be disabled because the display type of the bufferContainer is changed*/
     }
 
     .ghost::after {
-        inset: 0.1vw !important; /*glow effect strength, using vw to make it responsive to screen size changes which matters when screen is smaller*/
+        inset: 0.1vw !important;
+        /*glow effect strength, using vw to make it responsive to screen size changes which matters when screen is smaller*/
     }
+
     #buffer-container {
         height: min-content;
         padding-left: min(10%, 3vw);
         padding-right: min(10%, 3vw);
     }
+
     #terminal-content-row {
         display: flex;
         flex-direction: column;
     }
+
     #breach-time-bar {
         width: 100% !important;
     }
+
     #breach-time-value {
         margin: 0 !important;
     }
@@ -239,7 +288,7 @@
 
 
 
-#profile-picture {     
+#profile-picture {
     width: auto;
     max-width: 4.5em;
     max-height: 4.5em;
@@ -264,11 +313,14 @@
 }
 
 #cy-terminal {
-    border : 2px solid var(--cy-yellow);
+    border: 2px solid var(--cy-yellow);
     padding: 1rem;
 }
 
-#cy-terminal::before, #cy-terminal::after, #cy-terminal .cy-hud-frame__br, #cy-terminal .cy-hud-frame__bl {
+#cy-terminal::before,
+#cy-terminal::after,
+#cy-terminal .cy-hud-frame__br,
+#cy-terminal .cy-hud-frame__bl {
     border-color: var(--cy-yellow);
 }
 
@@ -307,7 +359,7 @@
     aspect-ratio: 1;
     border: none;
     background-image: url("data:image/svg+xml,%3csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3e%3cline x1='0' y1='0' x2='19%25' y2='0' stroke='%23FFDD00' stroke-width='1.4'/%3e%3cline x1='41%25' y1='0' x2='59%25' y2='0' stroke='%23FFDD00' stroke-width='1.4'/%3e%3cline x1='81%25' y1='0' x2='100%25' y2='0' stroke='%23FFDD00' stroke-width='1.4'/%3e%3cline x1='0' y1='100%25' x2='19%25' y2='100%25' stroke='%23FFDD00' stroke-width='1.4'/%3e%3cline x1='41%25' y1='100%25' x2='59%25' y2='100%25' stroke='%23FFDD00' stroke-width='1.4'/%3e%3cline x1='81%25' y1='100%25' x2='100%25' y2='100%25' stroke='%23FFDD00' stroke-width='1.4'/%3e%3cline x1='0' y1='0' x2='0' y2='19%25' stroke='%23FFDD00' stroke-width='1.4'/%3e%3cline x1='0' y1='41%25' x2='0' y2='59%25' stroke='%23FFDD00' stroke-width='1.4'/%3e%3cline x1='0' y1='81%25' x2='0' y2='100%25' stroke='%23FFDD00' stroke-width='1.4'/%3e%3cline x1='100%25' y1='0' x2='100%25' y2='19%25' stroke='%23FFDD00' stroke-width='1.4'/%3e%3cline x1='100%25' y1='41%25' x2='100%25' y2='59%25' stroke='%23FFDD00' stroke-width='1.4'/%3e%3cline x1='100%25' y1='81%25' x2='100%25' y2='100%25' stroke='%23FFDD00' stroke-width='1.4'/%3e%3c%2fsvg%3e");
-;
+    ;
 
 
     position: relative;
@@ -318,21 +370,22 @@
 }
 
 .buffer-cell[filled] {
-    border: 1.4px solid var(--cy-yellow) !important; /*takes priority over non-filled cell*/
+    border: 1.4px solid var(--cy-yellow) !important;
+    /*takes priority over non-filled cell*/
     background-image: none !important;
 }
 
-.buffer-cell .cy-hud-frame__br, .buffer-cell .cy-hud-frame__bl {
+.buffer-cell .cy-hud-frame__br,
+.buffer-cell .cy-hud-frame__bl {
     border-color: var(--cy-yellow) !important;
     border-style: solid !important;
 }
 
 
-#terminal-content-row { 
+#terminal-content-row {
     border: outset 0.5px var(--cy-yellow);
     padding: 1rem 0 1rem 0;
     background-color: var(--cy-yellow-ghost)
-    
 }
 
 #buffer-text {
@@ -380,7 +433,8 @@
     align-content: center;
     color: rgb(215, 237, 102);
     container-type: inline-size;
-    width: calc(100% / var(--matrixSize)); /*6-7*/
+    width: calc(100% / var(--matrixSize));
+    /*6-7*/
 }
 
 #matrix-window {
@@ -412,9 +466,11 @@
 #window-outside[data-state="active"] {
     border: solid 1px var(--cy-yellow);
 }
+
 #window-outside[data-state="won"] {
     border: solid 1px var(--cy-completed-green);
 }
+
 #window-outside[data-state="won"] #window-header {
     background-color: var(--cy-completed-green);
 }
@@ -422,6 +478,7 @@
 #window-outside[data-state="lost"] {
     border: solid 1px var(--cy-red);
 }
+
 #window-outside[data-state="lost"] #window-header {
     background-color: var(--cy-red);
 }
@@ -453,9 +510,11 @@
 }
 
 .selectable-cell {
-    position: relative; /*to enable z-index*/
-    z-index: 1; /*to keep the edge cells from being overlapped by the extra highlight cells on the edge*/
-    
+    position: relative;
+    /*to enable z-index*/
+    z-index: 1;
+    /*to keep the edge cells from being overlapped by the extra highlight cells on the edge*/
+
     outline: var(--cy-space-xs) double var(--cy-cyan);
     box-sizing: border-box !important;
 }
@@ -514,8 +573,10 @@
 }
 
 #sequence-header-div {
-    border-bottom: 1px solid var(--cy-yellow); /* min() in case browser doesnt support 0.5px*/
-    border-bottom: 0.5px solid var(--cy-yellow); /* min() in case browser doesnt support 0.5px*/
+    border-bottom: 1px solid var(--cy-yellow);
+    /* min() in case browser doesnt support 0.5px*/
+    border-bottom: 0.5px solid var(--cy-yellow);
+    /* min() in case browser doesnt support 0.5px*/
 }
 
 #upload-sequence-header {
@@ -528,6 +589,7 @@
     flex-direction: column;
     flex: 1;
 }
+
 .score-card {
     display: flex;
     flex-direction: row;
@@ -549,9 +611,9 @@
 }
 
 .score-card-text * {
-    font-size: clamp(0.2vw,11cqi,16px);
+    font-size: clamp(0.2vw, 11cqi, 16px);
     margin: 0;
-    
+
 }
 
 
@@ -569,14 +631,15 @@
 
 
 .score-card-node {
-    position: relative; 
+    position: relative;
     padding: 2px 1px;
     text-align: center;
     font-size: min(9.5cqw, 1.3rem);
     /*TODO
     add blur effect to background only
     */
-    isolation: isolate; /* creates its own stacking context */
+    isolation: isolate;
+    /* creates its own stacking context */
     overflow-y: hidden;
 }
 
@@ -630,6 +693,7 @@
     /*filter: hue-rotate(45deg);*/
     filter: url("#installed-filter") !important;
 }
+
 .sequence-list-row[failed] .score-card-img {
     filter: url("#failed-filter") !important;
 }
@@ -671,9 +735,12 @@
 
 .hovered-current-node {
     position: relative;
-    overflow-y: visible !important; /*to allow the glow effect to be visible outside the node*/
+    overflow-y: visible !important;
+    /*to allow the glow effect to be visible outside the node*/
 }
-.hovered-current-node .score-card-node-text-span, .ghost {
+
+.hovered-current-node .score-card-node-text-span,
+.ghost {
     outline: 2px double var(--cy-cyan);
     position: relative;
     isolation: isolate;
@@ -682,7 +749,8 @@
     background-image: none;
 }
 
-.hovered-current-node .score-card-node-text-span::after, .ghost::after {
+.hovered-current-node .score-card-node-text-span::after,
+.ghost::after {
     content: "";
     position: absolute;
     inset: 0;
@@ -700,8 +768,273 @@
 }
 
 .ghost::after {
-    inset: 5px; /*glow effect strength*/
+    inset: 5px;
+    /*glow effect strength*/
     /*TODO:
     animate this to pulse
     */
 }
+
+
+
+
+/* ── Pre-game card shell ── */
+#icb-pre-card {
+    position: relative;
+    z-index: 10;
+    background: rgba(4, 10, 20, 0.92);
+    border: 1px solid rgba(0, 255, 255, 0.18);
+    backdrop-filter: blur(14px);
+    clip-path: polygon(0 0, calc(100% - 22px) 0, 100% 22px, 100% 100%, 0 100%);
+    animation: icbPreReveal 0.85s ease-out forwards;
+    opacity: 0;
+    max-width: 680px;
+    width: 100%;
+}
+
+@keyframes icbPreReveal {
+    from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.985);
+    }
+
+    to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+    }
+}
+
+/* top-right corner notch accent */
+#icb-pre-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    right: 0;
+    width: 22px;
+    height: 22px;
+    border-top: 1px solid #00CCDD;
+    border-right: 1px solid #00CCDD;
+    pointer-events: none;
+}
+
+/* ── Shared divider tint ── */
+.icb-pre__divider {
+    border-color: rgba(0, 255, 255, 0.18) !important;
+}
+
+/* ── Logo in header ── */
+.icb-pre__header-logo {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: clamp(22px, 4vw, 32px);
+    letter-spacing: -0.5px;
+    line-height: 1;
+    text-transform: uppercase;
+    flex-shrink: 0;
+}
+
+.icb-pre__header-ice {
+    color: #00FFFF;
+    text-shadow:
+        0 0 12px rgba(0, 255, 255, 0.5),
+        0 0 30px rgba(0, 255, 255, 0.15);
+    animation: icbPreFlicker 8s ease-in-out infinite;
+    text-transform: uppercase;
+}
+
+.icb-pre__header-breaker {
+    color: #FF2D78;
+    text-shadow:
+        0 0 12px rgba(255, 45, 120, 0.4),
+        0 0 28px rgba(255, 45, 120, 0.12);
+    text-transform: uppercase;
+}
+
+.icb-pre__header-sub {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 8px;
+    letter-spacing: 4px;
+    color: rgba(0, 204, 221, 0.6);
+    text-transform: uppercase;
+    display: block;
+    margin-top: 2px;
+}
+
+.icb-pre__header-sub::before {
+    content: '// ';
+    color: #FF2D78;
+    opacity: 0.55;
+}
+
+/* ── Timeframe selector ── */
+.icb-pre__tf-label {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 3px;
+    color: rgba(0, 180, 200, 0.45);
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+.icb-pre__tf-group {
+    display: flex;
+    gap: 6px;
+    align-items: center;
+}
+
+.icb-pre__tf-btn {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 2px;
+    color: rgba(0, 210, 230, 0.55);
+    background: rgba(0, 255, 255, 0.04);
+    border: 1px solid rgba(0, 255, 255, 0.18);
+    padding: 3px 12px;
+    cursor: pointer;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    clip-path: polygon(5px 0%, 100% 0%, calc(100% - 5px) 100%, 0% 100%);
+    white-space: nowrap;
+}
+
+.icb-pre__tf-btn:hover {
+    background: rgba(0, 255, 255, 0.10);
+    border-color: rgba(0, 255, 255, 0.40);
+    color: #00CCDD;
+}
+
+.icb-pre__tf-btn.icb-pre__tf-active {
+    background: rgba(0, 255, 255, 0.12);
+    border-color: rgba(0, 255, 255, 0.50);
+    color: #00FFFF;
+    text-shadow: 0 0 8px rgba(0, 255, 255, 0.5);
+}
+
+/* ── Prompt message ── */
+.icb-pre__prompt {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 3px;
+    color: rgba(0, 180, 200, 0.45);
+    text-transform: uppercase;
+    animation: icbPreBlink 2.7s step-end infinite;
+}
+
+@keyframes icbPreBlink {
+
+    0%,
+    100% {
+        visibility: visible;
+    }
+
+    50% {
+        visibility: hidden;
+    }
+}
+
+/* ── Start button ── */
+.icb-pre__start-btn {
+    flex: 1;
+    background: rgba(0, 255, 255, 0.04);
+    border: none;
+    border-left: 2px solid rgba(0, 255, 255, 0.35);
+    cursor: pointer;
+    transition: background 0.18s;
+    height: 52px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+}
+
+.icb-pre__start-btn:hover {
+    background: rgba(0, 255, 255, 0.10);
+}
+
+.icb-pre__start-label {
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: #00FFFF;
+}
+
+.icb-pre__start-icon {
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    border: 1px solid rgba(0, 255, 255, 0.3);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.icb-pre__start-icon svg {
+    width: 9px;
+    height: 9px;
+    fill: #00CCDD;
+}
+
+/* ── Bottom menu/settings icons ── */
+.icb-pre__ico-btn {
+    width: 52px;
+    height: 52px;
+    background: transparent;
+    border: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: background 0.18s;
+    flex-shrink: 0;
+}
+
+.icb-pre__ico-btn:hover {
+    background: rgba(0, 255, 255, 0.07);
+}
+
+.icb-pre__ico-btn svg {
+    width: 16px;
+    height: 16px;
+    stroke: #00CCDD;
+    fill: none;
+    stroke-width: 1.5;
+}
+
+.icb-pre__ico-btn--sepl {
+    border-left: 1px solid rgba(0, 255, 255, 0.18);
+}
+
+/* ── Bottom bar wrapper ── */
+.icb-pre__bottom-bar {
+    background: rgba(0, 0, 0, 0.45);
+    border-top: 1px solid rgba(0, 255, 255, 0.18);
+}
+
+/* ── Decorative rule ── */
+.icb-pre__rule-line {
+    height: 1px;
+    flex: 1;
+    max-width: 100px;
+}
+
+.icb-pre__rule-line--l {
+    background: linear-gradient(90deg, transparent, #00CCDD);
+}
+
+.icb-pre__rule-line--r {
+    background: linear-gradient(90deg, #00CCDD, transparent);
+}
+
+.icb-pre__rule-text {
+    font-family: 'Share Tech Mono', monospace;
+    font-size: 9px;
+    letter-spacing: 4px;
+    color: #00CCDD;
+    text-transform: uppercase;
+    white-space: nowrap;
+}
+
+/* ── Pre-game card shell end ── */
+

@@ -627,14 +627,16 @@ function animateRoundEnd(roundResult, resultType) {
 }
 
 
-function unAnimateRoundEnd() {
+function unAnimateRoundEnd(instant = false) {
     return new Promise((resolve) => {
+        let secondsWait = String(instant ? 0 : 0.3) + 's'; // if instant is true, skip the animation and resolve immediately, otherwise wait for the animation to finish
+
         // collapse everything simultaneously
         for (const element_id of ['breach-time-container', 'window-outside', 'breach-time-bar', 'buffer-text']) {
             const el = document.getElementById(element_id);
             el.getBoundingClientRect() //force reflow
             el.style.transformOrigin = 'left center';
-            el.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            el.style.transition = 'transform ' + secondsWait + 'cubic-bezier(0.4, 0, 0.2, 1)';
             el.style.transform = 'scaleX(0)';
         }
 
@@ -642,7 +644,7 @@ function unAnimateRoundEnd() {
             const el = document.getElementById(element_id);
             if (!el) continue;
             el.getBoundingClientRect() //force reflow
-            el.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            el.style.transition = 'transform ' + secondsWait + 'cubic-bezier(0.4, 0, 0.2, 1)';
             el.style.transform = 'scaleX(0)';
         }
 
@@ -650,7 +652,7 @@ function unAnimateRoundEnd() {
 
         for (const cell of document.querySelectorAll('.buffer-cell')) {
             cell.getBoundingClientRect() //force reflow
-            cell.style.transition = 'transform 0.3s cubic-bezier(0.4, 0, 0.2, 1)';
+            cell.style.transition = 'transform ' + secondsWait + 'cubic-bezier(0.4, 0, 0.2, 1)';
             cell.style.transform = 'scaleX(0)';
         }
         for (const elem of ['buffer-text', 'matrixEffectImage', 'sequence-bottom-decoration', 'nettech-logo', 'cyberpunk-header']) {
@@ -718,7 +720,7 @@ function unAnimateRoundEnd() {
             frontEndHandler.animating = false;
             resolve();
 
-        }, 1300);
+        }, instant ? 0 : 1500); // if instant is true, skip the animation and resolve immediately, otherwise wait for the animation to finish
     });
 }
 
@@ -1464,8 +1466,29 @@ socket.on('initialization_success', (data) => {
     document.getElementById('pre-game-menu').style.display = 'block' 
 });
 
-// 
+
+function initialGameGUI () {
+    unAnimateRoundEnd(/*instant = */true); //to clear gui
+    requestAnimationFrame(() => { //unAnimateRoundEnd is async and this keeps its style resets from overriding the intial GUI setup below
+        document.body.style.backgroundColor = 'var(--cy-dark-1)'; //initial black to match the pre game menu
+        document.getElementById('terminal-content-row').style.padding = '0';
+        document.getElementById('window-outside').style.height = '0';
+        document.getElementById('sequences-wrapper').style.height = '0';
+        document.getElementById('document-header').style.height = '1rem';
+    }, 1)
+}   
+initialGameGUI(); // set up the initial GUI state for the game, this is necessary in case the player starts a new game after finishing a previous one, to reset the GUI back to the initial state without any lingering styles or elements from the end of round animation.
+
+function undoInitialGameGUI() {
+    document.body.style.removeProperty('background-color'); //remove the black background set for the pre game menu to allow the normal background to show through during gameplay
+    document.getElementById('terminal-content-row').style.removeProperty('padding');
+    document.getElementById('window-outside').style.removeProperty('height');
+    document.getElementById('sequences-wrapper').style.removeProperty('height');
+    document.getElementById('document-header').style.removeProperty('height');
+}
+
 document.getElementById('icb-pre-start-btn').addEventListener('click', () => {
+    undoInitialGameGUI(); // remove the initial GUI styles set for the pre game menu to transition into the normal gameplay GUI
     //start round
     frontEndHandler.newRound();
 });
