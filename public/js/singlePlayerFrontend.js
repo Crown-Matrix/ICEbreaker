@@ -2,7 +2,7 @@ import * as audioHandler from "/js/audio.js";
 audioHandler.initAudio();
 placeFullScreenButton();
 generateSelectedBar(); //for timeframe
-
+ 
 class SinglePlayerFrontend {
     constructor() {
         this.rowMode = true; // true for row mode, false for column mode
@@ -23,6 +23,7 @@ class SinglePlayerFrontend {
         this.savedMatrixHtml = null; //used to store the original HTML of the matrix header before the lose animation removes it, this allows us to restore it properly when un-animating the lose state. mainMatrixCol looses all children for animation
         this.savedMainColWidth = '58%';
         this.animating = false;
+        this.url = null; //set by goToPage`
     }
 
     updateBackendHandler() {
@@ -148,6 +149,53 @@ class SinglePlayerFrontend {
         });
     }
 
+    goToPage(url) {
+      fetch(url)
+        .then(res => {
+          if (res.ok) return res.text();
+          throw new Error('Network response was not ok');
+        })
+        .then(html => {
+            this.url = url;
+            sessionStorage.setItem('frontEndHandler', JSON.stringify(this)); //save the current front end handler state to session storage before navigating, this allows the new page to access it and restore the state, effectively allowing us to persist the front end handler across page navigations which is necessary for the result page after the game endsb
+          history.pushState({}, "", url);
+
+          const parser = new DOMParser();
+          const newDoc = parser.parseFromString(html, 'text/html');
+
+          document.head.replaceWith(newDoc.head);
+          document.body.replaceWith(newDoc.body);
+
+          // Run scripts sequentially
+          const scripts = [...document.body.querySelectorAll('script')];
+          return scripts.reduce((chain, oldScript) => {
+            return chain.then(() => new Promise((resolve, reject) => {
+              const newScript = document.createElement('script');
+
+              [...oldScript.attributes].forEach(attr =>
+                newScript.setAttribute(attr.name, attr.value)
+              );
+              newScript.textContent = oldScript.textContent;
+
+              if (oldScript.src) {
+                newScript.onload = resolve;
+                newScript.onerror = reject;
+              } else {
+                resolve();
+              }
+
+              oldScript.replaceWith(newScript);
+            }));
+          }, Promise.resolve());
+        }).then(() => {
+          document.body.style.visibility = 'visible';
+        })
+        .catch(err => {
+          console.error('Failed to load page:', err);
+          window.location.replace(url);
+        });
+    }
+
     updateBufferProgress() {
         let complete_solution_progress = checkForSolutions(this.currentBuffer.join(' '), this.solutions);
         //example_complete_solution_progress = {"easy": true,"medium": false,"hard": false}
@@ -208,10 +256,10 @@ class SinglePlayerFrontend {
         await animateRoundEnd('won', resultType);
         setTimeout(async () => {
             await unAnimateRoundEnd();
-            debugger
             if (Date.now() < sessionEndTime) {
                 this.newRound();
             } else {
+                this.goToPage('/singlePlayer/result');
                 console.log('Session has ended. Not starting new round.');
             }
         }, 1000); // match the animation duration
@@ -225,10 +273,10 @@ class SinglePlayerFrontend {
         await animateRoundEnd('lost', resultType);
         setTimeout(async () => {
             await unAnimateRoundEnd();
-            debugger
             if (Date.now() < sessionEndTime) {
                 this.newRound();
             } else {
+                this.goToPage('/singlePlayer/result');
                 console.log('Session has ended. Not starting new round.');
             }
         }, 1000); // match the animation duration
@@ -236,6 +284,10 @@ class SinglePlayerFrontend {
 
     async newRound() {
         const firstRound = this.gameState === "init";
+
+        if (firstRound) {
+            document.getElementById('pre-game-menu').style.display = 'none'
+        }
 
         this.updateBackendHandler();
 
@@ -266,6 +318,7 @@ class SinglePlayerFrontend {
         if (firstRound) {
             audioHandler.stopMusic();
             audioHandler.startMusic(this.BGVolume);
+            
 
             initTimer();
             setTimeout(() => {
@@ -669,16 +722,24 @@ function unAnimateRoundEnd() {
     });
 }
 
+document.querySelectorAll('.icb-pre__tf-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+        document.querySelectorAll('.icb-pre__tf-btn').forEach(b => b.classList.remove('icb-pre__tf-active'));
+        btn.classList.add('icb-pre__tf-active');
+        //selectedSeconds = selectedTimeFrame; // update the selectedSeconds variable with the new time frame value when a button is clicked, this ensures that if the user changes the time frame mid-game, the timer will use the new value for subsequent rounds
+    });
+});
+
 document.addEventListener('click', (event) => {
-    if (!event.target.classList.contains('timeframe-option')) return;
-
-    const selectedTimeFrame = parseInt(event.target.getAttribute('data-timeframe'));
-
+    if (!event.target.classList.contains('icb-pre__tf-btn')) { return }
+     
+    const selectedTimeFrame = parseInt(event.target.getAttribute('data-seconds'), 10);
     socket.emit('timeframe_update', { timeframe: selectedTimeFrame });
     socket.once('timeframe_update_response', (data) => {
         console.log('Time frame update response received for socket ID:', data);
         if (data.accepted) {
             frontEndHandler.selectedTimeFrame = selectedTimeFrame; //update the front end handler's selected time frame to reflect the successful update, this will ensure the UI and timer use the new time frame value
+            
             initTimer(); // re-initialize timer with new time frame
             document.querySelectorAll('.timeframe-option').forEach(opt => {
                 opt.removeAttribute('selected');
@@ -693,7 +754,7 @@ document.addEventListener('click', (event) => {
 });
 window.addEventListener('resize', () => moveSelectedBar(false));
 window.addEventListener('resize', () => {
-    if (frontEndHandler.animating) return;
+    if (frontEndHandler.animating || (frontEndHandler.url == '/singlePlayer/result')) return;
     if (window.innerWidth <= 992) {
         resizeMatrixCol(100);
         document.getElementById('sizeUp-btn').style.display = 'none';
@@ -1383,7 +1444,7 @@ document.addEventListener('keydown', (event) => {
 //web socket
 const socket = io(window.location.origin, {
     path: "/singlePlayer/socket"
-}); // Connect to the Socket.IO server at the specified path
+}); // Connecting to the Socket.IO server at the path
 
 socket.on('connect', () => {
     console.log('Connected to server with socket ID:', socket.id);
@@ -1400,7 +1461,13 @@ socket.on('initialization_error', (data) => {
 
 socket.on('initialization_success', (data) => {
     console.log('Initialization success from server:', data.message);
-    frontEndHandler.newRound() //start new round instantly
+    document.getElementById('pre-game-menu').style.display = 'block' 
+});
+
+// 
+document.getElementById('icb-pre-start-btn').addEventListener('click', () => {
+    //start round
+    frontEndHandler.newRound();
 });
 
 const testing_exports = {
@@ -1427,5 +1494,6 @@ const testing_exports = {
     socket,
     resetClient,
     unAnimateRoundEnd,
+    initTimer,
 };
 Object.assign(window, testing_exports);
