@@ -1,14 +1,14 @@
 import * as audioHandler from "/js/audio.js";
 audioHandler.initAudio();
 placeFullScreenButton();
-generateSelectedBar(); //for timeframe
+
  
 class SinglePlayerFrontend {
     constructor() {
         this.rowMode = true; // true for row mode, false for column mode
         this.currentRow = null;
-        this.currentCol = null;
         this.currentBuffer = []; //[str,str...]
+        this.currentCol = null;
         this.maxBufferSize = null; //set by the server on init, to prevent client tampering
         this.selectedTimeFrame = 60; //60 by default, can be changed through the servers permission(to prevent illegal client tampering) this is used to display the selected time frame in the UI and also for the game timer
         this.matrix = null;
@@ -115,7 +115,6 @@ class SinglePlayerFrontend {
         addCellHighlightListeners();
         populateBuffer(); //also clears old ones
         frontEndHandler.rowModeUpdate(0); //initial highlight of first row
-        moveSelectedBar(false); //in case slightly shifted from new page content
     }
 
     updateBufferGUI() {
@@ -734,8 +733,14 @@ document.querySelectorAll('.icb-pre__tf-btn').forEach(btn => {
 
 document.addEventListener('click', (event) => {
     if (!event.target.classList.contains('icb-pre__tf-btn')) { return }
-     
+    
     const selectedTimeFrame = parseInt(event.target.getAttribute('data-seconds'), 10);
+
+    if (frontEndHandler.selectedTimeFrame == selectedTimeFrame) {
+        console.log('Selected time frame is the same as the current one. No update needed.');
+        return;
+    }
+     
     socket.emit('timeframe_update', { timeframe: selectedTimeFrame });
     socket.once('timeframe_update_response', (data) => {
         console.log('Time frame update response received for socket ID:', data);
@@ -743,18 +748,13 @@ document.addEventListener('click', (event) => {
             frontEndHandler.selectedTimeFrame = selectedTimeFrame; //update the front end handler's selected time frame to reflect the successful update, this will ensure the UI and timer use the new time frame value
             
             initTimer(); // re-initialize timer with new time frame
-            document.querySelectorAll('.timeframe-option').forEach(opt => {
-                opt.removeAttribute('selected');
-            });
-            event.target.setAttribute('selected', '');
-            moveSelectedBar(true);
+
         } else {
             console.warn('Time frame update rejected for socket ID:', socket.id, 'Reason:', data.message);
         }
     });
 
 });
-window.addEventListener('resize', () => moveSelectedBar(false));
 window.addEventListener('resize', () => {
     if (frontEndHandler.animating || (frontEndHandler.url == '/singlePlayer/result')) return;
     if (window.innerWidth <= 992) {
@@ -773,46 +773,6 @@ window.addEventListener('resize', () => {
 function getSelectedOption() {
     return document.querySelector('.timeframe-option[selected]');
 }
-
-function generateSelectedBar() {
-    const selected = getSelectedOption();
-    if (!selected) return;
-
-    const bar = document.createElement('div');
-    bar.classList.add('selected-bar');
-    const parent = document.getElementById('timeframe-options');
-    parent.appendChild(bar);
-
-    positionBarUnder(bar, selected, false);
-}
-
-function moveSelectedBar(animate = false) {
-    const bar = document.querySelector('.selected-bar');
-    const selected = getSelectedOption();
-    if (!bar || !selected) return;
-
-    positionBarUnder(bar, selected, animate);
-}
-
-
-
-function positionBarUnder(bar, element, animate) {
-    const parentRect = bar.offsetParent.getBoundingClientRect();
-    const rect = element.getBoundingClientRect();
-
-    bar.style.transition = animate ? 'left 0.3s ease, width 0.3s ease' : 'none';
-    bar.style.top = `${rect.top - parentRect.top}px`;
-    bar.style.height = `${rect.height}px`;
-    if (window.innerWidth > 576) {
-        bar.style.width = `${rect.width}px`;
-        bar.style.left = `${rect.left - parentRect.left}px`;
-    } else { //add horizontal_offset for mobile to make it look better, on desktop its already there naturally.
-        const horizontalOffset = 12.5;
-        bar.style.width = `${rect.width + horizontalOffset * 2}px`;
-        bar.style.left = `${rect.left - parentRect.left - horizontalOffset}px`;
-    }
-}
-
 
 
 async function resizeMatrixCol(percentage = "58", offset = 0) {
@@ -1475,7 +1435,20 @@ function initialGameGUI () {
         document.getElementById('window-outside').style.height = '0';
         document.getElementById('sequences-wrapper').style.height = '0';
         document.getElementById('document-header').style.height = '1rem';
-    }, 1)
+        document.getElementById('cy-terminal').style.border = 'none';
+        document.getElementById('cy-terminal').style.width = '100%';
+        (function () {
+            const style = document.createElement('style');
+            style.id = 'hide-terminal-pseudo';
+            style.textContent = `#cy-terminal::before, #cy-terminal::after { display: none !important; }`;
+            document.head.appendChild(style);
+        })();
+        document.querySelector('.cy-hud-frame__br').style.display = 'none';
+        document.querySelector('.cy-hud-frame__bl').style.display = 'none';
+        document.querySelector('#terminal-content-row').style.backgroundColor = 'transparent';
+        document.querySelector('#terminal-content-row').style.borderColor = 'transparent';    
+        document.querySelector('#terminal-content-row').classList.add('glitch-static');    
+    });
 }   
 initialGameGUI(); // set up the initial GUI state for the game, this is necessary in case the player starts a new game after finishing a previous one, to reset the GUI back to the initial state without any lingering styles or elements from the end of round animation.
 
@@ -1485,10 +1458,19 @@ function undoInitialGameGUI() {
     document.getElementById('window-outside').style.removeProperty('height');
     document.getElementById('sequences-wrapper').style.removeProperty('height');
     document.getElementById('document-header').style.removeProperty('height');
+    document.getElementById('cy-terminal').style.removeProperty('border');
+    document.getElementById('cy-terminal').style.removeProperty('width');
+    document.getElementById('hide-terminal-pseudo').remove();
+    document.querySelector('.cy-hud-frame__br').style.removeProperty('display');
+    document.querySelector('.cy-hud-frame__bl').style.removeProperty('display');
+    document.querySelector('#terminal-content-row').style.removeProperty('background-color');
+    document.querySelector('#terminal-content-row').style.removeProperty('border-color');   
+    document.querySelector('#terminal-content-row').classList.remove('glitch-static');
 }
 
 document.getElementById('icb-pre-start-btn').addEventListener('click', () => {
     undoInitialGameGUI(); // remove the initial GUI styles set for the pre game menu to transition into the normal gameplay GUI
+    audioHandler.stopCover();
     //start round
     frontEndHandler.newRound();
 });

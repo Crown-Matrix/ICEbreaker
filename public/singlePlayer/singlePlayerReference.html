@@ -624,7 +624,6 @@ function removeImageCursor() {
         return; // ignore modifier keys
       }
       document.removeEventListener('keydown', handleKeydown);
-      audioModule.stopCover();
       goToPage('/singlePlayer/singlePlayerIndex.html');
     }
     document.addEventListener('keydown', handleKeydown);
