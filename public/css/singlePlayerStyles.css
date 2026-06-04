@@ -1038,3 +1038,43 @@
 
 /* ── Pre-game card shell end ── */
 
+
+
+/* glitch static */
+.glitch-static {
+    position: relative;
+    background: transparent;
+    overflow: hidden;
+}
+
+.glitch-static::before,
+.glitch-static::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background-image:
+        repeating-linear-gradient(
+            to bottom,
+            transparent 0px,
+            transparent 3px,
+            var(--cy-cyan) 3px,
+            var(--cy-cyan) 4px
+        );
+    background-size: 100% 8px;
+    opacity: 0.08;
+}
+
+.glitch-static::after {
+    background-size: 100% 13px;
+    opacity: 0.05;
+    animation: glitch-shift 0.3s steps(1) infinite;
+}
+
+@keyframes glitch-shift {
+    0%   { transform: translateX(0)   translateY(0); }
+    20%  { transform: translateX(-3px) translateY(1px); }
+    40%  { transform: translateX(2px)  translateY(-1px); }
+    60%  { transform: translateX(-1px) translateY(2px); }
+    80%  { transform: translateX(3px)  translateY(0); }
+    100% { transform: translateX(0)   translateY(0); }
+}
