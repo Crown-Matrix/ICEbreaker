@@ -624,6 +624,32 @@ function removeImageCursor() {
         return; // ignore modifier keys
       }
       document.removeEventListener('keydown', handleKeydown);
+
+
+        function openFullscreen() {
+          const elem = document.documentElement; // Targets the whole page    
+          if (elem.requestFullscreen) {
+              elem.requestFullscreen();
+          } else if (elem.webkitRequestFullscreen) { /* Safari */
+              elem.webkitRequestFullscreen();
+          } else if (elem.msRequestFullscreen) { /* IE11 */
+              elem.msRequestFullscreen();
+          } else {
+              console.warn("FullScreen Request - Failed");
+          }
+        }
+
+
+      (function () {
+            let frontEndHandlerStorage = sessionStorage.getItem('frontEndHandler')
+            if (!frontEndHandlerStorage || frontEndHandlerStorage === 'undefined') return;//for some reason sessionStorage returns the string 'undefined' instead of just undefined or null...
+            let fullScreenStatus = JSON.parse(frontEndHandlerStorage).fullScreen;
+            if (!fullScreenStatus || fullScreenStatus === 'undefined') return;
+
+            if (fullScreenStatus === true) {
+                openFullscreen();
+            }
+          })();
       goToPage('/singlePlayer/singlePlayerIndex.html');
     }
     document.addEventListener('keydown', handleKeydown);

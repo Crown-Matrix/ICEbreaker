@@ -66,6 +66,7 @@ class backEndHandler {
     this.roundStartTime = null;
     this.selectedTimeFrame = timeframe;
     this.frontEndHandler = frontEndHandlerArg; //should be shortly assigned by front end handler when it emits initialize_data
+    this.totalSequencesUploaded = 0;
   }
 
   createRound(frontEndHandlerArg) {
@@ -84,6 +85,7 @@ class backEndHandler {
     frontEndHandlerArg.sequence = []; //sequence of node coordinates the user has selected, of the form [{row: int, col: int}, {row: int, col: int}, ...]
     frontEndHandlerArg.maxBufferSize = maxBufferSize;
     frontEndHandlerArg.difficultyValues = difficultyValues;
+    frontEndHandlerArg.totalSequencesUploaded = this.totalSequencesUploaded || 0;
 
     return frontEndHandlerArg;
   }
@@ -175,11 +177,13 @@ class backEndHandler {
     // use this buffer to compute which solutions were installed
 
     let solution_result_json = codeMatrix.checkforSolutions(bufferString, frontEndHandlerArg.solutions)
+    let sequencesUploadedCount = 0;
     
     let scoreGained = 0;
     let all_solved = true;
     for (const [i, v] of Object.entries(solution_result_json)) {
       if (v) {
+        sequencesUploadedCount++;
         scoreGained += difficultyValues[i] || 0; // Add the corresponding score for the solution type, default to 0 if type is unrecognized
       } else {
         all_solved = false;
@@ -192,8 +196,17 @@ class backEndHandler {
       roundResult: all_solved ? 'won' : 'lost', //'[won,lost]'
       resultType: all_solved ? 'all_uploaded' : 'buffer_full', //[buffer_full, timeout, all_uploaded]
       scoreGained: scoreGained, //some integer score based on the user's performance in the round, can be 0 if they lost, or some positive integer if they won, the scoring system can be based on factors like time taken to solve, number of moves, etc
+      sequencesUploaded: sequencesUploadedCount, //number of solutions uploaded based on the user's buffer, this can be used by the front end to display feedback to the user about how many solutions they successfully uploaded with their sequence
       message: "Round ended successfully."
     };
+  }
+
+
+  scoreToEddies(score) {
+    // formula: eddies = ((3/100) * score) + 25: y = mx + b, where m = 3/100 (3 eddies per multiple of 100) and b = 25 (base eddies for participating in the round)
+    // designed to ensure integer output since score is always a multiple of 100
+    let eddies = Math.floor((3 * score) / 100) + 25;
+    return eddies;
   }
 }
 
@@ -267,6 +280,14 @@ io.on('connection', async (socket) => {
         socket.id
       );
 
+      // TODO: check if user has an account or is a guest
+      testing___guest_account = false; //temp variable for testing, this should be determined by checking if the user has a valid session cookie or some other form of authentication token that indicates they are logged in, if not, we can treat them as a guest account with limited features or rewards
+      if (testing___guest_account) {
+        backEndHandlerInstance.frontEndHandler.guestAccount = true;
+      } else {
+        backEndHandlerInstance.frontEndHandler.guestAccount = false;
+      }
+
       function gameLoopInit() {
         // wait for user start socket event
         socket.on('start_game', () => {
@@ -294,8 +315,8 @@ io.on('connection', async (socket) => {
         socket.on('frontEndHandler_update', (data) => {
           console.log('Front end handler update received for socket ID:', socket.id);
           // Validate the incoming data before updating the front end handler
-          const immutableKeys = ['matrix', 'solutions', 'sequence', 'gameState', 'maxBufferSize','difficultyValues']; //keys that should not be directly manipulated by the client, server will always overwrite these with trusted values, anti-cheat
-          const clientOnlyKeys = ['FXVolume','BGVolume','savedMatrixHeaderHTML','savedMainColWidth','animating',]; //keys that we delete from the info to avoid messing with, server does not have to care about these properties
+          const immutableKeys = ['matrix', 'solutions', 'sequence', 'gameState', 'maxBufferSize','difficultyValues','totalSequencesUploaded','guestAccount']; //keys that should not be directly manipulated by the client, server will always overwrite these with trusted values, anti-cheat
+          const clientOnlyKeys = ['FXVolume','BGVolume','savedMatrixHeaderHTML','savedMainColWidth','animating','fullscreen']; //keys that we delete from the info to avoid messing with, server does not have to care about these properties
           const objectKeys = new Set(['matrix', 'solutions', 'sequence']); // reference types need deep compare
           
           immutableKeys.forEach(key => {
@@ -325,6 +346,7 @@ io.on('connection', async (socket) => {
           console.log('End game event received for socket ID:', socket.id);
           let round_results = backEndHandlerInstance.endRound(backEndHandlerInstance, sequence_data);
           backEndHandlerInstance.frontEndHandler.gameState = round_results.roundResult;
+          backEndHandlerInstance.totalSequencesUploaded += round_results.sequencesUploaded || 0; //keep a running total of sequences uploaded across rounds, this is used for end game stats in the result page
           socket.emit('end_game_response', round_results);
         });
 
