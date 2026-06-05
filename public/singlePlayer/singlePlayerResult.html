@@ -1,42 +1,46 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>ICEbreaker — Run Summary</title>
-  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@500;700&family=Share+Tech+Mono&display=swap"
+    rel="stylesheet">
   <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
   <style>
     :root {
-      --cy-cyan:        #00FFFF;
-      --cy-cyan-dim:    #00CCDD;
-      --cy-cyan-glow:   rgba(0,255,255,0.35);
-      --cy-red:         #FF2D78;
-      --cy-red-dim:     rgba(255,45,120,0.7);
-      --cy-panel:       rgba(4,10,20,0.92);
-      --cy-border:      rgba(0,255,255,0.18);
-      --cy-border-mid:  rgba(0,255,255,0.30);
-      --cy-text-dim:    rgba(0,210,230,0.55);
-      --cy-text-muted:  rgba(0,180,200,0.35);
-      --font-mono:      'Share Tech Mono', monospace;
-      --font-display:   'Rajdhani', sans-serif;
+      --cy-cyan: #00FFFF;
+      --cy-cyan-dim: #00CCDD;
+      --cy-cyan-glow: rgba(0, 255, 255, 0.35);
+      --cy-red: #FF2D78;
+      --cy-red-dim: rgba(255, 45, 120, 0.7);
+      --cy-panel: rgba(4, 10, 20, 0.92);
+      --cy-border: rgba(0, 255, 255, 0.18);
+      --cy-border-mid: rgba(0, 255, 255, 0.30);
+      --cy-text-dim: rgba(0, 210, 230, 0.55);
+      --cy-text-muted: rgba(0, 180, 200, 0.35);
+      --font-mono: 'Share Tech Mono', monospace;
+      --font-display: 'Rajdhani', sans-serif;
     }
 
     /* ── Base ── */
-    html, body {
+    html,
+    body {
       height: 100%;
       background-color: #000;
-      background-image: linear-gradient(to bottom, rgba(255,0,60,0.09), rgba(4,218,246,0.04));
+      background-image: linear-gradient(to bottom, rgba(255, 0, 60, 0.09), rgba(4, 218, 246, 0.04));
       overflow: hidden;
     }
 
     /* ── BG grid ── */
     body::before {
       content: '';
-      position: fixed; inset: 0;
+      position: fixed;
+      inset: 0;
       background-image:
-        linear-gradient(rgba(0,255,255,0.03) 1px, transparent 1px),
-        linear-gradient(90deg, rgba(0,255,255,0.03) 1px, transparent 1px);
+        linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
       background-size: 40px 40px;
       animation: gridShift 20s linear infinite;
       pointer-events: none;
@@ -46,22 +50,26 @@
     /* ── Scanlines ── */
     body::after {
       content: '';
-      position: fixed; inset: 0;
+      position: fixed;
+      inset: 0;
       background: repeating-linear-gradient(0deg,
-        transparent, transparent 3px,
-        rgba(255,255,255,0.012) 3px, rgba(255,255,255,0.012) 4px);
+          transparent, transparent 3px,
+          rgba(255, 255, 255, 0.012) 3px, rgba(255, 255, 255, 0.012) 4px);
       pointer-events: none;
       z-index: 0;
     }
 
     @keyframes gridShift {
-      to { background-position: 40px 40px; }
+      to {
+        background-position: 40px 40px;
+      }
     }
 
     /* ── Vignette ── */
     .vignette {
-      position: fixed; inset: 0;
-      background: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 35%, rgba(0,0,0,0.92) 100%);
+      position: fixed;
+      inset: 0;
+      background: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 35%, rgba(0, 0, 0, 0.92) 100%);
       pointer-events: none;
       z-index: 0;
     }
@@ -72,20 +80,43 @@
       font-family: var(--font-mono);
       font-size: 9px;
       letter-spacing: 3px;
-      color: rgba(0,255,255,0.16);
+      color: rgba(0, 255, 255, 0.16);
       text-transform: uppercase;
       pointer-events: none;
       z-index: 1;
     }
-    .side-label.left  { left:18px; top:50%; transform:translateY(-50%) rotate(-90deg); }
-    .side-label.right { right:18px; top:50%; transform:translateY(-50%) rotate(90deg); }
+
+    .side-label.left {
+      left: 18px;
+      top: 50%;
+      transform: translateY(-50%) rotate(-90deg);
+    }
+
+    .side-label.right {
+      right: 18px;
+      top: 50%;
+      transform: translateY(-50%) rotate(90deg);
+    }
 
     /* ── H accent lines ── */
     .h-accent {
-      position: fixed; left:0; right:0; height:1px; pointer-events:none; z-index:1;
+      position: fixed;
+      left: 0;
+      right: 0;
+      height: 1px;
+      pointer-events: none;
+      z-index: 1;
     }
-    .h-accent.top    { top:48px;    background: linear-gradient(90deg, transparent 5%, rgba(0,255,255,0.10) 30%, rgba(255,45,120,0.16) 50%, rgba(0,255,255,0.10) 70%, transparent 95%); }
-    .h-accent.bottom { bottom:48px; background: linear-gradient(90deg, transparent 5%, rgba(0,255,255,0.07) 30%, rgba(255,71,57,0.12) 50%, rgba(0,255,255,0.07) 70%, transparent 95%); }
+
+    .h-accent.top {
+      top: 48px;
+      background: linear-gradient(90deg, transparent 5%, rgba(0, 255, 255, 0.10) 30%, rgba(255, 45, 120, 0.16) 50%, rgba(0, 255, 255, 0.10) 70%, transparent 95%);
+    }
+
+    .h-accent.bottom {
+      bottom: 48px;
+      background: linear-gradient(90deg, transparent 5%, rgba(0, 255, 255, 0.07) 30%, rgba(255, 71, 57, 0.12) 50%, rgba(0, 255, 255, 0.07) 70%, transparent 95%);
+    }
 
     /* ── Card shell ── */
     .cy-card {
@@ -100,35 +131,57 @@
     }
 
     @keyframes cardReveal {
-      from { opacity:0; transform: translateY(18px) scale(0.985); }
-      to   { opacity:1; transform: translateY(0)    scale(1); }
+      from {
+        opacity: 0;
+        transform: translateY(18px) scale(0.985);
+      }
+
+      to {
+        opacity: 1;
+        transform: translateY(0) scale(1);
+      }
     }
 
     /* corner notch accent */
     .cy-card::before {
       content: '';
-      position: absolute; top:0; right:0;
-      width:22px; height:22px;
+      position: absolute;
+      top: 0;
+      right: 0;
+      width: 22px;
+      height: 22px;
       border-top: 1px solid var(--cy-cyan-dim);
       border-right: 1px solid var(--cy-cyan-dim);
       pointer-events: none;
     }
 
     /* ── Section dividers ── */
-    .cy-divider { border-color: var(--cy-border) !important; }
+    .cy-divider {
+      border-color: var(--cy-border) !important;
+    }
 
     /* ── ACCOUNT ROW ── */
     .account-avatar {
-      width: 40px; height: 40px;
-      border-radius: 0;                      /* angular, not round */
-      background: rgba(0,255,255,0.08);
+      width: 40px;
+      height: 40px;
+      border-radius: 0;
+      /* angular, not round */
+      background: rgba(0, 255, 255, 0.08);
       border: 1px solid var(--cy-border-mid);
-      display: flex; align-items: center; justify-content: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       flex-shrink: 0;
       clip-path: polygon(4px 0%, 100% 0%, 100% calc(100% - 4px), calc(100% - 4px) 100%, 0% 100%, 0% 4px);
     }
 
-    .account-avatar svg { width:20px; height:20px; stroke:var(--cy-cyan-dim); fill:none; stroke-width:1.4; }
+    .account-avatar svg {
+      width: 20px;
+      height: 20px;
+      stroke: var(--cy-cyan-dim);
+      fill: none;
+      stroke-width: 1.4;
+    }
 
     .account-name {
       font-family: var(--font-mono);
@@ -160,22 +213,33 @@
     .title-ice {
       color: var(--cy-cyan);
       text-shadow:
-        0 0 18px rgba(0,255,255,0.55),
-        0 0 50px rgba(0,255,255,0.18),
-        2px 2px 0px rgba(0,255,255,0.12);
+        0 0 18px rgba(0, 255, 255, 0.55),
+        0 0 50px rgba(0, 255, 255, 0.18),
+        2px 2px 0px rgba(0, 255, 255, 0.12);
       animation: titleFlicker 8s ease-in-out infinite;
     }
 
     .title-breaker {
       color: var(--cy-red);
       text-shadow:
-        0 0 18px rgba(255,45,120,0.45),
-        0 0 45px rgba(255,45,120,0.14);
+        0 0 18px rgba(255, 45, 120, 0.45),
+        0 0 45px rgba(255, 45, 120, 0.14);
     }
 
     @keyframes titleFlicker {
-      0%,94%,96%,98%,100% { opacity:1; }
-      95%,97% { opacity:0.82; }
+
+      0%,
+      94%,
+      96%,
+      98%,
+      100% {
+        opacity: 1;
+      }
+
+      95%,
+      97% {
+        opacity: 0.82;
+      }
     }
 
     .title-sub {
@@ -186,7 +250,15 @@
       text-transform: uppercase;
       opacity: 0.7;
     }
-    .title-sub::before, .title-sub::after { content:'//'; color:var(--cy-red); opacity:0.55; margin:0 8px; font-size:0.9em; }
+
+    .title-sub::before,
+    .title-sub::after {
+      content: '//';
+      color: var(--cy-red);
+      opacity: 0.55;
+      margin: 0 8px;
+      font-size: 0.9em;
+    }
 
     /* ── SCORE / TIME STAT PILLS ── */
     .stat-block {
@@ -210,14 +282,14 @@
       font-size: clamp(32px, 5vw, 52px);
       line-height: 1;
       color: var(--cy-cyan);
-      text-shadow: 0 0 16px rgba(0,255,255,0.4);
+      text-shadow: 0 0 16px rgba(0, 255, 255, 0.4);
       letter-spacing: -1px;
       animation: titleFlicker 7s 1.2s ease-in-out infinite;
     }
 
     .stat-value.red {
       color: var(--cy-red);
-      text-shadow: 0 0 16px rgba(255,45,120,0.4);
+      text-shadow: 0 0 16px rgba(255, 45, 120, 0.4);
     }
 
     .stat-unit {
@@ -244,19 +316,35 @@
 
     /* ── STATUS ROWS ── */
     .status-icon-wrap {
-      width: 24px; height: 24px;
-      border: 1px solid rgba(255,45,120,0.3);
-      background: rgba(255,45,120,0.06);
-      display: flex; align-items: center; justify-content: center;
+      width: 24px;
+      height: 24px;
+      border: 1px solid rgba(255, 45, 120, 0.3);
+      background: rgba(255, 45, 120, 0.06);
+      display: flex;
+      align-items: center;
+      justify-content: center;
       flex-shrink: 0;
     }
+
     .status-icon-wrap.cyan {
-      border-color: rgba(0,255,255,0.28);
-      background: rgba(0,255,255,0.05);
+      border-color: rgba(0, 255, 255, 0.28);
+      background: rgba(0, 255, 255, 0.05);
     }
-    .status-icon-wrap svg { width:12px; height:12px; fill:none; stroke-width:1.8; }
-    .status-icon-wrap svg.red { stroke: var(--cy-red); }
-    .status-icon-wrap svg.cyan { stroke: var(--cy-cyan-dim); }
+
+    .status-icon-wrap svg {
+      width: 12px;
+      height: 12px;
+      fill: none;
+      stroke-width: 1.8;
+    }
+
+    .status-icon-wrap svg.red {
+      stroke: var(--cy-red);
+    }
+
+    .status-icon-wrap svg.cyan {
+      stroke: var(--cy-cyan-dim);
+    }
 
     .status-text {
       font-family: var(--font-display);
@@ -264,23 +352,35 @@
       font-size: 14px;
       letter-spacing: 1.5px;
       text-transform: uppercase;
-      color: rgba(190,235,245,0.75);
+      color: rgba(190, 235, 245, 0.75);
     }
 
     /* ── METRICS ROW ── */
     .metric-cell {
-      display: flex; flex-direction: column; align-items: center; gap: 3px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
       padding: 10px 0;
     }
-    .metric-cell + .metric-cell { border-left: 1px solid var(--cy-border); }
+
+    .metric-cell+.metric-cell {
+      border-left: 1px solid var(--cy-border);
+    }
 
     .metric-val {
       font-family: var(--font-mono);
       font-size: 15px;
       color: var(--cy-cyan-dim);
     }
-    .metric-val.green { color: #00FF9D; }
-    .metric-val.muted { color: var(--cy-text-dim); }
+
+    .metric-val.green {
+      color: #00FF9D;
+    }
+
+    .metric-val.muted {
+      color: var(--cy-text-dim);
+    }
 
     .metric-lbl {
       font-family: var(--font-mono);
@@ -292,30 +392,52 @@
 
     /* ── BOTTOM BAR ── */
     .bottom-bar {
-      background: rgba(0,0,0,0.45);
+      background: rgba(0, 0, 0, 0.45);
       border-top: 1px solid var(--cy-border);
     }
 
     .ico-btn {
-      width: 48px; height: 48px;
+      width: 48px;
+      height: 48px;
       background: transparent;
       border: none;
-      display: flex; align-items: center; justify-content: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
       transition: background 0.18s;
     }
-    .ico-btn:hover { background: rgba(0,255,255,0.07); }
-    .ico-btn svg { width:16px; height:16px; stroke:var(--cy-cyan-dim); fill:none; stroke-width:1.5; }
-    .ico-btn.sep-r { border-right: 1px solid var(--cy-border); }
-    .ico-btn.sep-l { border-left:  1px solid var(--cy-border); }
+
+    .ico-btn:hover {
+      background: rgba(0, 255, 255, 0.07);
+    }
+
+    .ico-btn svg {
+      width: 16px;
+      height: 16px;
+      stroke: var(--cy-cyan-dim);
+      fill: none;
+      stroke-width: 1.5;
+    }
+
+    .ico-btn.sep-r {
+      border-right: 1px solid var(--cy-border);
+    }
+
+    .ico-btn.sep-l {
+      border-left: 1px solid var(--cy-border);
+    }
 
     .play-btn {
-      background: rgba(0,255,255,0.04);
+      background: rgba(0, 255, 255, 0.04);
       border: none;
       cursor: pointer;
       transition: background 0.18s;
     }
-    .play-btn:hover { background: rgba(0,255,255,0.10); }
+
+    .play-btn:hover {
+      background: rgba(0, 255, 255, 0.10);
+    }
 
     .play-btn-label {
       font-family: var(--font-display);
@@ -327,29 +449,97 @@
     }
 
     .play-btn-circle {
-      width: 22px; height: 22px;
+      width: 22px;
+      height: 22px;
       border-radius: 50%;
-      border: 1px solid rgba(0,255,255,0.3);
-      display: flex; align-items: center; justify-content: center;
+      border: 1px solid rgba(0, 255, 255, 0.3);
+      display: flex;
+      align-items: center;
+      justify-content: center;
     }
-    .play-btn-circle svg { width:8px; height:8px; fill: var(--cy-cyan-dim); }
+
+    .play-btn-circle svg {
+      width: 8px;
+      height: 8px;
+      fill: var(--cy-cyan-dim);
+    }
 
     /* ── Close btn ── */
     .cy-close {
-      width: 20px; height: 20px;
-      border: 1px solid rgba(255,45,120,0.3);
+      width: 20px;
+      height: 20px;
+      border: 1px solid rgba(255, 45, 120, 0.3);
       background: transparent;
       color: var(--cy-red);
       font-family: var(--font-mono);
       font-size: 10px;
-      display: flex; align-items: center; justify-content: center;
+      display: flex;
+      align-items: center;
+      justify-content: center;
       cursor: pointer;
       transition: background 0.18s;
       flex-shrink: 0;
     }
-    .cy-close:hover { background: rgba(255,45,120,0.15); }
+
+    .cy-close:hover {
+      background: rgba(255, 45, 120, 0.15);
+    }
+
+    .glitch-static {
+      position: relative;
+      background: transparent;
+      overflow: hidden;
+    }
+
+    .glitch-static::before,
+    .glitch-static::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background-image:
+        repeating-linear-gradient(to bottom,
+          transparent 0px,
+          transparent 3px,
+          var(--cy-cyan) 3px,
+          var(--cy-cyan) 4px);
+      background-size: 100% 8px;
+      opacity: 0.08;
+    }
+
+    .glitch-static::after {
+      background-size: 100% 13px;
+      opacity: 0.05;
+      animation: glitch-shift 0.3s steps(1) infinite;
+    }
+
+    @keyframes glitch-shift {
+      0% {
+        transform: translateX(0) translateY(0);
+      }
+
+      20% {
+        transform: translateX(-3px) translateY(1px);
+      }
+
+      40% {
+        transform: translateX(2px) translateY(-1px);
+      }
+
+      60% {
+        transform: translateX(-1px) translateY(2px);
+      }
+
+      80% {
+        transform: translateX(3px) translateY(0);
+      }
+
+      100% {
+        transform: translateX(0) translateY(0);
+      }
+    }
   </style>
 </head>
+
 <body>
 
   <div class="vignette"></div>
@@ -359,7 +549,8 @@
   <div class="side-label right">CLASSIFICATION: ULTRA-BLACK // AUTHORIZED ONLY</div>
 
   <!-- ═══════════════ FULL-HEIGHT CENTERING ═══════════════ -->
-  <div class="d-flex align-items-center justify-content-center" style="min-height:100vh; position:relative; z-index:10; padding: 2rem 1.25rem;">
+  <div class="d-flex align-items-center justify-content-center"
+    style="min-height:100vh; position:relative; z-index:10; padding: 2rem 1.25rem;">
 
     <div class="cy-card w-100" style="max-width:680px;">
 
@@ -368,8 +559,8 @@
         <div class="account-avatar">
           <!-- placeholder person icon -->
           <svg viewBox="0 0 24 24">
-            <circle cx="12" cy="8" r="4"/>
-            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke-linecap="round"/>
+            <circle cx="12" cy="8" r="4" />
+            <path d="M4 20c0-4 3.6-7 8-7s8 3 8 7" stroke-linecap="round" />
           </svg>
         </div>
         <div class="d-flex flex-column gap-1">
@@ -378,17 +569,37 @@
         </div>
         <div class="ms-auto">
           <!-- top-right corner accent bar -->
-          <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:3px;color:var(--cy-text-muted);text-transform:uppercase;">RUN #0047</span>
+          <span
+            style="font-family:var(--font-mono);font-size:9px;letter-spacing:3px;color:var(--cy-text-muted);text-transform:uppercase;">RUN
+            #0047</span>
         </div>
       </div>
 
+
+      <!-- ══ OVERVIEW HEADER ══ -->
+      <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom cy-divider">
+        <span class="ov-header">// Overview</span>
+        <button class="cy-close">✕</button>
+      </div>
+
+      <!-- ══ STATIC BAR ══ -->
+      <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom cy-divider glitch-static">
+      </div>
+
       <!-- ══ TITLE BLOCK ══ -->
-      <div class="d-flex flex-column align-items-center justify-content-center py-4 px-3 border-bottom cy-divider text-center">
+      <div
+        class="d-flex flex-column align-items-center justify-content-center py-4 px-3 border-bottom cy-divider text-center">
         <!-- top rule -->
         <div class="d-flex align-items-center gap-3 mb-3 w-100 justify-content-center">
-          <div style="flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--cy-cyan-dim));max-width:100px;"></div>
-          <span style="font-family:var(--font-mono);font-size:9px;letter-spacing:4px;color:var(--cy-cyan-dim);text-transform:uppercase;">Run Complete</span>
-          <div style="flex:1;height:1px;background:linear-gradient(90deg,var(--cy-cyan-dim),transparent);max-width:100px;"></div>
+          <div
+            style="flex:1;height:1px;background:linear-gradient(90deg,transparent,var(--cy-cyan-dim));max-width:100px;">
+          </div>
+          <span
+            style="font-family:var(--font-mono);font-size:9px;letter-spacing:4px;color:var(--cy-cyan-dim);text-transform:uppercase;">Run
+            Complete</span>
+          <div
+            style="flex:1;height:1px;background:linear-gradient(90deg,var(--cy-cyan-dim),transparent);max-width:100px;">
+          </div>
         </div>
 
         <div class="game-title mb-1">
@@ -408,29 +619,32 @@
         <div class="stat-sep mx-4"></div>
 
         <div class="stat-block flex-fill">
-          <span class="stat-label">Time Used</span>
-          <span class="stat-value red">0:47</span>
-          <span class="stat-unit">/ 60 sec</span>
+          <span class="stat-label">Timeframe</span>
+          <span class="stat-value red">60</span>
+          <span class="stat-unit">/ seconds</span>
         </div>
       </div>
 
-      <!-- ══ OVERVIEW HEADER ══ -->
-      <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom cy-divider">
-        <span class="ov-header">// Overview</span>
-        <button class="cy-close">✕</button>
+      <!-- ══ STATIC BAR ══ -->
+      <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom cy-divider glitch-static">
       </div>
 
       <!-- ══ STATUS ROWS ══ -->
       <div class="d-flex flex-column gap-2 px-3 py-3 border-bottom cy-divider">
         <div class="d-flex align-items-center gap-2">
           <div class="status-icon-wrap">
-            <svg class="red" viewBox="0 0 12 12"><path d="M2 2l8 8M10 2l-8 8" stroke-linecap="round"/></svg>
+            <svg class="red" viewBox="0 0 12 12">
+              <path d="M2 2l8 8M10 2l-8 8" stroke-linecap="round" />
+            </svg>
           </div>
           <span class="status-text">Condition Critical</span>
         </div>
         <div class="d-flex align-items-center gap-2">
           <div class="status-icon-wrap cyan">
-            <svg class="cyan" viewBox="0 0 12 12"><rect x="1" y="3" width="10" height="7" rx="1"/><path d="M4 3V2a2 2 0 014 0v1" stroke-linecap="round"/></svg>
+            <svg class="cyan" viewBox="0 0 12 12">
+              <rect x="1" y="3" width="10" height="7" rx="1" />
+              <path d="M4 3V2a2 2 0 014 0v1" stroke-linecap="round" />
+            </svg>
           </div>
           <span class="status-text">Node 13 Reached</span>
         </div>
@@ -439,12 +653,12 @@
       <!-- ══ METRICS ROW ══ -->
       <div class="row g-0 border-bottom cy-divider">
         <div class="col metric-cell">
-          <span class="metric-val">+13</span>
-          <span class="metric-lbl">Sectors</span>
+          <span class="metric-val" id="sequence-counter">13</span>
+          <span class="metric-lbl">Sequences uploaded</span>
         </div>
         <div class="col metric-cell">
-          <span class="metric-val green">165</span>
-          <span class="metric-lbl">Data Harvested</span>
+          <span class="metric-val green" id="eddies-counter">165</span>
+          <span class="metric-lbl" id="eddies-msg">Eddies Mined</span>
         </div>
         <div class="col metric-cell">
           <span class="metric-val muted">+0%</span>
@@ -456,16 +670,20 @@
       <div class="d-flex align-items-center bottom-bar">
         <button class="play-btn flex-fill d-flex align-items-center justify-content-center gap-2 py-3">
           <div class="play-btn-circle">
-            <svg viewBox="0 0 8 8"><path d="M2 1l5 3-5 3z"/></svg>
+            <svg viewBox="0 0 8 8">
+              <path d="M2 1l5 3-5 3z" />
+            </svg>
           </div>
           <span class="play-btn-label">Play Again</span>
         </button>
 
         <button class="ico-btn sep-l" aria-label="Settings">
           <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
-            <path d="M6.5 1.5h3l.4 1.6a4.5 4.5 0 0 1 1.1.65l1.55-.5 1.5 2.6-1.2 1.1a4.6 4.6 0 0 1 0 1.1l1.2 1.1-1.5 2.6-1.55-.5a4.5 4.5 0 0 1-1.1.65l-.4 1.6h-3l-.4-1.6a4.5 4.5 0 0 1-1.1-.65l-1.55.5-1.5-2.6 1.2-1.1a4.6 4.6 0 0 1 0-1.1l-1.2-1.1 1.5-2.6 1.55.5a4.5 4.5 0 0 1 1.1-.65z" stroke="#00CCDD" stroke-width="1.2" stroke-linejoin="round"/>
-            <circle cx="8" cy="7.6" r="2" stroke="#00CCDD" stroke-width="1.2"/>
-        </svg>
+            <path
+              d="M6.5 1.5h3l.4 1.6a4.5 4.5 0 0 1 1.1.65l1.55-.5 1.5 2.6-1.2 1.1a4.6 4.6 0 0 1 0 1.1l1.2 1.1-1.5 2.6-1.55-.5a4.5 4.5 0 0 1-1.1.65l-.4 1.6h-3l-.4-1.6a4.5 4.5 0 0 1-1.1-.65l-1.55.5-1.5-2.6 1.2-1.1a4.6 4.6 0 0 1 0-1.1l-1.2-1.1 1.5-2.6 1.55.5a4.5 4.5 0 0 1 1.1-.65z"
+              stroke="#00CCDD" stroke-width="1.2" stroke-linejoin="round" />
+            <circle cx="8" cy="7.6" r="2" stroke="#00CCDD" stroke-width="1.2" />
+          </svg>
         </button>
       </div>
 
@@ -520,8 +738,52 @@
     }
     document.querySelector('.play-btn').addEventListener('click', () => {
       console.log('Play Again clicked');
-      goToPage('/singlePlayer');
+      window.location.replace('/singlePlayer');
     }, { once: true });
+
+
+    function scoreToEddies (score) {
+        // formula: eddies = ((3/100) * score) + 25: y = mx + b, where m = 3/100 (3 eddies per multiple of 100) and b = 25 (base eddies for participating in the round)
+        // designed to ensure integer output since score is always a multiple of 100
+        eddies = Math.floor((3 * score) / 100) + 25;
+        return eddies;
+    }
+
+
+
+    // logic to fill text with sessionStorage data:
+    
+    let frontEndHandler = sessionStorage.getItem('frontEndHandler');
+    if (frontEndHandler) {
+      frontEndHandler = JSON.parse(frontEndHandler);
+      document.querySelector('.stat-value').textContent = frontEndHandler.score || '0';
+      document.querySelector('.stat-value.red').textContent = frontEndHandler.selectedTimeFrame ? String(frontEndHandler.selectedTimeFrame) : '60';
+      document.querySelector('#sequence-counter').textContent = frontEndHandler.totalSequencesUploaded || '0';
+      if (!frontEndHandler.guestAccount) {
+        // user account
+        document.querySelector('#eddies-counter').textContent = scoreToEddies(frontEndHandler.score || 0);
+        document.querySelector('#eddies-msg').textContent = "Eddies Mined"; //should be the default anyway, just in case
+      } else {
+        // guest account
+        document.querySelector('#eddies-counter').textContent = "Sign-in to earn eddies";
+        document.querySelector('#eddies-msg').textContent = "Guest Account";
+        
+      }
+
+    } else {
+      console.warn('No frontEndHandler data found in sessionStorage');
+      goToPage('/singlePlayer');
+    }
+
+
+    document.querySelector('.cy-close').addEventListener('click', () => {
+    frontEndHandler.selectedTimeFrame = undefined
+    sessionStorage.setItem('frontEndHandler',JSON.stringify(frontEndHandler))
+    window.location.replace('/singlePlayer');
+    }, { once: true });
+
+
   </script>
 </body>
+
 </html>
