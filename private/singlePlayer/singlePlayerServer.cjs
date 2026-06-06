@@ -140,9 +140,24 @@ class backEndHandler {
         message: 'No active round to end.'
       };
     }
+
+    `
+following is the logic for handling the end of a round of a signed in user, skip this for guest accounts, frontend report is enough for guests
+games_finished += 1, incrementGame() handles this
+update average score using the formula in the function: updateGameStats() handles that
+there is no win condition for single player, just put false for that parameter just incase
+add eddies to user account based on scoreToEddies()
+`
     if (backEndHandlerInstance.roundStartTime + backEndHandlerInstance.selectedTimeFrame * 1000 + toleranceMS < Date.now()) {
       //reject the end round attempt and mark the round as lost due to time out, this can help prevent cheating by trying to end the round after the time limit has been exceeded, while still providing a small grace period to account for any minor timing issues
       // If the current time has exceeded the round start time plus the selected time frame, then the player has run out of time and loses the round
+      //TODO testing UUID for bob
+      const userUUID = '583f5934-d403-42c1-ae75-67b6fa4f5831'//backEndHandlerInstance.UUID; //todo implement this to actually work
+      const username = SQL_Manager_Instance.getUsernameFromUUID(userUUID);
+      const score = backEndHandlerInstance.score || 0; //get the user's score for the round, this should have been calculated and stored in the front end handler during gameplay, if not, we can default to 0
+      SQL_Manager_Instance.updateGameStats(username, score, 'sp', false);
+      SQL_Manager_Instance.addEddies(username, this.scoreToEddies(score)); //add eddies based on the score they achieved in the round, even if they lost, to reward them for their performance and encourage continued play
+      console.log(SQL_Manager_Instance.getUserByUsername('bob')); //testing to see if the DB updates are working, should show bob with 25 eddies from participating in the round, and an average score of whatever they scored in the round, games finished should be 1, games won should be 0 since there is no win condition for single player
       return {
         roundResult: 'lost',
         scoreGained: 0,
@@ -171,7 +186,7 @@ class backEndHandler {
     let convertedBuffer = this.convertSequenceToBuffer(sequence_data, frontEndHandlerArg.matrix);
     let bufferString = convertedBuffer.join('');
     
-    //TODO process sequence data and verify its validity for anti cheat purposes, determine score, outcome, etc and send it all back to the front end
+    //process sequence data and verify its validity for anti cheat purposes, determine score, outcome, etc and send it all back to the front end
     // verify the sequence data by ensuring the row/column mode is being followed, and the coordinates are valid
     // convert the sequence data to a buffer using the backEnd saved matrix and the sequence of coordinates
     // use this buffer to compute which solutions were installed
@@ -192,6 +207,8 @@ class backEndHandler {
     
     // from those results, compute, the round result, resultType, and scoreGained
     // transmit those back to the front end via json
+
+    backEndHandlerInstance.score = (backEndHandlerInstance.score || 0) + scoreGained; //keep a running total of the user's score across rounds in the front end handler, this can be used for end game stats and to reward users based on their overall performance
     return {
       roundResult: all_solved ? 'won' : 'lost', //'[won,lost]'
       resultType: all_solved ? 'all_uploaded' : 'buffer_full', //[buffer_full, timeout, all_uploaded]
@@ -281,11 +298,11 @@ io.on('connection', async (socket) => {
       );
 
       // TODO: check if user has an account or is a guest
-      testing___guest_account = false; //temp variable for testing, this should be determined by checking if the user has a valid session cookie or some other form of authentication token that indicates they are logged in, if not, we can treat them as a guest account with limited features or rewards
+      const testing___guest_account = false; //temp variable for testing, this should be determined by checking if the user has a valid session cookie that indicates they are logged in, if not, we can treat them as a guest account with limited features or rewards, no DB writes
       if (testing___guest_account) {
-        backEndHandlerInstance.frontEndHandler.guestAccount = true;
+        backEndHandlerInstance.frontEndHandler.isGuest = true;
       } else {
-        backEndHandlerInstance.frontEndHandler.guestAccount = false;
+        backEndHandlerInstance.frontEndHandler.isGuest = false;
       }
 
       function gameLoopInit() {
@@ -293,6 +310,7 @@ io.on('connection', async (socket) => {
         socket.on('start_game', () => {
           console.log('Start game event received for socket ID:', socket.id);
           console.log('Current game state:', backEndHandlerInstance.frontEndHandler.gameState);
+          
 
           if (backEndHandlerInstance.frontEndHandler.gameState === 'active') {
             console.warn('Game already active for socket ID:', socket.id);
@@ -304,6 +322,8 @@ io.on('connection', async (socket) => {
           let updatedFrontEndHandler = backEndHandlerInstance.createRound(backEndHandlerInstance.frontEndHandler);
           backEndHandlerInstance.frontEndHandler = updatedFrontEndHandler;
           if (isFirstRound) { //only reset time for the first round
+            const username = SQL_Manager_Instance.getUsernameFromUUID('583f5934-d403-42c1-ae75-67b6fa4f5831'); //TODO implement this to obviously not be hardcoded as a test
+            SQL_Manager_Instance.incrementGame(username, 'sp');
             backEndHandlerInstance.roundStartTime = Date.now() + 505; //505 ms, delay to give frontend time to animate new round transition
             //if updating this number, update the setTimeout delay in singlePlayerFrontend.js too
             backEndHandlerInstance.frontEndHandler.score = 0; //initialize score for the first round, following rounds will add to it
@@ -315,7 +335,7 @@ io.on('connection', async (socket) => {
         socket.on('frontEndHandler_update', (data) => {
           console.log('Front end handler update received for socket ID:', socket.id);
           // Validate the incoming data before updating the front end handler
-          const immutableKeys = ['matrix', 'solutions', 'sequence', 'gameState', 'maxBufferSize','difficultyValues','totalSequencesUploaded','guestAccount']; //keys that should not be directly manipulated by the client, server will always overwrite these with trusted values, anti-cheat
+          const immutableKeys = ['matrix', 'solutions', 'sequence', 'gameState', 'maxBufferSize','difficultyValues','totalSequencesUploaded','isGuest']; //keys that should not be directly manipulated by the client, server will always overwrite these with trusted values, anti-cheat
           const clientOnlyKeys = ['FXVolume','BGVolume','savedMatrixHeaderHTML','savedMainColWidth','animating','fullscreen']; //keys that we delete from the info to avoid messing with, server does not have to care about these properties
           const objectKeys = new Set(['matrix', 'solutions', 'sequence']); // reference types need deep compare
           

@@ -745,7 +745,7 @@
     function scoreToEddies (score) {
         // formula: eddies = ((3/100) * score) + 25: y = mx + b, where m = 3/100 (3 eddies per multiple of 100) and b = 25 (base eddies for participating in the round)
         // designed to ensure integer output since score is always a multiple of 100
-        eddies = Math.floor((3 * score) / 100) + 25;
+        const eddies = Math.floor((3 * score) / 100) + 25;
         return eddies;
     }
 
@@ -753,13 +753,13 @@
 
     // logic to fill text with sessionStorage data:
     
-    let frontEndHandler = sessionStorage.getItem('frontEndHandler');
+    var frontEndHandler = sessionStorage.getItem('frontEndHandler');
     if (frontEndHandler) {
       frontEndHandler = JSON.parse(frontEndHandler);
       document.querySelector('.stat-value').textContent = frontEndHandler.score || '0';
       document.querySelector('.stat-value.red').textContent = frontEndHandler.selectedTimeFrame ? String(frontEndHandler.selectedTimeFrame) : '60';
       document.querySelector('#sequence-counter').textContent = frontEndHandler.totalSequencesUploaded || '0';
-      if (!frontEndHandler.guestAccount) {
+      if (!frontEndHandler.isGuest) {
         // user account
         document.querySelector('#eddies-counter').textContent = scoreToEddies(frontEndHandler.score || 0);
         document.querySelector('#eddies-msg').textContent = "Eddies Mined"; //should be the default anyway, just in case

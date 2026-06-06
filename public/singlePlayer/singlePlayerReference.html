@@ -510,12 +510,11 @@
     await audioModule.initAudio();
     audioModule.startCover();
 
-
-function attachImageCursor(imgSrc, size = 32) {
-    const cursor = document.createElement('img');
-    cursor.src = imgSrc;
-    cursor.id = 'image-cursor';
-    cursor.style.cssText = `
+    function attachImageCursor(imgSrc, size = 32) {
+      const cursor = document.createElement('img');
+      cursor.src = imgSrc;
+      cursor.id = 'image-cursor';
+      cursor.style.cssText = `
             position: fixed;
             pointer-events: none;
             z-index: 99999;
@@ -524,39 +523,36 @@ function attachImageCursor(imgSrc, size = 32) {
             width: ${size}px;
             height: ${size}px;
         `;
-    document.body.appendChild(cursor);
+      document.body.appendChild(cursor);
 
-    document.addEventListener('mousemove', (e) => {
+      document.addEventListener('mousemove', (e) => {
         cursor.style.display = 'block';
         cursor.style.left = `${e.clientX}px`;
         cursor.style.top = `${e.clientY}px`;
-    });
+      });
 
-    return cursor; // return ref to be able to remove/resize it later
-}
+      return cursor; // return ref to be able to remove/resize it later
+    }
 
-document.body.style.cssText += `cursor: none !important;`;
-if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
+    document.body.style.cssText += `cursor: none !important;`;
+    if (window.matchMedia('(hover: hover) and (pointer: fine)').matches) {
 
-    const style = document.createElement('style');
-    style.textContent = '* { cursor: none !important; }';
-    document.head.appendChild(style);
+      const style = document.createElement('style');
+      style.textContent = '* { cursor: none !important; }';
+      document.head.appendChild(style);
 
-    attachImageCursor('/imgs/blueSquare.png', 32);
-}
+      attachImageCursor('/imgs/blueSquare.png', 32);
+    }
 
-if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) {
-    document.body.style.cursor = 'default';
-    removeImageCursor();
-}
+    if (window.matchMedia('(hover: none) and (pointer: coarse)').matches) {
+      document.body.style.cursor = 'default';
+      removeImageCursor();
+    }
 
-function removeImageCursor() {
-    const cursor = document.getElementById('image-cursor');
-    cursor?.remove();
-}
-
-
-
+    function removeImageCursor() {
+      const cursor = document.getElementById('image-cursor');
+      cursor?.remove();
+    }
     const noise = document.getElementById('noise');
     const count = 30;
     for (let i = 0; i < count; i++) {
@@ -607,7 +603,6 @@ function removeImageCursor() {
               } else {
                 resolve();
               }
-
               oldScript.replaceWith(newScript);
             }));
           }, Promise.resolve());
@@ -625,38 +620,34 @@ function removeImageCursor() {
       }
       document.removeEventListener('keydown', handleKeydown);
 
-
-        function openFullscreen() {
-          const elem = document.documentElement; // Targets the whole page    
-          if (elem.requestFullscreen) {
-              elem.requestFullscreen();
-          } else if (elem.webkitRequestFullscreen) { /* Safari */
-              elem.webkitRequestFullscreen();
-          } else if (elem.msRequestFullscreen) { /* IE11 */
-              elem.msRequestFullscreen();
-          } else {
-              console.warn("FullScreen Request - Failed");
-          }
+      function openFullscreen() {
+        const elem = document.documentElement; // Targets the whole page    
+        if (elem.requestFullscreen) {
+          elem.requestFullscreen();
+        } else if (elem.webkitRequestFullscreen) { /* Safari */
+          elem.webkitRequestFullscreen();
+        } else if (elem.msRequestFullscreen) { /* IE11 */
+          elem.msRequestFullscreen();
+        } else {
+          console.warn("FullScreen Request - Failed");
         }
-
+      }
 
       (function () {
-            let frontEndHandlerStorage = sessionStorage.getItem('frontEndHandler')
-            if (!frontEndHandlerStorage || frontEndHandlerStorage === 'undefined') return;//for some reason sessionStorage returns the string 'undefined' instead of just undefined or null...
-            let fullScreenStatus = JSON.parse(frontEndHandlerStorage).fullScreen;
-            if (!fullScreenStatus || fullScreenStatus === 'undefined') return;
+        let frontEndHandlerStorage = sessionStorage.getItem('frontEndHandler')
+        if (!frontEndHandlerStorage || frontEndHandlerStorage === 'undefined') return;//for some reason sessionStorage returns the string 'undefined' instead of just undefined or null...
+        let fullScreenStatus = JSON.parse(frontEndHandlerStorage).fullScreen;
+        if (!fullScreenStatus || fullScreenStatus === 'undefined') return;
 
-            if (fullScreenStatus === true) {
-                openFullscreen();
-            }
-          })();
+        if (fullScreenStatus === true) {
+          openFullscreen();
+        }
+      })();
       goToPage('/singlePlayer/singlePlayerIndex.html');
     }
     document.addEventListener('keydown', handleKeydown);
 
   </script>
-
-
 </body>
 
 </html>
