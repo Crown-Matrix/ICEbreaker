@@ -635,11 +635,7 @@
     padding: 2px 1px;
     text-align: center;
     font-size: min(9.5cqw, 1.3rem);
-    /*TODO
-    add blur effect to background only
-    */
     isolation: isolate;
-    /* creates its own stacking context */
     overflow-y: hidden;
 }
 
@@ -768,8 +764,8 @@
 }
 
 .ghost::after {
-    inset: 5px;
-    /*glow effect strength*/
+    inset: 5px; /*glow effect strength*/
+    
     /*TODO:
     animate this to pulse
     */
