@@ -1,7 +1,8 @@
 const sql = require('better-sqlite3')
 const path = require('path');
 const bcrypt = require('bcrypt');
-const { randomUUID, hash } = require('crypto');
+const { randomUUID, hash, randomBytes } = require('crypto');
+const auth = require('./auth.cjs')
 
 
 
@@ -82,6 +83,20 @@ function initializeSessionsTable() {
     db.prepare(createTableStmt).run()
 }
 
+
+
+function initializeBannedTable() {
+    const createTableStmt = `
+        CREATE TABLE IF NOT EXISTS banned (
+        ip_address TEXT UNIQUE NOT NULL,
+        UUID TEXT UNIQUE DEFAULT NULL,
+        reason TEXT,
+        ban_expires DATE DEFAULT NULL,
+        FOREIGN KEY (UUID) REFERENCES users(account_UUID)
+        )
+    `
+    db.prepare(createTableStmt).run()
+}
 //max username length: 64
 //max password length: 64
 //session lifespan: 7 days
@@ -111,10 +126,11 @@ const createUser = protected_sql((username, password) => {
         throw new Error('Max password length exceeded')
     }
     const existing = getUserByUsername(username);
+    const UUID = randomUUID()
     if (existing) throw new Error('Username already taken');
     const info = db.prepare('INSERT INTO users (username, password, account_UUID) VALUES (?, ?, ?)')
-        .run(username, hashPassword(password), randomUUID());
-    return info.lastInsertRowid;
+        .run(username, hashPassword(password), UUID);
+    return UUID;
 });
 
 // no transaction needed — single read + bcrypt compare, no write
@@ -132,28 +148,54 @@ const deleteUser = protected_sql((username) => {
 });
 
 
-const updateGameStats = protected_sql((username, appended_score, gameType, gameWon ) => {
+const updateGameStats = protected_sql((username, appended_score, gameType, gameWon) => {
+    console.log('updateGameStats called', {
+        username,
+        appended_score,
+        gameType,
+        gameWon
+    });
 
-    const query = db.prepare(`SELECT ${gameType}_average_Score,${gameType}_games_Finished FROM users WHERE username = ?`).get(username)
+    if (!['sp', 'mp'].includes(gameType)) {
+        throw new Error('Invalid gameType');
+    }
+
+    const query = db.prepare(`
+        SELECT ${gameType}_average_Score, ${gameType}_games_Finished 
+        FROM users 
+        WHERE username = ?
+    `).get(username);
+
     if (!query) {
         throw new Error('User not found');
     }
+
     if (gameType === 'sp') {
-        gameWon = false; //there is no win condition for single player, so we can just set this to false to avoid any issues with the games_Won stat
+        gameWon = false;
     }
+
     const avg_score = query[`${gameType}_average_Score`];
-    const gamesFinished = query[`${gameType}_games_Finished`];
-    const new_avg_score = avg_score !== null
-        ? (avg_score * gamesFinished + appended_score) / (gamesFinished + 1)
-        : appended_score;
-    //update average score
-    db.prepare(`UPDATE users SET ${gameType}_average_Score = ?,mp_games_Won = mp_games_Won + ?, ${gameType}_games_Finished = ${gameType}_games_Finished + 1 WHERE username = ?`)
-        .run(
-            new_avg_score
-            , (gameWon && gameType === 'mp')  ? 1 : 0
-            , username
-        )
-    return true
+
+    const gamesFinished = query[`${gameType}_games_Finished`]; // always >= 0 per schema
+
+    const new_avg_score =
+        avg_score !== null
+            ? (avg_score * gamesFinished + appended_score) / (gamesFinished + 1)
+            : appended_score;
+
+    db.prepare(`
+        UPDATE users 
+        SET ${gameType}_average_Score = ?,
+            mp_games_Won = mp_games_Won + ?,
+            ${gameType}_games_Finished = ${gameType}_games_Finished + 1
+        WHERE username = ?
+    `).run(
+        new_avg_score,
+        (gameWon && gameType === 'mp') ? 1 : 0,
+        username
+    );
+
+    return true;
 });
 
 
@@ -275,6 +317,7 @@ const wipeDatabase = () => {
     initializeUserTable();
     initializeFriendsTable();
     initializeSessionsDatabase();
+    initializeBannedTable();
     console.log('Database wiped and re-initialized');
 }
 
@@ -288,7 +331,6 @@ const addEddies = protected_sql((username, eddiesToAdd) => {
 })
 
 
-
 const getUsernameFromUUID = (UUID) => {
     const query = db.prepare('SELECT username FROM users WHERE account_UUID = ?').get(UUID)
 
@@ -297,6 +339,16 @@ const getUsernameFromUUID = (UUID) => {
     }
 
     return query.username
+}
+
+const getUUIDFromUsername = (username) => {
+    const query = db.prepare('SELECT account_UUID FROM users WHERE username = ?').get(username)
+
+    if (!query) {
+        throw new Error('user not found!')
+    }
+
+    return query.account_UUID
 }
 
 const updateLastLoginDate = protected_sql((username) => {
@@ -312,17 +364,17 @@ const updateLastLoginDate = protected_sql((username) => {
 
 //auth
 
-const createSessionToken = (UUID) => {
+const createSessionTokenForUUID = (UUID) => {
     //create session token to write
 
-    let opaque = hash('sha512', crypto.randomBytes(32)).toString('hex');
-    
+    let opaque = hash('sha512', randomBytes(32)).toString('hex');
+
     // write opaque with UUID
 
     db.prepare(`
         INSERT INTO sessions (session_token,account_UUID)
         VALUES (?,?)
-    `).run(opaque,UUID)
+    `).run(opaque, UUID)
 
     return opaque //to give back to user for http-only cookie storage
 }
@@ -355,14 +407,14 @@ const sessionTokenToUUID = (token) => {
 
 const deleteSessionTokenFromUUID = (UUID) => {
     const query = db.prepare('DELETE FROM sessions WHERE account_UUID = ?').run(UUID)
-    if (query.changes == 0) {throw new Error('Session token not found')}
+    if (query.changes == 0) { throw new Error('Session token not found') }
     return query.changes
 }
 
 
 const deleteSessionToken = (token) => {
     const query = db.prepare('DELETE FROM sessions WHERE session_token = ?').run(token);
-    if (query.changes == 0) {throw new Error('Session token not found')}
+    if (query.changes == 0) { throw new Error('Session token not found') }
     return query.changes
 }
 
@@ -377,6 +429,113 @@ const clearAllSessionTokens = () => {
     const query = db.prepare('DELETE FROM sessions').run();
     return query.changes
 }
+
+
+
+
+const banUser = protected_sql((ip, UUID, reason, ban_length_days) => {
+
+
+    if (Number.isNaN(ban_length_days)) {
+        throw new Error('Invalid ban length');
+    };
+
+    
+
+    const indefinite =
+        ban_length_days == null /*also takes undefined as true*/ || 
+        ban_length_days === Infinity;
+    if (!indefinite) {
+        if (ban_length_days < 0) {
+            throw new Error('Invalid ban length');
+        };
+    };
+    
+    try {
+        const ban_expires = indefinite
+            ? null
+            : new Date(Date.now() + ban_length_days * 86400000).toISOString();
+
+        db.prepare(`
+      INSERT INTO banned (ip_address, UUID, reason, ban_expires)
+      VALUES (?, ?, ?, ?)
+    `).run(ip, UUID, reason, ban_expires);
+
+    return true;
+    } catch (error) {
+        if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
+            throw new Error('info is already banned');
+        };
+        throw error;
+    };
+});
+
+
+
+const isIPBanned = (ip) => {
+    const row = db.prepare(`
+    SELECT *
+    FROM banned
+    WHERE ip_address = ?
+  `).get(ip);
+
+    // not banned
+    if (!row) return false;
+
+    // no expiry = permanent ban
+    if (!row.ban_expires) return true;
+
+    // check expiration
+    const now = new Date();
+    const expires = new Date(row.ban_expires);
+
+    if (now >= expires) {
+        db.prepare('DELETE FROM banned WHERE ip_address = ?').run(ip);
+        return false;
+    }
+
+    return true;
+};
+
+const isUUIDBanned = (UUID) => {
+    const row = db.prepare(`
+    SELECT *
+    FROM banned
+    WHERE UUID = ?
+  `).get(UUID);
+
+    if (!row) return false;
+
+    if (!row.ban_expires) return true;
+
+    const now = new Date();
+    const expires = new Date(row.ban_expires);
+
+    if (now >= expires) {
+        db.prepare('DELETE FROM banned WHERE UUID = ?').run(UUID);
+        return false;
+    }
+
+    return true;
+};
+
+
+const unbanIP = protected_sql((ip) => {
+    const query = db.prepare('DELETE FROM banned WHERE ip_address = ?').run(ip);
+    if (query.changes === 0) {
+        throw new Error('IP address not found in banned table');
+    }
+    return true;
+})
+
+const unbanUUID = protected_sql((UUID) => {
+    const query = db.prepare('DELETE FROM banned WHERE UUID = ?').run(UUID);
+    if (query.changes === 0) {
+        throw new Error('UUID not found in banned table');
+    }
+    return true;
+})
+
 // single player flow:
 
 
@@ -386,15 +545,13 @@ const clearAllSessionTokens = () => {
 //available data: username || UUID, score, game_finished(implied true), can also calculate eddie from score
 
 
-
-const bob = '583f5934-d403-42c1-ae75-67b6fa4f5831'
-
 module.exports = {
     db,
-    bob,
+    auth,
     initializeUserTable,
     initializeFriendsTable,
     initializeSessionsTable,
+    initializeBannedTable,
     getAllUsers,
     getUserByUsername,
     createUser,
@@ -411,10 +568,17 @@ module.exports = {
     getUsernameFromUUID,
     addEddies,
     updateLastLoginDate,
-    createSessionToken,
+    createSessionTokenForUUID,
     sessionTokenToUUID,
     deleteSessionTokenFromUUID,
     deleteSessionToken,
     clearExpiredSessionTokens,
-    clearAllSessionTokens
+    clearAllSessionTokens,
+    sessionTokenToUUID,
+    getUUIDFromUsername,
+    isIPBanned,
+    isUUIDBanned,
+    banUser,
+    unbanIP,
+    unbanUUID
 }

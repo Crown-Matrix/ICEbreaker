@@ -42,7 +42,7 @@ const prompt = () => {
             try {
                 let db = singlePlayer.SQL_Manager_Instance.db;
                 let sql = singlePlayer.SQL_Manager_Instance;
-                let bob = sql.bob;
+                let auth = sql.auth;
                 let result = eval(command);
                 if (result !== undefined) {
                     console.log(result);
