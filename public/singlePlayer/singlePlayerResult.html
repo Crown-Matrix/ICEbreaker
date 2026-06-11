@@ -756,17 +756,22 @@
     var frontEndHandler = sessionStorage.getItem('frontEndHandler');
     if (frontEndHandler) {
       frontEndHandler = JSON.parse(frontEndHandler);
-      document.querySelector('.stat-value').textContent = frontEndHandler.score || '0';
+      let score = frontEndHandler.score || '0';
+      document.querySelector('.stat-value').textContent = score;
       document.querySelector('.stat-value.red').textContent = frontEndHandler.selectedTimeFrame ? String(frontEndHandler.selectedTimeFrame) : '60';
       document.querySelector('#sequence-counter').textContent = frontEndHandler.totalSequencesUploaded || '0';
       if (!frontEndHandler.isGuest) {
         // user account
-        document.querySelector('#eddies-counter').textContent = scoreToEddies(frontEndHandler.score || 0);
+        document.querySelector('#eddies-counter').textContent = scoreToEddies(score);
         document.querySelector('#eddies-msg').textContent = "Eddies Mined"; //should be the default anyway, just in case
+        document.querySelector('.account-name').textContent = frontEndHandler.username || 'Unknown Operative';
+        document.querySelector('.account-tag').textContent = `// User Identified`
       } else {
         // guest account
-        document.querySelector('#eddies-counter').textContent = "Sign-in to earn eddies";
+        document.querySelector('#eddies-counter').innerHTML = `Sign-in to have` + '<br>' + `earned ${scoreToEddies(score)} eddies!`;
         document.querySelector('#eddies-msg').textContent = "Guest Account";
+        document.querySelector('.account-name').textContent = 'Ghost Operative';
+        document.querySelector('.account-tag').textContent = '// Guest Session';
         
       }
 

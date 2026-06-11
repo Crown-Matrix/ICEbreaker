@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ICEBreaker</title>
+  <link
+  rel="icon"
+  type="image/png"
+  href="data:image/png;base64,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"
+>
+  <link href="https://fonts.googleapis.com/css2?family=VT323&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+  <style>
+    *,
+    *::before,
+    *::after {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    /* ============================================================
+   ICEbreaker — Color Variables & Background
+   ============================================================ */
+
+    /* === COLOR VARIABLES === */
+    :root {
+      --cy-title-cyan: #00FFFF;
+      --cy-title-cyan-dim: #00CCDD;
+      --cy-title-red: #FF2D78;
+      --cy-title-yellow: #FF2D78;
+      --cy-title-dark: #050509;
+    }
+
+    /* === BACKGROUND LAYERS === */
+    .bg {
+      position: fixed;
+      inset: 0;
+      z-index: -1;
+    }
+
+    body {
+      cursor: none !important;
+      width: 100vw;
+      height: 100vh;
+      overflow: hidden;
+    }
+
+    body * {
+      cursor: none !important;
+    }
+
+    /* Base gradient */
+    .bg-base {
+      position: absolute;
+      inset: 0;
+      background-color: #000000;
+      background-image: linear-gradient(to bottom,
+          rgba(255, 0, 60, 0.20),
+          rgba(4, 218, 246, 0.05));
+      background-attachment: fixed;
+    }
+
+    /* Scrolling grid pattern */
+    .bg-grid {
+      position: absolute;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(0, 255, 255, 0.03) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(0, 255, 255, 0.03) 1px, transparent 1px);
+      background-size: 40px 40px;
+      animation: gridShift 20s linear infinite;
+    }
+
+    @keyframes gridShift {
+      0% {
+        background-position: 0 0;
+      }
+
+      100% {
+        background-position: 40px 40px;
+      }
+    }
+
+    /* Falling data noise columns */
+    .bg-noise {
+      position: absolute;
+      inset: 0;
+      overflow: hidden;
+    }
+
+    .noise-col {
+      position: absolute;
+      top: 0;
+      width: 2px;
+      height: 100%;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+      animation: noiseScroll linear infinite;
+      opacity: 0;
+    }
+
+    .noise-col span {
+      display: block;
+      width: 100%;
+      background: var(--cy-title-red);
+      border-radius: 1px;
+    }
+
+    @keyframes noiseScroll {
+      0% {
+        transform: translateY(-100%);
+        opacity: 0;
+      }
+
+      10% {
+        opacity: 1;
+      }
+
+      90% {
+        opacity: 0.6;
+      }
+
+      100% {
+        transform: translateY(100%);
+        opacity: 0;
+      }
+    }
+
+    /* CRT scanlines */
+    .bg-scanlines {
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(0deg,
+          transparent,
+          transparent 3px,
+          rgba(255, 255, 255, 0.015) 3px,
+          rgba(255, 255, 255, 0.015) 4px);
+      pointer-events: none;
+    }
+
+    /* Edge vignette */
+    .bg-vignette {
+      position: absolute;
+      inset: 0;
+      background: radial-gradient(ellipse 90% 80% at 50% 50%,
+          transparent 40%,
+          rgba(0, 0, 0, 0.85) 100%);
+    }
+
+    /* === DECORATIVE ACCENT LINES === */
+    .h-accent {
+      position: fixed;
+      left: 0;
+      right: 0;
+      height: 1px;
+      z-index: 5;
+    }
+
+    .h-accent.top {
+      top: 60px;
+      background: linear-gradient(90deg,
+          transparent 5%,
+          rgba(0, 255, 255, 0.12) 30%,
+          rgba(255, 230, 0, 0.20) 50%,
+          rgba(0, 255, 255, 0.12) 70%,
+          transparent 95%);
+    }
+
+    .h-accent.bottom {
+      bottom: 60px;
+      background: linear-gradient(90deg,
+          transparent 5%,
+          rgba(0, 255, 255, 0.08) 30%,
+          rgba(255, 71, 57, 0.15) 50%,
+          rgba(0, 255, 255, 0.08) 70%,
+          transparent 95%);
+    }
+
+
+    .access {
+      color: red;
+      position: relative;
+      text-shadow: 10px 10px 10px rgb(0, 0, 0);
+      background-color: rgba(0, 0, 0, 0.1);
+      border-radius: 10px;
+      border: 2px solid transparent;
+      width: 100%;
+      padding: 0 20px;
+      font-size: 5rem;
+      box-sizing: content-box;
+    }
+
+    .access::after {
+      position: absolute;
+      content: 'Access Denied';
+      color: black;
+      width: 100%;
+      z-index: -1;
+      top: 2px;
+      right: 11px;
+    }
+
+
+    .caption, .reason-caption {
+      color: red;
+      position: relative;
+      font-family: 'Share Tech Mono', monospace;
+    }
+
+
+    .caption::after {
+      position: absolute;
+      content: 'Your account has been banned. If you believe this is a mistake, please contact support.';
+      color: black;
+      width: 100%;
+      z-index: -1;
+      top: -2px;
+      left: -2px;
+      text-shadow: 0 0 1px black;
+      line-height: 1.3;
+      font-size: 16px;
+      white-space: pre-wrap;
+    }
+
+    .reason-caption::after {
+      position: absolute;
+      content: var(--ban-reason);
+      color: black;
+      width: 100%;
+      z-index: -1;
+      top: -2px;
+      left: -2px;
+      text-shadow: 0 0 1px black;
+      line-height: 1.3;
+      font-size: 16px;
+      white-space: pre-wrap;
+    }
+
+
+    .body {
+      position: absolute;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      /* min-width: max-content; */
+      justify-items: center;
+      text-align: center;
+    }
+
+    #glitch-root-a,
+    #glitch-root-b {
+      width: 100%;
+      height: 100%;
+      position: relative;
+      overflow: hidden;
+      border-radius: 3px;
+      box-sizing: border-box;
+
+    }
+
+    #gr-flash-a,
+    #gr-flash-b {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 9;
+      background: rgba(180, 0, 0, 0.2);
+      opacity: 0;
+      transition: opacity 0.13s ease-out;
+    }
+
+
+    body *,
+    .unselectable {
+      -webkit-touch-callout: none;
+      /* iOS Safari */
+      -webkit-user-select: none;
+      /* Safari */
+      -khtml-user-select: none;
+      /* Konqueror HTML */
+      -moz-user-select: none;
+      /* Old Firefox versions */
+      -ms-user-select: none;
+      /* Internet Explorer/Edge */
+      user-select: none;
+      /* Non-prefixed version */
+    }
+
+    .access {
+      font-family: 'VT323', monospace;
+    }
+
+    
+
+
+  </style>
+</head>
+<script>
+</script>
+
+<body>
+  <!-- Background layers -->
+  <div class="bg">
+    <div class="bg-base"></div>
+    <div class="bg-grid"></div>
+    <div class="bg-noise" id="noise"></div>
+    <div class="bg-scanlines"></div>
+    <div class="bg-vignette"></div>
+  </div>
+
+
+  <!-- ============================================================
+     RED GLITCH DIV
+     Drop this entire block anywhere in your project.
+     No external dependencies. No document-level styles.
+     Resize by changing width/height on the outer div.
+============================================================ -->
+  <div id="glitch-root-a" style="background:transparent; opacity:0.6;">
+
+    <div id="gr-flash-a"></div>
+
+    <canvas id="gr-canvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;"></canvas>
+
+    <script>
+      (function () {
+        const root = document.getElementById('glitch-root-a');
+        const canvas = document.getElementById('gr-canvas');
+        const flash = document.getElementById('gr-flash-a');
+        const ctx = canvas.getContext('2d');
+
+        let W = 0, H = 0, tick = 0;
+        const segs = [];
+        const floaters = [];
+        const sparkRows = [];
+        const digitCols = [];
+        let hardActive = false, hardEnd = 0;
+        let scanY = 0;
+
+        const rnd = (a, b) => a + Math.random() * (b - a);
+        const irnd = (a, b) => Math.floor(rnd(a, b));
+        const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+        function resize() {
+          const nw = root.clientWidth, nh = root.clientHeight;
+          if (nw === W && nh === H) return;
+          W = nw; H = nh;
+          canvas.width = W;
+          canvas.height = H;
+        }
+
+        function spawnSeg() {
+          const w = rnd(1.5, W * rnd(0.01, 0.14));
+          const h = rnd(H * 0.012, H * rnd(0.2, 0.88));
+          segs.push({
+            x: rnd(0, W - w), y: rnd(-h * 0.3, H * 0.9),
+            w, h,
+            alpha: rnd(0.06, 0.6),
+            r: irnd(145, 255), g: irnd(0, 25), b: irnd(0, 18),
+            vy: rnd(-0.9, 0.9),
+            life: rnd(20, 200), age: 0,
+            fadeIn: rnd(4, 16),
+            decay: rnd(0.005, 0.025),
+            shred: Math.random() > 0.72,
+            shimmer: Math.random() > 0.58,
+            sliceCount: irnd(3, 9),
+          });
+        }
+
+        function spawnFloater() {
+          floaters.push({
+            x: rnd(0, W), y: rnd(0, H),
+            w: rnd(1, 4.5), h: rnd(H * 0.006, H * 0.055),
+            alpha: rnd(0.2, 0.9), r: irnd(160, 255),
+            vx: rnd(-0.3, 1.4),
+            life: rnd(10, 70), age: 0,
+          });
+        }
+
+        function spawnSparkRow() {
+          const pts = Array.from({ length: irnd(4, 28) }, () => ({
+            x: rnd(0, W), w: rnd(1, rnd(3, 28)), a: rnd(0.2, 1),
+          }));
+          sparkRows.push({ y: rnd(0, H), pts, life: rnd(2, 22), age: 0 });
+        }
+
+        function spawnDigitCol() {
+          digitCols.push({
+            x: rnd(0, W - 12), y: rnd(0, H * 0.6),
+            size: irnd(8, 14), len: irnd(2, 9),
+            alpha: rnd(0.08, 0.4),
+            life: rnd(6, 40), age: 0,
+            chars: Array.from({ length: 9 }, () =>
+              Math.random() > 0.5 ? irnd(0, 9).toString() : String.fromCharCode(irnd(65, 90))
+            ),
+          });
+        }
+
+        function drawBg() {
+          ctx.clearRect(0, 0, W, H);  // fully clears instead of painting dark bg
+          if (tick % 90 < 3) {
+            const g = ctx.createLinearGradient(0, 0, W, 0);
+            g.addColorStop(0, 'rgba(80,0,0,0)');
+            g.addColorStop(0.5, `rgba(60,0,0,${rnd(0.04, 0.1).toFixed(3)})`);
+            g.addColorStop(1, 'rgba(80,0,0,0)');
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, W, H);
+          }
+        }
+
+        function drawSegs() {
+          for (let i = segs.length - 1; i >= 0; i--) {
+            const s = segs[i];
+            s.age++; s.y += s.vy;
+            if (s.age > s.life) s.alpha -= s.decay;
+            const t = Math.min(1, s.age / s.fadeIn);
+            const a = clamp(s.alpha * t, 0, 1);
+            if (a < 0.005 || s.y > H + s.h + 20 || s.y + s.h < -20) { segs.splice(i, 1); continue; }
+
+            if (s.shred) {
+              const sh = s.h / s.sliceCount;
+              for (let j = 0; j < s.sliceCount; j++) {
+                const sa = clamp(a * rnd(0.35, 1), 0, 1);
+                ctx.fillStyle = `rgba(${s.r},${s.g},${s.b},${sa.toFixed(3)})`;
+                ctx.fillRect(s.x + rnd(-5, 5), s.y + j * sh, s.w, sh * rnd(0.25, 1));
+              }
+            } else if (s.shimmer) {
+              const sa = clamp(a * (0.55 + 0.45 * Math.sin(tick * 0.14 + s.x * 0.05)), 0, 1);
+              ctx.fillStyle = `rgba(${s.r},${s.g},${s.b},${sa.toFixed(3)})`;
+              ctx.fillRect(s.x, s.y, s.w, s.h);
+            } else {
+              ctx.fillStyle = `rgba(${s.r},${s.g},${s.b},${a.toFixed(3)})`;
+              ctx.fillRect(s.x, s.y, s.w, s.h);
+            }
+
+            if (s.w > 8 && !s.shred) {
+              ctx.fillStyle = `rgba(255,40,20,${clamp(a * 0.35, 0, 1).toFixed(3)})`;
+              ctx.fillRect(s.x + s.w * 0.38, s.y, s.w * 0.24, s.h);
+            }
+          }
+        }
+
+        function drawFloaters() {
+          for (let i = floaters.length - 1; i >= 0; i--) {
+            const f = floaters[i];
+            f.age++; f.x += f.vx;
+            const a = clamp(f.alpha * (1 - (f.age / f.life) ** 2), 0, 1);
+            if (a < 0.01 || f.x > W + 12) { floaters.splice(i, 1); continue; }
+            ctx.fillStyle = `rgba(${f.r},8,4,${a.toFixed(3)})`;
+            ctx.fillRect(f.x, f.y, f.w, f.h);
+          }
+        }
+
+        function drawSparkRows() {
+          for (let i = sparkRows.length - 1; i >= 0; i--) {
+            const sr = sparkRows[i];
+            sr.age++;
+            const a = clamp(1 - sr.age / sr.life, 0, 1);
+            if (a <= 0) { sparkRows.splice(i, 1); continue; }
+            for (const p of sr.pts) {
+              ctx.fillStyle = `rgba(215,0,0,${(p.a * a).toFixed(3)})`;
+              ctx.fillRect(p.x, sr.y, p.w, 1.5);
+            }
+          }
+        }
+
+        function drawDigitCols() {
+          for (let i = digitCols.length - 1; i >= 0; i--) {
+            const d = digitCols[i];
+            d.age++;
+            if (d.age > d.life) { digitCols.splice(i, 1); continue; }
+            const progress = d.age / d.life;
+            ctx.font = `${d.size}px monospace`;
+            for (let j = 0; j < d.len; j++) {
+              const a = clamp(d.alpha * (1 - j / d.len) * (1 - progress * 0.8), 0, 1);
+              ctx.fillStyle = `rgba(200,0,0,${a.toFixed(3)})`;
+              ctx.fillText(d.chars[j % d.chars.length], d.x, d.y + j * d.size);
+            }
+          }
+        }
+
+        function drawScan() {
+          scanY = (scanY + 0.65) % H;
+          const g = ctx.createLinearGradient(0, scanY - 5, 0, scanY + 5);
+          g.addColorStop(0, 'rgba(160,0,0,0)');
+          g.addColorStop(0.5, `rgba(190,15,5,${(0.035 + 0.025 * Math.sin(tick * 0.03)).toFixed(3)})`);
+          g.addColorStop(1, 'rgba(160,0,0,0)');
+          ctx.fillStyle = g;
+          ctx.fillRect(0, scanY - 5, W, 10);
+        }
+
+        function drawNoise() {
+          const count = irnd(50, 150);
+          for (let i = 0; i < count; i++) {
+            ctx.fillStyle = `rgba(${irnd(140, 255)},0,0,${rnd(0.04, 0.5).toFixed(3)})`;
+            ctx.fillRect(rnd(0, W), rnd(0, H), rnd(1, 3), rnd(1, 2.5));
+          }
+        }
+
+        function drawHardGlitch(now) {
+          if (!hardActive) return;
+          if (now > hardEnd) { hardActive = false; return; }
+          const rows = irnd(2, 9);
+          for (let i = 0; i < rows; i++) {
+            const y = rnd(0, H), h = rnd(2, H * 0.13);
+            ctx.save();
+            ctx.translate(rnd(-W * 0.14, W * 0.14), 0);
+            ctx.fillStyle = `rgba(${irnd(160, 255)},0,0,${rnd(0.04, 0.38).toFixed(3)})`;
+            ctx.fillRect(0, y, W, h);
+            ctx.restore();
+          }
+          for (let i = 0; i < irnd(1, 5); i++) {
+            ctx.fillStyle = `rgba(255,0,0,${rnd(0.08, 0.55).toFixed(3)})`;
+            ctx.fillRect(rnd(0, W), 0, rnd(1, 14), H);
+          }
+          for (let i = 0; i < irnd(1, 6); i++) {
+            ctx.fillStyle = `rgba(255,50,30,${rnd(0.3, 0.9).toFixed(3)})`;
+            ctx.fillRect(rnd(0, W * 0.4), rnd(0, H), rnd(W * 0.1, W * 0.7), 1);
+          }
+        }
+
+        function triggerFlash() {
+          flash.style.transition = 'none';
+          flash.style.opacity = rnd(0.25, 0.75).toFixed(2);
+          setTimeout(() => {
+            flash.style.transition = 'opacity 0.14s ease-out';
+            flash.style.opacity = '0';
+          }, rnd(18, 90));
+        }
+
+        function loop(now) {
+          tick++;
+          resize();
+          drawBg();
+          drawSegs();
+          drawFloaters();
+          drawSparkRows();
+          drawDigitCols();
+          drawNoise();
+          drawScan();
+          drawHardGlitch(now);
+
+          if (segs.length < 28 && Math.random() < 0.38) spawnSeg();
+          if (segs.length < 55 && Math.random() < 0.20) spawnSeg();
+          if (floaters.length < 30 && Math.random() < 0.28) spawnFloater();
+          if (Math.random() < 0.09) spawnSparkRow();
+          if (tick % 4 === 0 && Math.random() < 0.35) spawnDigitCol();
+
+          if (!hardActive && Math.random() < 0.003) {
+            hardActive = true;
+            hardEnd = now + rnd(55, 240);
+            if (Math.random() < 0.65) triggerFlash();
+          }
+
+          requestAnimationFrame(loop);
+        }
+
+        resize();
+        for (let i = 0; i < 20; i++) spawnSeg();
+        requestAnimationFrame(loop);
+      })();
+    </script>
+
+  </div>
+
+  <div id="glitch-root-b" style="background:transparent; opacity:0.4;">
+
+    <div id="gr-flash-b"></div>
+
+    <canvas id="gr-canvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;"></canvas>
+
+    <script>
+      (function () {
+        const root = document.getElementById('glitch-root-b');
+        const canvas = document.getElementById('gr-canvas');
+        const flash = document.getElementById('gr-flash-b');
+        const ctx = canvas.getContext('2d');
+
+        let W = 0, H = 0, tick = 0;
+        const segs = [];
+        const floaters = [];
+        const sparkRows = [];
+        const digitCols = [];
+        let hardActive = false, hardEnd = 0;
+        let scanY = 0;
+
+        const rnd = (a, b) => a + Math.random() * (b - a);
+        const irnd = (a, b) => Math.floor(rnd(a, b));
+        const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+
+        function resize() {
+          const nw = root.clientWidth, nh = root.clientHeight;
+          if (nw === W && nh === H) return;
+          W = nw; H = nh;
+          canvas.width = W;
+          canvas.height = H;
+        }
+
+        function spawnSeg() {
+          const w = rnd(1.5, W * rnd(0.01, 0.14));
+          const h = rnd(H * 0.012, H * rnd(0.2, 0.88));
+          segs.push({
+            x: rnd(0, W - w), y: rnd(-h * 0.3, H * 0.9),
+            w, h,
+            alpha: rnd(0.06, 0.6),
+            r: irnd(145, 255), g: irnd(0, 25), b: irnd(0, 18),
+            vy: rnd(-0.9, 0.9),
+            life: rnd(20, 200), age: 0,
+            fadeIn: rnd(4, 16),
+            decay: rnd(0.005, 0.025),
+            shred: Math.random() > 0.72,
+            shimmer: Math.random() > 0.58,
+            sliceCount: irnd(3, 9),
+          });
+        }
+
+        function spawnFloater() {
+          floaters.push({
+            x: rnd(0, W), y: rnd(0, H),
+            w: rnd(1, 4.5), h: rnd(H * 0.006, H * 0.055),
+            alpha: rnd(0.2, 0.9), r: irnd(160, 255),
+            vx: rnd(-0.3, 1.4),
+            life: rnd(10, 70), age: 0,
+          });
+        }
+
+        function spawnSparkRow() {
+          const pts = Array.from({ length: irnd(4, 28) }, () => ({
+            x: rnd(0, W), w: rnd(1, rnd(3, 28)), a: rnd(0.2, 1),
+          }));
+          sparkRows.push({ y: rnd(0, H), pts, life: rnd(2, 22), age: 0 });
+        }
+
+        function spawnDigitCol() {
+          digitCols.push({
+            x: rnd(0, W - 12), y: rnd(0, H * 0.6),
+            size: irnd(8, 14), len: irnd(2, 9),
+            alpha: rnd(0.08, 0.4),
+            life: rnd(6, 40), age: 0,
+            chars: Array.from({ length: 9 }, () =>
+              Math.random() > 0.5 ? irnd(0, 9).toString() : String.fromCharCode(irnd(65, 90))
+            ),
+          });
+        }
+
+        function drawBg() {
+          ctx.clearRect(0, 0, W, H);  // fully clears instead of painting dark bg
+          if (tick % 90 < 3) {
+            const g = ctx.createLinearGradient(0, 0, W, 0);
+            g.addColorStop(0, 'rgba(80,0,0,0)');
+            g.addColorStop(0.5, `rgba(60,0,0,${rnd(0.04, 0.1).toFixed(3)})`);
+            g.addColorStop(1, 'rgba(80,0,0,0)');
+            ctx.fillStyle = g;
+            ctx.fillRect(0, 0, W, H);
+          }
+        }
+
+        function drawSegs() {
+          for (let i = segs.length - 1; i >= 0; i--) {
+            const s = segs[i];
+            s.age++; s.y += s.vy;
+            if (s.age > s.life) s.alpha -= s.decay;
+            const t = Math.min(1, s.age / s.fadeIn);
+            const a = clamp(s.alpha * t, 0, 1);
+            if (a < 0.005 || s.y > H + s.h + 20 || s.y + s.h < -20) { segs.splice(i, 1); continue; }
+
+            if (s.shred) {
+              const sh = s.h / s.sliceCount;
+              for (let j = 0; j < s.sliceCount; j++) {
+                const sa = clamp(a * rnd(0.35, 1), 0, 1);
+                ctx.fillStyle = `rgba(${s.r},${s.g},${s.b},${sa.toFixed(3)})`;
+                ctx.fillRect(s.x + rnd(-5, 5), s.y + j * sh, s.w, sh * rnd(0.25, 1));
+              }
+            } else if (s.shimmer) {
+              const sa = clamp(a * (0.55 + 0.45 * Math.sin(tick * 0.14 + s.x * 0.05)), 0, 1);
+              ctx.fillStyle = `rgba(${s.r},${s.g},${s.b},${sa.toFixed(3)})`;
+              ctx.fillRect(s.x, s.y, s.w, s.h);
+            } else {
+              ctx.fillStyle = `rgba(${s.r},${s.g},${s.b},${a.toFixed(3)})`;
+              ctx.fillRect(s.x, s.y, s.w, s.h);
+            }
+
+            if (s.w > 8 && !s.shred) {
+              ctx.fillStyle = `rgba(255,40,20,${clamp(a * 0.35, 0, 1).toFixed(3)})`;
+              ctx.fillRect(s.x + s.w * 0.38, s.y, s.w * 0.24, s.h);
+            }
+          }
+        }
+
+        function drawFloaters() {
+          for (let i = floaters.length - 1; i >= 0; i--) {
+            const f = floaters[i];
+            f.age++; f.x += f.vx;
+            const a = clamp(f.alpha * (1 - (f.age / f.life) ** 2), 0, 1);
+            if (a < 0.01 || f.x > W + 12) { floaters.splice(i, 1); continue; }
+            ctx.fillStyle = `rgba(${f.r},8,4,${a.toFixed(3)})`;
+            ctx.fillRect(f.x, f.y, f.w, f.h);
+          }
+        }
+
+        function drawSparkRows() {
+          for (let i = sparkRows.length - 1; i >= 0; i--) {
+            const sr = sparkRows[i];
+            sr.age++;
+            const a = clamp(1 - sr.age / sr.life, 0, 1);
+            if (a <= 0) { sparkRows.splice(i, 1); continue; }
+            for (const p of sr.pts) {
+              ctx.fillStyle = `rgba(215,0,0,${(p.a * a).toFixed(3)})`;
+              ctx.fillRect(p.x, sr.y, p.w, 1.5);
+            }
+          }
+        }
+
+        function drawDigitCols() {
+          for (let i = digitCols.length - 1; i >= 0; i--) {
+            const d = digitCols[i];
+            d.age++;
+            if (d.age > d.life) { digitCols.splice(i, 1); continue; }
+            const progress = d.age / d.life;
+            ctx.font = `${d.size}px monospace`;
+            for (let j = 0; j < d.len; j++) {
+              const a = clamp(d.alpha * (1 - j / d.len) * (1 - progress * 0.8), 0, 1);
+              ctx.fillStyle = `rgba(200,0,0,${a.toFixed(3)})`;
+              ctx.fillText(d.chars[j % d.chars.length], d.x, d.y + j * d.size);
+            }
+          }
+        }
+
+        function drawScan() {
+          scanY = (scanY + 0.65) % H;
+          const g = ctx.createLinearGradient(0, scanY - 5, 0, scanY + 5);
+          g.addColorStop(0, 'rgba(160,0,0,0)');
+          g.addColorStop(0.5, `rgba(190,15,5,${(0.035 + 0.025 * Math.sin(tick * 0.03)).toFixed(3)})`);
+          g.addColorStop(1, 'rgba(160,0,0,0)');
+          ctx.fillStyle = g;
+          ctx.fillRect(0, scanY - 5, W, 10);
+        }
+
+        function drawNoise() {
+          const count = irnd(50, 150);
+          for (let i = 0; i < count; i++) {
+            ctx.fillStyle = `rgba(${irnd(140, 255)},0,0,${rnd(0.04, 0.5).toFixed(3)})`;
+            ctx.fillRect(rnd(0, W), rnd(0, H), rnd(1, 3), rnd(1, 2.5));
+          }
+        }
+
+        function drawHardGlitch(now) {
+          if (!hardActive) return;
+          if (now > hardEnd) { hardActive = false; return; }
+          const rows = irnd(2, 9);
+          for (let i = 0; i < rows; i++) {
+            const y = rnd(0, H), h = rnd(2, H * 0.13);
+            ctx.save();
+            ctx.translate(rnd(-W * 0.14, W * 0.14), 0);
+            ctx.fillStyle = `rgba(${irnd(160, 255)},0,0,${rnd(0.04, 0.38).toFixed(3)})`;
+            ctx.fillRect(0, y, W, h);
+            ctx.restore();
+          }
+          for (let i = 0; i < irnd(1, 5); i++) {
+            ctx.fillStyle = `rgba(255,0,0,${rnd(0.08, 0.55).toFixed(3)})`;
+            ctx.fillRect(rnd(0, W), 0, rnd(1, 14), H);
+          }
+          for (let i = 0; i < irnd(1, 6); i++) {
+            ctx.fillStyle = `rgba(255,50,30,${rnd(0.3, 0.9).toFixed(3)})`;
+            ctx.fillRect(rnd(0, W * 0.4), rnd(0, H), rnd(W * 0.1, W * 0.7), 1);
+          }
+        }
+
+        function triggerFlash() {
+          flash.style.transition = 'none';
+          flash.style.opacity = rnd(0.25, 0.75).toFixed(2);
+          setTimeout(() => {
+            flash.style.transition = 'opacity 0.14s ease-out';
+            flash.style.opacity = '0';
+          }, rnd(18, 90));
+        }
+
+        function loop(now) {
+          tick++;
+          resize();
+          drawBg();
+          drawSegs();
+          drawFloaters();
+          drawSparkRows();
+          drawDigitCols();
+          drawNoise();
+          drawScan();
+          drawHardGlitch(now);
+
+          if (segs.length < 28 && Math.random() < 0.38) spawnSeg();
+          if (segs.length < 55 && Math.random() < 0.20) spawnSeg();
+          if (floaters.length < 30 && Math.random() < 0.28) spawnFloater();
+          if (Math.random() < 0.09) spawnSparkRow();
+          if (tick % 4 === 0 && Math.random() < 0.35) spawnDigitCol();
+
+          if (!hardActive && Math.random() < 0.003) {
+            hardActive = true;
+            hardEnd = now + rnd(55, 240);
+            if (Math.random() < 0.65) triggerFlash();
+          }
+
+          requestAnimationFrame(loop);
+        }
+
+        resize();
+        for (let i = 0; i < 20; i++) spawnSeg();
+        requestAnimationFrame(loop);
+      })();
+
+
+
+
+
+      function placeCursor(base64) {
+        const img = document.createElement('img');
+        img.src = base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`;
+
+        img.style.cssText = `
+    position: fixed;
+    pointer-events: none;
+    z-index: 999999;
+    width: 32px;
+    height: 32px;
+    transform: translate(-50%, -50%);
+  `;
+
+        document.body.style.cursor = 'none';
+        document.body.appendChild(img);
+
+        document.addEventListener('mousemove', (e) => {
+          img.style.left = e.clientX + 'px';
+          img.style.top = e.clientY + 'px';
+        });
+      }
+      const bannedPngBase64 = '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';
+      placeCursor(bannedPngBase64);
+    </script>
+
+  </div>
+
+
+
+  <div class="body">
+    <h1 class="access">Access Denied</h1>
+    <p class="caption">Your account has been banned. If you believe this is a mistake, please contact support.</p>
+    <p class="reason-caption" id="ban-reason"></p>
+    <script>
+      const ban_reason = localStorage.getItem('ban_reason');
+      console.log(ban_reason);
+      if (ban_reason) {
+        document.documentElement.style.setProperty('--ban-reason', `'Ban Reason: ${ban_reason}'`);
+        document.getElementById('ban-reason').textContent = 'Ban Reason: ' + ban_reason;
+      } else {
+        document.documentElement.style.setProperty('--ban-reason', `'No specific reason provided.'`);
+        document.getElementById('ban-reason').textContent = 'No specific reason provided.'; 
+      }
+    </script>
+  </div>
+</body>
+
+</html>
