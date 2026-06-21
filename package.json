@@ -12,7 +12,8 @@
     "singlePlayer": "node private/singlePlayer/singlePlayerServer.cjs",
     "map": "bash personal/filemap.sh",
     "main": "node private/admin-js/main.cjs",
-    "init_db":"bash personal/init_db.sh"
+    "init_db":"bash personal/init_db.sh",
+    "db_init": "bash personal/init_db.sh"
   },
   "type": "module"
 }

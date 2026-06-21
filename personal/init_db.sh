@@ -6,7 +6,8 @@ found=0
 
 while [[ "$dir" != "/" ]]; do
     base="$(basename "$dir")"
-
+    #if this doesnt work because of a "bad substitution" ensure the env bash is updated (4+)
+    # bash --version ; which -a bash ;
     if [[ "${base,,}" == "icebreaker" ]]; then
         cd "$dir" || exit 1
         found=1
