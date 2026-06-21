@@ -15,7 +15,7 @@ if (!fs.existsSync(databasePath)) {
     fs.mkdirSync(databasePath);
 }
 
-//access .env variables
+//access .env variables from node process (should be global)
 const DEFAULT_PORT = 3000;
 const port = process.env.ICEBREAKER_PORT || DEFAULT_PORT;
 
