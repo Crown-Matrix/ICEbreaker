@@ -26,7 +26,7 @@ function initializeUserTable() {
     const createTableStmt = `
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE NOT NULL,
+            username TEXT UNIQUE COLLATE NOCASE NOT NULL,
             password TEXT NOT NULL,
             account_UUID TEXT UNIQUE NOT NULL,
             sp_games_Played INTEGER DEFAULT 0,
@@ -97,6 +97,16 @@ function initializeBannedTable() {
     `
     db.prepare(createTableStmt).run()
 }
+
+
+function initializeAllTables() {
+    initializeUserTable();
+    initializeSessionsTable();
+    initializeFriendsTable();
+    initializeBannedTable();
+}
+
+
 //max username length: 64
 //max password length: 64
 //session lifespan: 7 days
@@ -116,7 +126,7 @@ function protected_sql(func) {
 // simple reads — no transaction needed
 const getAllUsers = () => db.prepare('SELECT * FROM users').all();
 
-const getUserByUsername = (username) => db.prepare('SELECT * FROM users WHERE username = ?').get(username);
+const getUserByUsername = (username) => db.prepare('SELECT * FROM users WHERE LOWER(username) = ?').get(username.toLowerCase());
 
 // needs transaction — read then write
 const createUser = protected_sql((username, password) => {
@@ -144,7 +154,7 @@ const passwordMatch = (username, password_attempt) => {
 const deleteUser = protected_sql((username) => {
     const existing = getUserByUsername(username);
     if (!existing) throw new Error('User not found');
-    db.prepare('DELETE FROM users WHERE username = ?').run(username);
+    db.prepare('DELETE FROM users WHERE LOWER(username) = ?').run(username.toLowerCase());
 });
 
 
@@ -163,8 +173,8 @@ const updateGameStats = protected_sql((username, appended_score, gameType, gameW
     const query = db.prepare(`
         SELECT ${gameType}_average_Score, ${gameType}_games_Finished 
         FROM users 
-        WHERE username = ?
-    `).get(username);
+        WHERE LOWER(username) = ?
+    `).get(username.toLowerCase());
 
     if (!query) {
         throw new Error('User not found');
@@ -188,11 +198,11 @@ const updateGameStats = protected_sql((username, appended_score, gameType, gameW
         SET ${gameType}_average_Score = ?,
             mp_games_Won = mp_games_Won + ?,
             ${gameType}_games_Finished = ${gameType}_games_Finished + 1
-        WHERE username = ?
+        WHERE LOWER(username) = ?
     `).run(
         new_avg_score,
         (gameWon && gameType === 'mp') ? 1 : 0,
-        username
+        username.toLowerCase()
     );
 
     return true;
@@ -204,7 +214,7 @@ const incrementGame = protected_sql((username, gameType) => {
     if (gameType !== 'sp' && gameType !== 'mp') {
         throw new Error('Invalid game type');
     }
-    const query = db.prepare(`UPDATE users SET ${gameType}_games_Played = ${gameType}_games_Played + 1 WHERE username = ?`).run(username);
+    const query = db.prepare(`UPDATE users SET ${gameType}_games_Played = ${gameType}_games_Played + 1 WHERE LOWER(username) = ?`).run(username.toLowerCase());
     if (query.changes === 0) {
         throw new Error('User not found');
     }
@@ -342,17 +352,16 @@ const getUsernameFromUUID = (UUID) => {
 }
 
 const getUUIDFromUsername = (username) => {
-    const query = db.prepare('SELECT account_UUID FROM users WHERE username = ?').get(username)
+    const query = db.prepare('SELECT account_UUID FROM users WHERE LOWER(username) = ?').get(username.toLowerCase())
 
     if (!query) {
         throw new Error('user not found!')
     }
-
     return query.account_UUID
 }
 
 const updateLastLoginDate = protected_sql((username) => {
-    const query = db.prepare('UPDATE users SET last_Login_Date = CURRENT_TIMESTAMP WHERE username = ?').run(username);
+    const query = db.prepare('UPDATE users SET last_Login_Date = CURRENT_TIMESTAMP WHERE LOWER(username) = ?').run(username.toLowerCase());
     if (query.changes === 0) {
         throw new Error('User not found');
     }
@@ -552,6 +561,7 @@ module.exports = {
     initializeFriendsTable,
     initializeSessionsTable,
     initializeBannedTable,
+    initializeAllTables,
     getAllUsers,
     getUserByUsername,
     createUser,
@@ -580,5 +590,5 @@ module.exports = {
     isUUIDBanned,
     banUser,
     unbanIP,
-    unbanUUID
+    unbanUUID,
 }
