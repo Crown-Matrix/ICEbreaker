@@ -1440,6 +1440,7 @@ socket.on('connect', () => {
     console.log('Connected to server with socket ID:', socket.id);
     socket.emit('initialize_data', { frontEndHandler: frontEndHandler });
 });
+
 socket.on('message', (data) => {
     console.log('Message from server:', data);
 });
@@ -1484,7 +1485,6 @@ socket.on('initialization_success', (data) => {
 socket.once('isGuestStatus', (data) => {
     frontEndHandler.isGuest = data.isGuest;
 });
-
 
 socket.on('banned', (data) => {
     if (data.message === 'banned') {
