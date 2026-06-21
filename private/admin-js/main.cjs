@@ -15,9 +15,14 @@ if (!fs.existsSync(databasePath)) {
     fs.mkdirSync(databasePath);
 }
 
+//access .env variables
+const DEFAULT_PORT = 3000;
+const port = process.env.ICEBREAKER_PORT || DEFAULT_PORT;
+
 singlePlayer = require('../singlePlayer/singlePlayerServer.cjs')
 //multiPlayer = require('../multiPlayer/multiPlayerServer.cjs')
 singlePlayerAdminInstance = singlePlayer.backEndAdminInstance;
+
 
 
 

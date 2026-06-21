@@ -10,10 +10,12 @@
   },
   "scripts": {
     "singlePlayer": "node private/singlePlayer/singlePlayerServer.cjs",
-    "map": "bash personal/filemap.sh",
-    "main": "node private/admin-js/main.cjs",
-    "init_db":"bash personal/init_db.sh",
-    "db_init": "bash personal/init_db.sh"
+    "map": "bash personal/shell/filemap.sh",
+    "main": "bash personal/shell/main.sh",
+    "init_db":"bash personal/shell/init_db.sh",
+    "db_init": "bash personal/shell/init_db.sh",
+    "init_env": "bash personal/shell/init_env.sh",
+    "env_init": "bash personal/shell/init_env.sh"
   },
   "type": "module"
 }
