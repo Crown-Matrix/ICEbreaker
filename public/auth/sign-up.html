@@ -536,7 +536,7 @@
           <label class="cy-field-label" for="username">// Operative Handle</label>
           <input class="cy-input" type="text" id="username" placeholder="e.g. Ghost_7" maxlength="64" autocomplete="off"
             spellcheck="false">
-          <div class="field-hint" id="username-hint">3–64 characters. Letters, numbers, underscores.</div>
+          <div class="field-hint" id="username-hint">3-64 characters. Letters, numbers, underscores.</div>
         </div>
 
         <div class="cy-field-wrap">
@@ -563,7 +563,11 @@
 
       <!-- submit -->
       <div class="px-4 py-3 border-bottom cy-divider">
-        <button class="cy-submit" id="submit-btn" disabled>Initialize Account</button>
+        <button class="cy-submit" id="submit-btn" disabled>
+          <span id="btn-idle">Initialize Account</span>
+          <span id="btn-busy"
+            style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center;opacity:0;">Initializing...</span>
+        </button>
       </div>
 
       <!-- footer link -->
@@ -585,6 +589,8 @@
     const usernameHint = document.getElementById('username-hint');
     const passwordHint = document.getElementById('password-hint');
     const confirmHint = document.getElementById('confirm-hint');
+    const btnIdle = document.getElementById('btn-idle');
+    const btnBusy = document.getElementById('btn-busy');
     const segs = [1, 2, 3, 4].map(i => document.getElementById('s' + i));
 
     function scorePassword(pw) {
@@ -618,7 +624,7 @@
       };
     }
 
-let controller = null;
+    let controller = null; //keeps duplicate requests from stacking if user types quickly, prevents race conditions as well.
 
     async function validateUsername() {
       const v = usernameInput.value.trim();
@@ -645,12 +651,8 @@ let controller = null;
       }
 
       try {
-
         const req = await checkUsername(v)
         const data = await req.json();
-
-
-        
 
         function checkUsername(username) {
           if (controller) controller.abort();
@@ -703,9 +705,9 @@ let controller = null;
       const cOk = validateConfirm();
       submitBtn.disabled = !(uOk && pOk && cOk);
     }
-
+    
     usernameInput.addEventListener('input', debounce(checkSubmit, 1000));
-    passwordInput.addEventListener('input', () => { updateStrengthBar(scorePassword(passwordInput.value)); if (confirmInput.value) validateConfirm(); checkSubmit(); });
+    passwordInput.addEventListener('input', () => { updateStrengthBar(scorePassword(passwordInput.value)); if (confirmInput.value) { validateConfirm(); submitBtn.disabled = !(scorePassword(passwordInput.value) >= 1 && passwordInput.value.length >= 8) } });
     confirmInput.addEventListener('input', () => { submitBtn.disabled = !(validateConfirm()) });
 
     function showToast(msg, isErr = false) {
@@ -714,10 +716,10 @@ let controller = null;
       t.className = 'cy-toast show' + (isErr ? ' err' : '');
       setTimeout(() => { t.className = 'cy-toast' + (isErr ? ' err' : ''); }, 3000);
     }
-
     submitBtn.addEventListener('click', async () => {
       submitBtn.disabled = true;
-      submitBtn.textContent = 'Initializing...';
+      btnIdle.style.opacity = '0';
+      btnBusy.style.opacity = '1';
       try {
         const res = await fetch('/auth/sign-up', {
           method: 'POST',
@@ -727,18 +729,21 @@ let controller = null;
         const data = await res.json().catch(() => ({}));
         if (res.ok) {
           showToast('Account initialized. Redirecting...');
-          setTimeout(() => window.location.replace('/auth/log-in'), 1600);
+          setTimeout(() => window.location.replace('/'), 1600);
         } else {
           showToast(data.message || 'Registration failed.', true);
           submitBtn.disabled = false;
-          submitBtn.textContent = 'Initialize Account';
+          btnIdle.style.opacity = '1';
+          btnBusy.style.opacity = '0';
         }
       } catch (e) {
         showToast('Network error.', true);
         submitBtn.disabled = false;
-        submitBtn.textContent = 'Initialize Account';
+        btnIdle.style.opacity = '1';
+        btnBusy.style.opacity = '0';
       }
     });
   </script>
 </body>
+
 </html>
