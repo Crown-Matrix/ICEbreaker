@@ -117,6 +117,9 @@ class backEndHandler {
       }
       rowMode = !rowMode; //toggle mode for next node
       //final validation to ensure coordinates are within bounds of the matrix
+      if (this.frontEndHandler.matrix === null || this.frontEndHandler.matrix.length === 0 || this.frontEndHandler.matrix[0].length === 0) { 
+        return false; //matrix is not initialized or empty, cannot validate coordinates
+      }
       if (node.row < 0 || node.row >= this.frontEndHandler.matrix.length || node.col < 0 || node.col >= this.frontEndHandler.matrix[0].length) {
         return false;
       }
@@ -151,13 +154,13 @@ class backEndHandler {
       };
     }
 
-    `
+    /*
 following is the logic for handling the end of a round of a signed in user, skip this for guest accounts, frontend report is enough for guests
 games_finished += 1, incrementGame() handles this
 update average score using the formula in the function: updateGameStats() handles that
 there is no win condition for single player, just put false for that parameter just incase
 add eddies to user account based on scoreToEddies()
-`
+*/
     console.log('about to check time inequality?');
     console.log(backEndHandlerInstance.roundStartTime + backEndHandlerInstance.selectedTimeFrame * 1000 + toleranceMS, "<", Date.now(), '=', backEndHandlerInstance.roundStartTime + backEndHandlerInstance.selectedTimeFrame * 1000 + toleranceMS < Date.now());
     console.log({
@@ -297,14 +300,14 @@ app.use((req, res, next) => {
 
 
 app.use(express.static('public'));
-app.use(cookieParser()); // Add cookie parser middleware to parse cookies from incoming requests, this is necessary for retrieving the session token from the client's cookies during the Socket.IO handshake and other HTTP requests, allowing us to identify returning users and provide a more personalized experience based on their account data, such as their eddies balance, game stats, preferences, etc.
+
 
 
 
 io.use((socket, next) => {
 
   //get ip:
-  let ip = socket.handshake.address;
+  let ip = socket.handshake.address || socket.request.headers['x-forwarded-for']?.split(',')[0].trim() || socket.request.socket.remoteAddress;
   if (!ip) {
     console.warn('No IP address found in socket handshake for socket ID:', socket.id);
     return next(new Error('No IP address found in socket handshake')); // Reject the connection with an error message
@@ -497,7 +500,7 @@ io.on('connection', async (socket) => {
 
 
                 socket.emit('banned', { reason: createBanMessage(reason,banLengthDays), message:'banned' , length: banLengthDays });
-                setTimeout(() => socket.disconnect(true), 100); //race condition prevention for emit('banned') latency
+                setTimeout(() => socket.disconnect(true), 200); //race condition prevention for emit('banned') latency
                 break; // exit the loop after handling the tampering attempt to prevent multiple bans or redundant processing
               }
             }
@@ -565,14 +568,6 @@ io.on('connection', async (socket) => {
     backEndAdminInstance.removeSession(socket.id);
   }
 });
-
-app.get('/login', (req, res) => {
-  console.log('Login route accessed, setting session token for testing purposes');
-  // testing route to set session token for user
-
-  res = SQL_Manager_Instance.auth.sendSessionTokenAsCookie(res, SQL_Manager_Instance.createSessionTokenForUUID('583f5934-d403-42c1-ae75-67b6fa4f5831')); //TODO implement this to obviously not be hardcoded as a test, also this is just a temporary route for testing purposes to allow us to test the single player page with user data retrieval, this should be removed or protected in production
-  res.send('Session token set for testing. You can now access the single player page with user data retrieval for that user. This is a temporary route for testing purposes and should be removed or protected in production.');
-})
 
 app.use(express.json()); // Middleware to parse JSON bodies from incoming requests
 
