@@ -705,7 +705,6 @@
       const cOk = validateConfirm();
       submitBtn.disabled = !(uOk && pOk && cOk);
     }
-    
     usernameInput.addEventListener('input', debounce(checkSubmit, 1000));
     passwordInput.addEventListener('input', () => { updateStrengthBar(scorePassword(passwordInput.value)); if (confirmInput.value) { validateConfirm(); submitBtn.disabled = !(scorePassword(passwordInput.value) >= 1 && passwordInput.value.length >= 8) } });
     confirmInput.addEventListener('input', () => { submitBtn.disabled = !(validateConfirm()) });

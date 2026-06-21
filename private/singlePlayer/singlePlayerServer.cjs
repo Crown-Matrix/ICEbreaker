@@ -23,6 +23,9 @@ const difficultyValues = {
   'hard': 500
 }
 
+const DEFAULT_PORT = 3000;
+const PORT = process.env.ICEBREAKER_PORT || DEFAULT_PORT;
+
 
 class SQLManager {
   constructor() {
@@ -295,7 +298,7 @@ app.use((req, res, next) => {
 
 app.use(express.static('public'));
 app.use(cookieParser()); // Add cookie parser middleware to parse cookies from incoming requests, this is necessary for retrieving the session token from the client's cookies during the Socket.IO handshake and other HTTP requests, allowing us to identify returning users and provide a more personalized experience based on their account data, such as their eddies balance, game stats, preferences, etc.
-process.env
+
 
 
 io.use((socket, next) => {
@@ -709,7 +712,6 @@ app.get('/banned', (req, res) => {
 
 
 // Start the server
-const PORT = 3000;
 server.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
 });
