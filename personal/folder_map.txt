@@ -1,8 +1,22 @@
 .
   personal
+    .DS_Store
+    shell
+      main.sh
+      FORCE_kill_process.sh
+      kill_main.sh
+      init_db.sh
+      shell_Xmod.sh
+      find_icebreaker.sh
+      init_env.sh
+      kill_process.sh
+      filemap.sh
+    auth.txt
+    idea.txt
+    ICEBreaker_Architecture.png
     folder_map.txt
-    filemap.sh
   .DS_Store
+  LICENSE
   node_modules
   README.md
   public
@@ -43,6 +57,7 @@
         V's Phone (Ringtone).mp3
         Closing Phone Contacts.mp3
         Biochip Malfunctioning.mp3
+    favicon.ico
     .DS_Store
     css
       bootstrap.min.css
@@ -56,6 +71,8 @@
       profile-placeholder.png
       medium-cell-decoration.png
       nettech.png
+      .DS_Store
+      banned.png
       matrixEffectWithoutBackground.png
       blueSquare.png
       hard-cell-decoration.png
@@ -64,26 +81,54 @@
       easy-cell-decoration.png
       matrix.png
       cyberpunk-cursor.png
+      source-examples
+        source-example3.png
+        source-example2.png
+        source-example1.png
+        source-example5.png
+        source-example4.png
+        source-example6.png
+        source-example-vid1.mp4
+        source-example-vid3.mp4
+        source-example-vid2.mp4
       sequence_decoration.png
-      favicon_preview.ico
       raw-nettech.png
+    auth
+      log-in.html
+      log-out.html
+      banned.html
+      sign-up.html
     js
       codeMatrix.js
       singlePlayerFrontend.js
       bootstrap.bundle.min.js
       audio.js
-      offlineSinglePlayerFrontend.js
     singlePlayer
       .DS_Store
       singlePlayerIndex.html
+      singlePlayerReference.html
+      singlePlayerResult.html
   .gitignore
   package-lock.json
   package.json
   private
+    database
+      ICEbreaker.db
+      ICEbreaker.db-shm
+      ICEbreaker.db-wal
+    admin-panel
+      admin.html
+      admin-styles.css
+      admin.js
+    .DS_Store
     admin-js
+      auth.cjs
+      main.cjs
+      admin-panel.cjs
       SQL.cjs
     multiplayer
-      multiPlayerServer.js
+      multiPlayerServer.cjs
     singlePlayer
       singlePlayerServer.cjs
+  .env
   .git

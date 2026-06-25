@@ -19,7 +19,7 @@ function hashPassword(password) {
 }
 
 //name convention:
-//ooo_Oooo
+//foo_Bar
 //standard js convention but with an underscore
 
 function initializeUserTable() {
@@ -99,7 +99,7 @@ function initializeBannedTable() {
 }
 
 
-function initializeAllTables() {
+function initializeAllTables() { //do not change this function name, unless u feel like updating it in the shell scripts as well
     initializeUserTable();
     initializeSessionsTable();
     initializeFriendsTable();
