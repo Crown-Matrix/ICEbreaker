@@ -5,12 +5,16 @@
 Thumbs.db
 desktop.ini
 
+#used in icebreaker: .DS_Store
+
 # Logs
 logs/
 *.log
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
+
+#used in icebreaker:
 
 # Runtime / pid files / temp
 tmp/
@@ -19,12 +23,17 @@ temp/
 *.seed
 *.pid.lock
 
+#used in icebreaker: /tmp
+
+
 # Environment files
 .env
 .env.local
 .env.*.local
 .env.test
 .env.production
+
+#used in icebreaker: .env
 
 # Node
 node_modules/
@@ -36,6 +45,8 @@ build/
 !.yarn/patches
 .pnp.*
 coverage/
+
+#used in icebreaker: node_modules/
 
 # Python
 __pycache__/
@@ -52,6 +63,8 @@ pip-wheel-metadata/
 .eggs/
 .pytest_cache/
 
+#used in icebreaker: 
+
 # Java / JVM
 *.class
 *.jar
@@ -59,12 +72,16 @@ pip-wheel-metadata/
 *.ear
 target/
 
+#used in icebreaker: 
+
 # Go / binaries
 bin/
 *.exe
 *.dll
 *.so
 *.dylib
+
+#used in icebreaker: 
 
 # Rust
 target/
@@ -77,15 +94,21 @@ vendor/bundle/
 log/
 tmp/
 
+#used in icebreaker: 
+
 # PHP / Composer
 vendor/
 composer.lock
+
+#used in icebreaker: 
 
 # Build artifacts
 build/
 dist/
 out/
 coverage/
+
+#used in icebreaker: 
 
 # IDEs and editors
 .vscode/
@@ -94,11 +117,15 @@ coverage/
 *.code-workspace
 *.swp
 
+#used in icebreaker: potentially .vscode/
+
 # Containers / orchestrators
 Dockerfile.*
 docker-compose.override.yml
 .docker/
 .kube/
+
+#used in icebreaker: 
 
 # Terraform
 .terraform/
@@ -107,12 +134,16 @@ docker-compose.override.yml
 crash.log
 override.tfvars
 
+#used in icebreaker: 
+
 # SSH / credentials / keys
 *.pem
 *.key
 known_hosts
 secrets.*
 credentials
+
+#used in icebreaker: 
 
 # Archives and packages
 *.zip
@@ -121,11 +152,15 @@ credentials
 *.rar
 *.7z
 
+#used in icebreaker: 
+
 # Misc
 *.log
 *.bak
 *.tmp
 *.old
+
+#used in icebreaker: 
 
 
 
@@ -135,3 +170,5 @@ idea.txt
 auth.txt
 public/imgs/source-examples/
 ICEBreaker_Architecture.png
+admin_panel_blueprint.html
+ICEBreaker_Admin_Panel.png

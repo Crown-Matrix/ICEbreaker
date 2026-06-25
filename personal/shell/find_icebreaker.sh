@@ -21,4 +21,4 @@ if [[ "$found" -ne 1 ]]; then
     exit 1
 fi
 
-echo "Successfully found icebreaker directory at: $dir"
+echo "$dir"

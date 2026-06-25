@@ -8,5 +8,5 @@ if [[ ! ${pwd_dir,,} == "icebreaker" ]]; then
     exit 1
 fi
 
-
+#gives all shell files in /shell directory execute permissions
 find ./personal/shell/ -type f -name "*.sh" -exec chmod +x {} +
