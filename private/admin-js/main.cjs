@@ -1,3 +1,4 @@
+
 //import modules
 const readline = require('readline');
 const { spawn } = require("child_process");
@@ -17,6 +18,8 @@ if (!fs.existsSync(databasePath)) {
     fs.mkdirSync(databasePath);
 }
 
+
+
 //access .env variables from node process (should be global)
 const DEFAULT_PORT = 3000;
 const port = process.env.ICEBREAKER_PORT || DEFAULT_PORT;
@@ -25,6 +28,8 @@ const port = process.env.ICEBREAKER_PORT || DEFAULT_PORT;
 singlePlayer = require('../singlePlayer/singlePlayerServer.cjs')
 //multiPlayer = require('../multiPlayer/multiPlayerServer.cjs')
 singlePlayerAdminInstance = singlePlayer.backEndAdminInstance;
+
+
 
 process.env.TEST_MODE = process.env.TEST_MODE || 'false'; //default to true for testing, can be set to false in production
 

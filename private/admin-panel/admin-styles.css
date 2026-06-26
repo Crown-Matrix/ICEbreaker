@@ -176,6 +176,11 @@
   flex-direction: column;
 }
 
+#dropdown-logo-top {
+  height: calc(100% - 1rem); /*subtraction by the fontsize of the header */
+  align-content: center;
+}
+
 #logo span {
   margin: 0 0.5rem;
   font-size: 4cqw;

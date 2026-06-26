@@ -656,8 +656,14 @@ app.get('/singlePlayer/auth/:page', (req, res) => {
 });
 
 
+app.use('/admin-panel', express.static(join(__dirname, '../admin-panel/')));
+app.get('/admin-panel', (req, res) => {
+  res.status(200).sendFile('admin-panel/admin.html', { root: './private' });
+});
+
+
 app.get('/auth/sign-up', (req, res) => {
-  res.status(200).sendFile('auth/sign-up.html', { root: './public' });
+  res.status(200).sendFile('auth/sign-up.html', { root: __dirname + '../private' });
 });
 
 app.post('/auth/sign-up', (req, res) => {

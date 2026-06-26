@@ -25,9 +25,7 @@ if [ -s .env ]; then #ensure its not empty, cuz if it is then it freaks out and 
     export $(grep -v '^#' .env | xargs)
 fi
 server=$(printenv "ICEBREAKER_PORT");
-admin=$(printenv "ICEBREAKER_ADMIN_PORT");
 
 
 echo "$server" | ./personal/shell/kill_process.sh $ICEBREAKER_PORT;
-echo "$admin" | ./personal/shell/kill_process.sh $ICEBREAKER_ADMIN_PORT;
 echo -e "\e[1;32m\nProcesses killed successfully\n\e[0m"
