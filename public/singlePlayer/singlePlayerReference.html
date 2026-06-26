@@ -615,14 +615,19 @@
         });
     }
     function handleKeydown(event) {
-      if (event.key) {
-        if (['Control', 'Shift', 'Alt', 'Meta', 'Escape', 'CapsLock', 'Tab'].includes(event.key) || event.key[0] === 'F') {
-        return; // ignore modifier keys
+      if (event.type === 'keydown' && (['Control', 'Shift', 'Alt', 'Meta', 'Escape', 'CapsLock', 'Tab'].includes(event.key) || event.key[0] === 'F')) {
+        return; // Ignore modifier keys, Escape, Tab, and function keys
       }
-      }
-      
+
+      // distinction of pointer events for mobile users compatibility
+        if (event.type === 'pointerdown' && event.pointerType === 'mouse') {
+          return; // Ignore mouse clicks, computer users should use keyboard  
+        }
+        // 'touch' and 'pen' pointer types are for mobile users, so we allow them to proceed
+        // cuz they dont have a keyboard lmao
+
       document.removeEventListener('keydown', handleKeydown);
-      document.removeEventListener('click', handleKeydown);
+      document.removeEventListener('pointerdown', handleKeydown);
 
       function openFullscreen() {
         const elem = document.documentElement; // Targets the whole page    
@@ -650,8 +655,7 @@
       goToPage('/singlePlayer/singlePlayerIndex.html');
     }
     document.addEventListener('keydown', handleKeydown);
-    document.addEventListener('click', handleKeydown); //for mobile users;
-
+    document.addEventListener('pointerdown', handleKeydown); //for mobile users;
   </script>
 </body>
 
