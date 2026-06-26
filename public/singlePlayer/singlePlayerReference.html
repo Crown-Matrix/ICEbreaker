@@ -615,10 +615,14 @@
         });
     }
     function handleKeydown(event) {
-      if (['Control', 'Shift', 'Alt', 'Meta', 'Escape', 'CapsLock', 'Tab'].includes(event.key) || event.key[0] === 'F') {
+      if (event.key) {
+        if (['Control', 'Shift', 'Alt', 'Meta', 'Escape', 'CapsLock', 'Tab'].includes(event.key) || event.key[0] === 'F') {
         return; // ignore modifier keys
       }
+      }
+      
       document.removeEventListener('keydown', handleKeydown);
+      document.removeEventListener('click', handleKeydown);
 
       function openFullscreen() {
         const elem = document.documentElement; // Targets the whole page    
@@ -646,6 +650,7 @@
       goToPage('/singlePlayer/singlePlayerIndex.html');
     }
     document.addEventListener('keydown', handleKeydown);
+    document.addEventListener('click', handleKeydown); //for mobile users;
 
   </script>
 </body>

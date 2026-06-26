@@ -6,7 +6,7 @@
 
 pwd_dir=${PWD##*/}
 
-if [[ ! ${pwd_dir,,} == "icebreaker" ]]; then
+if [[ ! (${pwd_dir,,} == "icebreaker" || ${pwd_dir,,} == "src") ]]; then
     echo "script must be run from the icebreaker directory"
     exit 1
 fi

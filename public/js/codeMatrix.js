@@ -147,7 +147,6 @@ export function generateSolutions(vertical,horizontal) {
             hard_solution[Math.floor(hard_solution.length/2)] = hard_solution[Math.floor(hard_solution.length/2) + 1]
             hard_solution[hard_solution.length - 1] = easy_solution[0]
         }
-
     }
     return {
         "easy": easy_solution,
