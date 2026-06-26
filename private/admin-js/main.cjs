@@ -26,10 +26,10 @@ singlePlayer = require('../singlePlayer/singlePlayerServer.cjs')
 //multiPlayer = require('../multiPlayer/multiPlayerServer.cjs')
 singlePlayerAdminInstance = singlePlayer.backEndAdminInstance;
 
-
+process.env.TEST_MODE = process.env.TEST_MODE || 'false'; //default to true for testing, can be set to false in production
 
 //console.log('multiPlayerAdmin:', multiPlayer.backEndAdminInstance);
-if (true) {
+if (process.env.TEST_MODE === 'true') {
     // bring up console
     const prompt = () => {
         rl.question('Enter command: ', (command) => {

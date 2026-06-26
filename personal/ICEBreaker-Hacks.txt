@@ -1,0 +1,29 @@
+//running this will get you banned
+
+frontEndHandler.matrix = [
+['BD','BD','BD','BD','BD','BD','BD'],
+['BD','BD','BD','BD','BD','BD','BD'],
+['BD','BD','BD','BD','BD','BD','BD'],
+['BD','BD','BD','BD','BD','BD','BD'],
+['BD','BD','BD','BD','BD','BD','BD'],
+['BD','BD','BD','BD','BD','BD','BD'],
+['BD','BD','BD','BD','BD','BD','BD']
+];
+
+frontEndHandler.isGuest = false;
+
+frontEndHandler.maxBufferSize = 1
+
+frontEndHandler.sequence = [{row: 0, col: 0}, {row: 0, col: 0},{row: 0, col: 0}, {row: 0, col: 0},{row: 0, col: 0}, {row: 0, col: 0},{row: 0, col: 0}, {row: 0, col: 0},{row: 0, col: 0},{row: 0, col: 0},{row: 0, col: 0},{row: 0, col: 0},{row: 0, col: 0},{row: 0, col: 0},{row: 0, col: 0},{row: 0, col: 0},{row: 0, col: 0},{row: 0, col: 0},{row: 0, col: 0},{row: 0, col: 0},{row: 0, col: 0},{row: 0, col: 0},{row: 0, col: 0},{row: 0, col: 0},{row: 0, col: 0},{row: 0, col: 0},{row: 0, col: 0},{row: 0, col: 0},{row: 0, col: 0}];
+
+frontEndHandler.difficultyValues = {
+  'easy': 9999999,
+  'medium': 9999999,
+  'hard': 9999999
+}
+
+frontEndHandler.solutions = {
+        "easy": ['BD'],
+        "medium": ['BD'],
+        "hard": ['BD']
+}

@@ -3,11 +3,13 @@
 #this can also be called from package.json via "npm run main"
 
 #this must be run from the icebreaker directory
+
 pwd_dir=${PWD##*/}
 full_path=$(pwd)
 host_var=$(dig +short localhost)
 
-if [[ ! ${pwd_dir,,} == "icebreaker" ]]; then
+
+if [[ ! (${pwd_dir,,} == "icebreaker" || ${pwd_dir,,} == "src") ]]; then
     echo "script must be run from the icebreaker directory"
     exit 1
 fi
@@ -35,9 +37,11 @@ if [ "${AUTO_KILL_PREVIOUS_PROCESS}" == "true" ]; then
     npm run kill_main
 fi
 
-node --env-file=${env_file_path} "private/admin-js/admin-panel.cjs" &
 
-
+if [ "${IS_ADMIN}" == "true" ]; then
+    node --env-file=${env_file_path} "private/admin-js/main.cjs"
+    exit 0
+fi
 
 # up to the user:
 MAC_TAB=$(printenv MAC_TAB)
@@ -62,9 +66,7 @@ echo "$windowid" > /tmp/icebreaker/admin_panel_window_id.txt
 fi
 result=$?
 
-
 if [ "${AUTO_KILL_PREVIOUS_PROCESS}" == "true" ]; then
     echo -e "\e[38;5;208m[  Auto killed any previous processes  ] \n -------------------------------------- \n         [ Toggle this in .env ]\e[0m"
     echo -e "\n\n \e[1;32mServer Started Successfully...\e[0m"
 fi
-
