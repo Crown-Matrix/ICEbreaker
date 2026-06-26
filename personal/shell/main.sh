@@ -38,10 +38,9 @@ if [ "${AUTO_KILL_PREVIOUS_PROCESS}" == "true" ]; then
 fi
 
 
-if [ "${IS_ADMIN}" == "true" ]; then
-    node --env-file=${env_file_path} "private/admin-js/main.cjs"
-    exit 0
-fi
+
+node --env-file=${env_file_path} "private/admin-js/main.cjs"
+
 
 # up to the user:
 MAC_TAB=$(printenv MAC_TAB)
@@ -57,7 +56,7 @@ tell application \"Terminal\"
 end tell
 ")
 if [ "${ADMIN_OPEN}" == "true" ]; then
-    osascript -e "open location \"http://localhost:4000\" "
+    osascript -e "open location \"http://localhost:3000/admin-panel\" "
 fi
 mkdir -pv /tmp/icebreaker
 echo "$windowid" > /tmp/icebreaker/admin_panel_window_id.txt
