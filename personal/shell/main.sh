@@ -10,7 +10,7 @@ host_var=$(dig +short localhost)
 
 
 if [[ ! (${pwd_dir,,} == "icebreaker" || ${pwd_dir,,} == "src") ]]; then
-    echo "script must be run from the icebreaker directory"
+    echo "script must be run from the main directory"
     exit 1
 fi
 
