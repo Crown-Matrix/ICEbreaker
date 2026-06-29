@@ -618,27 +618,17 @@ app.get('/', (req, res) => {
 app.get('/singlePlayer', (req, res) => {
   const userIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   const queries = req.query;
-  const testing_mode = queries.testing === 'true'; // Access the testing query parameter, e.g., /singlePlayer?testing=true
-  // Serve singlePlayer html
-  if (testing_mode) {
-    res.status(200).sendFile('singlePlayer/singlePlayerIndex.html', { root: "./public" });
-  } else {
+  // Serve singlePlayer reference html
     res.status(200).sendFile('singlePlayer/singlePlayerReference.html', { root: "./public" }, (err) => {
       if (err) {
         console.error('Error sending singlePlayerTitle.html:', err);
         res.status(500).send('Internal Server Error');
-      } else {
-        //console.log('singlePlayerTitle.html sent successfully to IP:', userIp);
       }
     });
-  }
 });
 
 app.get('/singlePlayer/reference', (req, res) => {
   res.status(200).sendFile('singlePlayer/singlePlayerReference.html', { root: "./public" });
-});
-app.get('/singlePlayer/admin', (req, res) => {
-  res.status(418).send('COFFEE REQUEST RECEIVED...  CHECK CONSOLE');
 });
 
 app.get('/singlePlayer/result', (req, res) => {

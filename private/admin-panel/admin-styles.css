@@ -1,3 +1,6 @@
+
+@import url('/admin-panel/admin-window-styles.css');
+
 :root {
 
 --default-window-width: 400px;
