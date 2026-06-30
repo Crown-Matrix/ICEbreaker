@@ -71,35 +71,55 @@ neon green/red terminal effects.
 
 #### Environment Dependencies:
 - Node (required)
-- homebrew (optional, for installing node if node is not already installed)
 
+#### Install Node (skip if you already have it installed)
 
-install homebrew(optional for installing node)
+You just need Node installed by whatever method works for you. A few options:
+
+**Option A — Official installer (all platforms, easiest)**
+Download and run the installer from [nodejs.org](https://nodejs.org) — it includes npm.
+
+**Option B — Homebrew (macOS/Linux)**
 ```bash
-/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)";
-#installs homebrew
+# 1. Install Homebrew (skip if already installed)
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+# Homebrew will print some setup commands tailored to your system — run those too
 
-echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile;
-#adds homebrew to your zsh profiles;
-
-eval "$(/opt/homebrew/bin/brew shellenv)";
-#enters the profile with homebrew in it;
+# 2. Install Node
+brew install node
 ```
 
-install node (using homebrew or something else, this example is with homebrew)
+**Option C — winget (Windows)**
 ```bash
-brew install node;
-#uses homebrew to install node;
+winget install OpenJS.NodeJS.LTS
 ```
 
-Once node is installed:
+**Option D — nvm (any platform, lets you manage multiple Node versions)**
 ```bash
-git clone https://github.com/Crown-Matrix/ICEbreaker.git;
+curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.40.5/install.sh | bash
+```
+Then close and relaunch your terminal window
+```bash
+nvm install --lts
+```
 
-cd ICEbreaker;
+**Important:** Now that you have node installed, reopen your terminal to ensure its loaded in the profile
 
-npm install;
 
+
+Verify it worked (In new terminal window):
+```bash
+node -v
+npm -v
+```
+
+#### Once Node is installed:
+```bash
+git clone https://github.com/Crown-Matrix/ICEbreaker.git
+
+cd ICEbreaker
+
+npm install
 ```
 
 ### Method 1: Localhost
