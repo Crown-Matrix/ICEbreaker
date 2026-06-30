@@ -69,6 +69,30 @@ neon green/red terminal effects.
 
 ### First-Time Installation
 
+#### Environment Dependencies:
+- Node (required)
+- homebrew (optional, for installing node if node is not already installed)
+
+
+install homebrew(optional for installing node)
+```bash
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)";
+#installs homebrew
+
+echo 'eval "$(/opt/homebrew/bin/brew shellenv)"' >> ~/.zprofile;
+#adds homebrew to your zsh profiles;
+
+eval "$(/opt/homebrew/bin/brew shellenv)";
+#enters the profile with homebrew in it;
+```
+
+install node (using homebrew or something else, this example is with homebrew)
+```bash
+brew install node;
+#uses homebrew to install node;
+```
+
+Once node is installed:
 ```bash
 git clone https://github.com/Crown-Matrix/ICEbreaker.git;
 
