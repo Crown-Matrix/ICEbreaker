@@ -41,16 +41,22 @@ fi
 
 MAC_TAB=$(printenv MAC_TAB)
 ADMIN_OPEN=$(printenv ADMIN_OPEN)
+USE_EXEC=$(printenv MAC_TAB_USE_EXEC)
+EXEC_PREFIX=""
+if [ "$USE_EXEC" = "true" ]; then
+    EXEC_PREFIX="exec "
+fi
 
 if [ "$(uname)" == "Darwin" ] && [ "${MAC_TAB}" == "true" ]; then
 windowid=$(osascript -e "
 tell application \"Terminal\"
     activate
-    do script \"source ~/.zshrc; cd ${full_path} && echo && node ./private/admin-js/main.cjs\"
+    do script \"source ~/.zshrc; cd ${full_path} && echo && set -a && source ${env_file_path} && set +a && ${EXEC_PREFIX} node ./private/admin-js/main.cjs\"
 
     return id of front window
 end tell
 ")
+# the set -a ensures that the env vars are exported to the node process, and set +a disables it after sourcing the env file
 if [ "${ADMIN_OPEN}" == "true" ]; then
     osascript -e "open location \"http://localhost:3000/admin-panel\" "
 fi

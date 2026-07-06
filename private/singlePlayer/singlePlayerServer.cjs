@@ -1,18 +1,13 @@
 //code to handle single player interactions and logic
 // data will be stored in classes and objects, and will be manipulated based on user input and game state
 
-const codeMatrix = require("../../public/js/codeMatrix.js");
 
-const express = require('express');
-const app = express();
+const { join } = require('path');
 
-const { createServer } = require('node:http');
-const { join } = require('node:path');
-const cookieParser = require("cookie-parser");
-app.use(cookieParser());
+const { SQL_Manager_Instance, PORT, codeMatrix , express, app, createServer, cookieParser, Server, server } = require(join(__dirname, '../admin-js/server-core.cjs'));
 
-const { Server } = require('socket.io');
-const server = createServer(app);
+
+
 const io = new Server(server, {
   path: "/singlePlayer/socket" // Set the path for Socket.IO connections
 });
@@ -23,20 +18,10 @@ const difficultyValues = {
   'hard': 500
 }
 
-const DEFAULT_PORT = 3000;
-const PORT = process.env.ICEBREAKER_PORT || DEFAULT_PORT;
 
 
-class SQLManager {
-  constructor() {
-    let mySQL = require('../admin-js/SQL.cjs');
-    for (const [key, value] of Object.entries(mySQL)) {
-      this[key] = value;
-    }
-  }
-}
 
-const SQL_Manager_Instance = new SQLManager();
+
 
 
 
@@ -261,45 +246,7 @@ add eddies to user account based on scoreToEddies()
 
 
 
-app.use((req, res, next) => {
-  let ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress;
 
-  let sessionToken = req.cookies.sessionToken
-
-  let UUID = sessionToken ?
-    SQL_Manager_Instance.sessionTokenToUUID(sessionToken) : null;
-
-  let isUserBanned = UUID ?
-    SQL_Manager_Instance.isUUIDBanned(UUID) : false;
-
-  if (isUserBanned) {
-    console.warn('Banned user attempted to access path:', req.path, 'UUID:', UUID);
-    return res.status(403).sendFile('/auth/banned.html', { root: './public' });
-  }
-
-  if (
-    req.path === '/banned' ||
-    req.path === '/favicon.ico' ||
-    req.path.startsWith('/.well-known/')
-  ) {
-    return next();
-  }
-
-  if (!ip) {
-    console.warn('No IP address found in request for path:', req.path);
-    return res.status(400).send('Bad Request: No IP address found');
-  }
-
-  if (SQL_Manager_Instance.isIPBanned(ip)) {
-    console.warn('Banned IP attempted to access path:', req.path, 'IP:', ip);
-    return res.status(403).sendFile('/auth/banned.html', { root: './public' });
-  }
-  next();
-});
-
-
-
-app.use(express.static('public'));
 
 
 
@@ -569,51 +516,11 @@ io.on('connection', async (socket) => {
   }
 });
 
-app.use(express.json()); // Middleware to parse JSON bodies from incoming requests
 
-app.post('/auth/log-out', (req, res) => {
-  const sessionToken = SQL_Manager_Instance.auth.getSessionTokenFromRequest(req);
-  if (sessionToken) {
-    SQL_Manager_Instance.deleteSessionToken(sessionToken); // Invalidate the session token on the server side to log the user out
-  }
-  res.clearCookie('sessionToken'); // Clear the session token cookie on the client side
-  res.status(200).json({ message: 'Logged out successfully' });
-});
 
-app.get('/auth/log-out', (req, res) => {
-  res.status(200).sendFile('auth/log-out.html', { root: './public' });
-});
 
-app.get('/auth/log-in', (req, res) => {
-  res.status(200).sendFile('auth/log-in.html', { root: './public' });
-});
 
-app.get('/auth/sign-up', (req, res) => {
-  res.status(200).sendFile('auth/sign-up.html', { root: './public' });
-});
 
-app.post('/auth/log-in', async (req, res) => {
-  // check if username and password pair is valid
-  const { username, password } = req.body;
-  if (!username || !password) {
-    return res.status(400).json({ message: 'Username and password are required.' });
-  }
-
-  const isValid = await SQL_Manager_Instance.passwordMatch(username, password);
-  if (isValid) {
-    const userUUID = SQL_Manager_Instance.getUUIDFromUsername(username);
-    const sessionToken = SQL_Manager_Instance.createSessionTokenForUUID(userUUID);
-    SQL_Manager_Instance.auth.sendSessionTokenAsCookie(res, sessionToken);
-    return res.status(200).json({ message: 'Logged in successfully' });
-  } else {
-    return res.status(401).json({ message: 'Invalid username or password.' });
-  }
-});
-
-app.get('/', (req, res) => {
-  //temp redirect to single player page for testing
-  res.redirect('/singlePlayer');
-});
 
 app.get('/singlePlayer', (req, res) => {
   const userIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
@@ -646,68 +553,6 @@ app.get('/singlePlayer/auth/:page', (req, res) => {
 });
 
 
-app.use('/admin-panel', express.static(join(__dirname, '../admin-panel/')));
-app.get('/admin-panel', (req, res) => {
-  res.status(200).sendFile('admin-panel/admin.html', { root: './private' });
-});
-
-
-app.get('/auth/sign-up', (req, res) => {
-  res.status(200).sendFile('auth/sign-up.html', { root: __dirname + '../private' });
-});
-
-app.post('/auth/sign-up', (req, res) => {
-  //check if username taken
-  const { username, password } = req.body
-
-  if (!username || !password) {
-    return res.status(400).json({ message: 'Username and password are required.' });
-  }
-  const username_existence = SQL_Manager_Instance.getUserByUsername(username)
-
-  if (!username_existence) {
-    let newUUID = SQL_Manager_Instance.createUser(username, password);
-    return res.status(201).cookie('sessionToken', SQL_Manager_Instance.createSessionTokenForUUID(newUUID)).json({
-      message: 'User created successfully.',
-      UUID: newUUID,
-    })
-  } else {
-    return res.status(409).json({ message: 'username already taken!' })
-  }
-})
-
-app.get('/auth/checkForUsername/:username', async (req, res) => {
-  try {
-    const username = req.params.username?.trim().toLowerCase();
-    console.log(username)
-
-    if (!username || username.length < 3) {
-      return res.status(400).json({ error: "Invalid username" });
-    }
-
-    const user = await SQL_Manager_Instance.getUserByUsername(username);
-
-    return res.status(200).json({
-      available: !user
-    });
-
-  } catch (err) {
-    console.error(err);
-    return res.status(500).json({ error: "Server error" });
-  }
-});
-
-app.get('/banned', (req, res) => {
-  res.status(403).sendFile('/auth/banned.html', { root: './public' });
-});
-
-
-// Start the server
-
-server. listen(PORT, () => {
-  console.log(`Server is running at http://localhost:${PORT}`);
-  console.log(' ') //newline
-});
 
 
 //Browser opens index.html
@@ -722,7 +567,7 @@ server. listen(PORT, () => {
 //        ↓
 //Session destroyed
 
-//if this file is being required(), return the backend admin isntance
+//return the backend admin isntance to main.cjs
 module.exports = {
   backEndAdminInstance,
   SQL_Manager_Instance
