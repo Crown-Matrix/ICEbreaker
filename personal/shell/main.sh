@@ -39,11 +39,6 @@ if [ "${AUTO_KILL_PREVIOUS_PROCESS}" == "true" ]; then
 fi
 
 
-
-node --env-file=${env_file_path} "private/admin-js/main.cjs"
-
-
-# up to the user:
 MAC_TAB=$(printenv MAC_TAB)
 ADMIN_OPEN=$(printenv ADMIN_OPEN)
 

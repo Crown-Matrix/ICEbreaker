@@ -29,4 +29,4 @@ server=$(printenv "ICEBREAKER_PORT");
 
 
 echo "$server" | ./personal/shell/kill_process.sh $ICEBREAKER_PORT;
-echo -e "\e[1;32m\nProcesses killed successfully\n\e[0m"
+echo -e "\e[1;32m\nProcesses port is clear - Successful\n\e[0m"

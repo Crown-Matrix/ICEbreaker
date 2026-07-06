@@ -44,7 +44,7 @@ if (process.env.TEST_MODE === 'true') {
                 console.log('shutdown - Shutdown the server & Processes');
             } else if (command === 'exit') {
                 console.log('Exiting...');
-                rl.close(); e
+                rl.close();
                 return;
             } else if (command === 'shutdown') {
                 console.log('Shutting down...');
