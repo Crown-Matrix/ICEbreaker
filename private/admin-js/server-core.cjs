@@ -186,21 +186,41 @@ app.all('/admin-panel{/*splat}', (req, res, next) => {
   next();
 });
 
-app.get('/admin-panel/api/:endpoint', (req, res) => {
+app.get('/admin-panel/api/:endpoint{/:subendpoint}', (req, res) => {
   //auth is handled in above middleware
 
   const endpoint = req.params.endpoint.toLowerCase();
+  const subendpoint = req.params.subendpoint?.toLowerCase();
 
   switch (endpoint) {
     case 'singleplayer':
-        res.status(200).json(singlePlayer.backEndAdminInstance); //return the singlePlayer osInfo object
+      if (subendpoint === 'os') {
+        res.status(200).json(singlePlayer.backEndAdminInstance.osInfo.os); //return the singlePlayer osInfo object
+      } else if (subendpoint === 'analytics') {
+        res.status(200).json(singlePlayer.backEndAdminInstance.osInfo.analytics); //return the singlePlayer analytics object
+      } else {
+        res.status(200).json(singlePlayer.backEndAdminInstance) //return whole thing
+      }
+      break;
         // Handle singlePlayer API request
-        break;
     case 'multiplayer':
         // Handle multiPlayer API request
         break;
     case 'all':
+        const response = {
+          singlePlayer: singlePlayer.backEndAdminInstance,
+          //multiPlayer: multiPlayer.backEndAdminInstance
+        }
+        res.status(200).json(response);
+        break;
         // Handle all API request
+        break;
+    case 'analytics':
+        const analytics_response = new Object();
+        for (const [key, obj] of Object.entries(coreOSInfo['analytics'])) {
+            analytics_response[key] = obj.value; //theres a value property on each osInfo object, next to the description property
+        }
+        res.status(200).json(analytics_response);
         break;
     case 'os':
         const os_response = new Object();

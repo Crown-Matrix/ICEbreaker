@@ -1,32 +1,31 @@
 const LOCATIONS = {
-    Overview: [
+    "Overview": [
         "Dashboard",
         "Monitor"],
 
-    Players: [
+    "Players": [
         "All users",
         "Banlist"],
 
-    Single_Player: [
+    "Single_Player": [
         "Active Backends",
         "Logs",
         "Server config",
         "Server Controls"],
 
-    Multi_Player: [
+    "Multi_Player": [
         "Active Backends",
         "Logs",
         "Server config",
         "Server Controls"],
 
-    System: [
+    "System": [
         "Database",
         "Terminal",
         "Logs",
         "Controls"
     ]
 }
-
 
 const example_location = {
     group: "Players",
