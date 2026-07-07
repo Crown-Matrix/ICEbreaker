@@ -2,6 +2,7 @@
 //import modules
 const readline = require('readline');
 const { spawn } = require("child_process");
+const os = require('os');
 
 const rl = readline.createInterface({
     input: process.stdin,
@@ -25,9 +26,10 @@ const DEFAULT_PORT = 3000;
 const port = process.env.ICEBREAKER_PORT || DEFAULT_PORT;
 
 
-singlePlayer = require('../singlePlayer/singlePlayerServer.cjs')
+const singlePlayer = require('../singlePlayer/singlePlayerServer.cjs')
 //multiPlayer = require('../multiPlayer/multiPlayerServer.cjs')
-singlePlayerAdminInstance = singlePlayer.backEndAdminInstance;
+const singlePlayerAdminInstance = singlePlayer.backEndAdminInstance;
+const singlePlayerOsInfo = singlePlayerAdminInstance.osInfo;
 
 
 

@@ -1,0 +1,449 @@
+===============================================================================
+NODE.JS "OS" MODULE - COMPLETE REFERENCE
+===============================================================================
+Import with:
+  const os = require('os');
+  // or ESM:
+  import os from 'os';
+
+This module provides operating system-related utility methods and properties.
+It is cross-platform, so some fields behave differently (or are stubbed) on
+Windows vs. macOS (Darwin) vs. Linux. Notes on platform differences are
+included throughout.
+
+===============================================================================
+1. os.arch()
+===============================================================================
+SIGNATURE:  os.arch()
+RETURNS:    string
+
+Returns the CPU architecture that the Node.js BINARY was compiled for. This
+is NOT necessarily the actual hardware architecture (see os.machine() below).
+Equivalent to process.arch.
+
+Possible values include: 'arm', 'arm64', 'ia32', 'loong64', 'mips',
+'mipsel', 'ppc', 'ppc64', 'riscv64', 's390', 's390x', 'x64'.
+
+EXAMPLE:
+  console.log(os.arch()); // 'arm64'
+
+NOTE: If running an x64 build of Node under emulation (e.g. Rosetta 2 on
+Apple Silicon), os.arch() reports 'x64' even though the real hardware is
+arm64. Use os.machine() to get the true hardware architecture.
+
+===============================================================================
+2. os.machine()
+===============================================================================
+SIGNATURE:  os.machine()
+RETURNS:    string
+ADDED IN:   v18.9.0
+
+Returns the machine's hardware architecture as reported by the OS/kernel
+(equivalent to running `uname -m` on Unix systems). Unlike os.arch(), this
+reflects the actual physical hardware, not the compiled Node binary.
+
+EXAMPLE:
+  console.log(os.machine()); // 'arm64'
+
+===============================================================================
+3. os.cpus()
+===============================================================================
+SIGNATURE:  os.cpus()
+RETURNS:    Array<Object>  (one object per logical CPU core)
+
+Each object has the shape:
+  {
+    model: string,     // CPU model name (same string for every core)
+    speed: number,      // clock speed in MHz (see caveat below)
+    times: {
+      user: number,     // ms spent in user-space code
+      nice: number,     // ms spent on "niced" (lowered-priority) processes
+      sys:  number,     // ms spent in kernel/system code
+      idle: number,     // ms spent idle
+      irq:  number      // ms spent servicing hardware interrupts
+    }
+  }
+
+All `times` values are CUMULATIVE milliseconds since system boot -- not
+point-in-time percentages. To compute "CPU usage %", sample os.cpus() twice
+with a delay and calculate the delta of each bucket over the delta of total
+time.
+
+PLATFORM CAVEATS:
+- On Apple Silicon (M-series Macs), `speed` is often a static filler value
+  (e.g. 2400) for every core -- macOS doesn't expose real live per-core
+  clock speed through the API Node uses, so this number is NOT reliable
+  there.
+- On macOS, `nice` and `irq` are always 0 -- Darwin doesn't track these
+  separately from `user`/`sys`.
+- The array length equals the number of LOGICAL cores (all P-cores + E-cores
+  combined on Apple Silicon). Node does not distinguish performance vs.
+  efficiency cores in this API.
+
+EXAMPLE OUTPUT (Apple M4 Pro, 12-core):
+  [
+    {
+      model: 'Apple M4 Pro',
+      speed: 2400,
+      times: { user: 31961130, nice: 0, sys: 17191490, idle: 127606890, irq: 0 }
+    },
+    // ... 11 more entries
+  ]
+
+TIP: To reliably distinguish performance vs. efficiency cores on Apple
+Silicon, you need a native call to:
+  sysctl -n hw.perflevel0.physicalcpu   // performance cores
+  sysctl -n hw.perflevel1.physicalcpu   // efficiency cores
+(Not available directly through os.cpus().)
+
+===============================================================================
+4. os.endianness()
+===============================================================================
+SIGNATURE:  os.endianness()
+RETURNS:    string -- either 'BE' (big endian) or 'LE' (little endian)
+
+Returns the endianness of the CPU. Almost all modern consumer hardware
+(x64, Apple Silicon) is little-endian.
+
+EXAMPLE:
+  console.log(os.endianness()); // 'LE'
+
+===============================================================================
+5. os.freemem()
+===============================================================================
+SIGNATURE:  os.freemem()
+RETURNS:    number -- bytes of free system memory
+
+EXAMPLE:
+  console.log(os.freemem());               // 2147483648
+  console.log(os.freemem() / (1024 ** 3));  // 2 (GB)
+
+NOTE: "Free" memory on modern OSes can be misleading -- macOS/Linux
+aggressively use "free" RAM for disk caching, which is reclaimed on demand.
+Low os.freemem() does not necessarily mean the system is under memory
+pressure.
+
+===============================================================================
+6. os.totalmem()
+===============================================================================
+SIGNATURE:  os.totalmem()
+RETURNS:    number -- total installed system memory, in bytes
+
+EXAMPLE:
+  console.log(os.totalmem());               // 36507222016
+  console.log(os.totalmem() / (1024 ** 3));  // ~34 (GB)
+
+===============================================================================
+7. os.getPriority([pid])
+===============================================================================
+SIGNATURE:  os.getPriority([pid])
+PARAMETERS: pid (number, optional) -- process ID; defaults to 0 (current process)
+RETURNS:    number -- scheduling priority
+
+EXAMPLE:
+  console.log(os.getPriority());     // priority of current process
+  console.log(os.getPriority(1234)); // priority of process 1234
+
+===============================================================================
+8. os.setPriority([pid, ]priority)
+===============================================================================
+SIGNATURE:  os.setPriority([pid, ]priority)
+PARAMETERS:
+  pid (number, optional) -- process ID; defaults to 0 (current process)
+  priority (number, required) -- new priority value
+
+Attempts to set the scheduling priority for a process. Requires elevated
+privileges (root/admin) on most systems, depending on the target and value.
+
+EXAMPLE:
+  os.setPriority(1234, os.constants.priority.PRIORITY_HIGH);
+
+===============================================================================
+9. os.homedir()
+===============================================================================
+SIGNATURE:  os.homedir()
+RETURNS:    string -- absolute path to the current user's home directory
+
+EXAMPLE:
+  console.log(os.homedir()); // '/Users/yourname' (macOS) or '/home/yourname' (Linux)
+
+===============================================================================
+10. os.hostname()
+===============================================================================
+SIGNATURE:  os.hostname()
+RETURNS:    string -- the hostname of the operating system
+
+EXAMPLE:
+  console.log(os.hostname()); // 'MacBook-Pro.local'
+
+===============================================================================
+11. os.loadavg()
+===============================================================================
+SIGNATURE:  os.loadavg()
+RETURNS:    Array<number> -- exactly 3 floats
+
+Returns [1-minute, 5-minute, 15-minute] load averages, a Unix kernel concept
+representing the average number of processes running or waiting for CPU
+time over that window.
+
+EXAMPLE:
+  console.log(os.loadavg()); // [ 2.19921875, 2.35205078125, 2.28466796875 ]
+
+INTERPRETATION:
+  A load value is relative to your core count. E.g., a load of 2.0 on a
+  2-core machine means ~100% average utilization, while the same 2.0 on a
+  12-core machine means only ~17% utilization.
+  Comparing the three numbers shows the trend:
+    1-min < 5-min < 15-min  -> load has been decreasing
+    1-min > 5-min > 15-min  -> load has been climbing
+
+PLATFORM CAVEAT: Always returns [0, 0, 0] on Windows -- no equivalent
+concept exists there.
+
+===============================================================================
+12. os.networkInterfaces()
+===============================================================================
+SIGNATURE:  os.networkInterfaces()
+RETURNS:    Object -- keyed by interface name, NOT an array
+
+Each key maps to an ARRAY of address objects (an interface can have
+multiple addresses: IPv4, IPv6, link-local, etc.)
+
+Each address object has:
+  {
+    address:   string,   // the IP address itself
+    netmask:   string,   // subnet mask for the address
+    family:    string,   // 'IPv4' or 'IPv6'
+    mac:       string,   // MAC address (all zeros for loopback/virtual ifaces)
+    internal:  boolean,  // true = loopback/internal only, false = real network-facing
+    cidr:      string,   // address + prefix length, e.g. '192.168.1.42/24'
+    scopeid:   number    // IPv6 ONLY -- disambiguates link-local addresses
+  }
+
+EXAMPLE OUTPUT:
+  {
+    lo0: [
+      {
+        address: '127.0.0.1',
+        netmask: '255.0.0.0',
+        family: 'IPv4',
+        mac: '00:00:00:00:00:00',
+        internal: true,
+        cidr: '127.0.0.1/8'
+      },
+      {
+        address: '::1',
+        netmask: 'ffff:ffff:ffff:ffff:ffff:ffff:ffff:ffff',
+        family: 'IPv6',
+        mac: '00:00:00:00:00:00',
+        internal: true,
+        cidr: '::1/128',
+        scopeid: 0
+      }
+    ],
+    en0: [
+      {
+        address: '192.168.1.42',
+        netmask: '255.255.255.0',
+        family: 'IPv4',
+        mac: 'a4:83:e7:xx:xx:xx',
+        internal: false,
+        cidr: '192.168.1.42/24'
+      },
+      {
+        address: 'fe80::1c3d:...',
+        netmask: 'ffff:ffff:ffff:ffff::',
+        family: 'IPv6',
+        mac: 'a4:83:e7:xx:xx:xx',
+        internal: false,
+        cidr: 'fe80::1c3d:.../64',
+        scopeid: 4
+      }
+    ]
+  }
+
+COMMON INTERFACE NAMES:
+  macOS:   lo0 (loopback), en0/en1 (Ethernet/Wi-Fi), utun0+ (VPN/tunnel),
+           awdl0 (Apple Wireless Direct Link), bridge0
+  Linux:   lo, eth0, wlan0, docker0
+  Windows: 'Ethernet', 'Wi-Fi'
+
+===============================================================================
+13. os.platform()
+===============================================================================
+SIGNATURE:  os.platform()
+RETURNS:    string -- identifies the operating system platform
+
+Possible values: 'aix', 'darwin', 'freebsd', 'linux', 'openbsd', 'sunos',
+'win32'. Equivalent to process.platform.
+
+EXAMPLE:
+  console.log(os.platform()); // 'darwin'
+
+===============================================================================
+14. os.release()
+===============================================================================
+SIGNATURE:  os.release()
+RETURNS:    string -- OS release/version string (kernel version)
+
+EXAMPLE:
+  console.log(os.release()); // '24.1.0' (Darwin kernel version, macOS)
+
+===============================================================================
+15. os.tmpdir()
+===============================================================================
+SIGNATURE:  os.tmpdir()
+RETURNS:    string -- absolute path to the default directory for temp files
+
+EXAMPLE:
+  console.log(os.tmpdir()); // '/var/folders/xx/.../T/' (macOS) or '/tmp' (Linux)
+
+===============================================================================
+16. os.type()
+===============================================================================
+SIGNATURE:  os.type()
+RETURNS:    string -- OS name, as returned by `uname`
+
+Possible values: 'Linux', 'Darwin' (macOS), 'Windows_NT'.
+
+EXAMPLE:
+  console.log(os.type()); // 'Darwin'
+
+===============================================================================
+17. os.uptime()
+===============================================================================
+SIGNATURE:  os.uptime()
+RETURNS:    number -- system uptime in SECONDS since boot
+
+EXAMPLE:
+  console.log(os.uptime()); // 183822
+
+===============================================================================
+18. os.userInfo([options])
+===============================================================================
+SIGNATURE:  os.userInfo([options])
+PARAMETERS:
+  options (Object, optional)
+    encoding (string) -- character encoding for returned strings; default 'utf8'
+RETURNS:    Object -- info about the current effective user
+
+Shape:
+  {
+    username: string,
+    uid: number,      // -1 on Windows
+    gid: number,      // -1 on Windows
+    shell: string,    // null on Windows
+    homedir: string
+  }
+
+EXAMPLE:
+  console.log(os.userInfo());
+  // {
+  //   username: 'yourname',
+  //   uid: 501,
+  //   gid: 20,
+  //   shell: '/bin/zsh',
+  //   homedir: '/Users/yourname'
+  // }
+
+===============================================================================
+19. os.availableParallelism()
+===============================================================================
+SIGNATURE:  os.availableParallelism()
+RETURNS:    number
+ADDED IN:   v19.4.0 / v18.14.0
+
+Returns the estimated number of parallel threads recommended for the
+current Node instance. Usually equals os.cpus().length, but can be LOWER
+if running inside a container/cgroup with CPU limits (e.g., Docker with
+--cpus=4 reports 4 here even on a 12-core host machine).
+
+This is the PREFERRED way to determine worker-pool / thread-pool sizing,
+rather than os.cpus().length, because it respects runtime CPU restrictions.
+
+EXAMPLE:
+  console.log(os.availableParallelism()); // 12
+
+===============================================================================
+20. os.devNull
+===============================================================================
+TYPE:       string (property, NOT a function)
+VALUE:      Platform-specific path to the "null device"
+              '/dev/null' on POSIX (macOS, Linux)
+              'NUL' on Windows
+
+EXAMPLE:
+  console.log(os.devNull); // '/dev/null'
+
+===============================================================================
+21. os.EOL
+===============================================================================
+TYPE:       string (property, NOT a function)
+VALUE:      Platform-specific end-of-line marker
+              '\n'   on POSIX (macOS, Linux)
+              '\r\n' on Windows
+
+EXAMPLE:
+  console.log(os.EOL === '\n'); // true on macOS/Linux
+
+===============================================================================
+22. os.constants
+===============================================================================
+TYPE:       Object (property, NOT a function)
+
+Contains OS-specific constant values, grouped into sub-objects:
+
+  os.constants.signals
+    Signal constants used with process.kill(), e.g.:
+      SIGHUP, SIGINT, SIGQUIT, SIGILL, SIGTRAP, SIGABRT, SIGKILL,
+      SIGTERM, SIGSTOP, SIGCONT, etc.
+
+  os.constants.errno
+    Error number constants for system errors, e.g.:
+      EPERM, ENOENT, ESRCH, EINTR, EIO, ENXIO, E2BIG, EACCES, EEXIST, etc.
+
+  os.constants.priority
+    Process scheduling priority constants, used with os.setPriority():
+      PRIORITY_LOW, PRIORITY_BELOW_NORMAL, PRIORITY_NORMAL,
+      PRIORITY_ABOVE_NORMAL, PRIORITY_HIGH, PRIORITY_HIGHEST
+
+  os.constants.dlopen
+    Constants for dynamic linking behavior (platform-specific), used
+    internally with things like process.dlopen(); rarely used directly.
+
+EXAMPLE:
+  console.log(os.constants.signals.SIGINT);              // 2
+  console.log(os.constants.priority.PRIORITY_HIGH);       // -14 (platform-dependent)
+  os.setPriority(pid, os.constants.priority.PRIORITY_HIGH);
+
+===============================================================================
+QUICK REFERENCE TABLE
+===============================================================================
+Function/Property           Returns              Notes
+---------------------------  --------------------  --------------------------------
+os.arch()                    string                Node binary's compiled arch
+os.machine()                 string                Actual hardware arch (v18.9+)
+os.cpus()                    Array<Object>          Per-core model/speed/times
+os.endianness()               string                'BE' or 'LE'
+os.freemem()                  number (bytes)
+os.totalmem()                 number (bytes)
+os.getPriority([pid])         number
+os.setPriority([pid,] pri)    undefined             Requires elevated privileges
+os.homedir()                  string                Path
+os.hostname()                 string
+os.loadavg()                  Array<number> (3)     [0,0,0] on Windows
+os.networkInterfaces()        Object (keyed)         Not an array!
+os.platform()                 string
+os.release()                  string
+os.tmpdir()                   string                Path
+os.type()                     string                'Darwin'/'Linux'/'Windows_NT'
+os.uptime()                   number (seconds)
+os.userInfo([options])        Object
+os.availableParallelism()     number                Preferred over cpus().length
+os.devNull                    string (property)      Path constant
+os.EOL                        string (property)      Line-ending constant
+os.constants                  Object (property)      signals/errno/priority/dlopen
+
+===============================================================================
+END OF DOCUMENT
+===============================================================================

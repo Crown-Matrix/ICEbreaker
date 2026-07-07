@@ -3,6 +3,7 @@ const path = require('path');
 const bcrypt = require('bcrypt');
 const { randomUUID, hash, randomBytes } = require('crypto');
 const auth = require('./auth.cjs')
+const TESTING_MODE = process.env.TEST_MODE === 'true' ? true : false;
 
 
 
@@ -51,6 +52,7 @@ function initializeUserTable() {
 0 - default, no extra perks
 1 - VIP, ability to use emotes / costs eddies or irl money
 2 - PREMIUM, ability to use emotes + animation skips + opponent distractions in multiplayer / costs only irl money
+3 - Admin, everything, plus full authentication for admin console access, not available to regular users
 `
 
 
@@ -545,6 +547,27 @@ const unbanUUID = protected_sql((UUID) => {
     return true;
 })
 
+
+const isAdmin = (UUID) => {
+    if (TESTING_MODE) {
+        console.log('Testing Mode: Admin Auto Approved')
+        return true; // In testing mode, all users are considered admins
+    }
+    //they are usually more than 30, this is just a lower bound
+        if (!UUID || UUID.length < 30) {
+        return false; // No UUID provided, cannot be an admin
+    }
+
+
+    const row = db.prepare(`
+    SELECT account_Tier
+    FROM users
+    WHERE account_UUID = ?
+  `).get(UUID);
+
+    return (row && row.account_Tier === 3); // Admin tier is 3
+}
+
 // single player flow:
 
 
@@ -591,4 +614,5 @@ module.exports = {
     banUser,
     unbanIP,
     unbanUUID,
+    isAdmin,
 }

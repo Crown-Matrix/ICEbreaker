@@ -380,5 +380,23 @@ function createDropdownItems() {
 };
 
 
-
-
+function fetchAdminPanelData(endpoint) {
+    const req = fetch(`/admin-panel/api/${endpoint}`)
+    .then(response => {
+        if (!response.ok) {
+            if (response.status == 403) {
+                throw Error('Error 403 - Unauthorized')
+            }
+            throw Error(`Fetch failure - Code: ${response.status}`)
+        }
+        return response.json();
+    })
+    .then(data => {
+        return data;
+    })
+    .catch(error => {
+        console.error('Error fetching admin panel data:', error);
+        return { error: error.message };
+    });
+    return req;
+}

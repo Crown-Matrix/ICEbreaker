@@ -1,11 +1,93 @@
 //code to handle single player interactions and logic
 // data will be stored in classes and objects, and will be manipulated based on user input and game state
-
+//singlePlayerServer.cjs
 
 const { join } = require('path');
 
-const { SQL_Manager_Instance, PORT, codeMatrix , express, app, createServer, cookieParser, Server, server } = require(join(__dirname, '../admin-js/server-core.cjs'));
+const os = require('os');
 
+
+
+const { SQL_Manager_Instance, PORT, codeMatrix, express, app, createServer, cookieParser, Server, server, singlePlayer } = require(join(__dirname, '../admin-js/server-core.cjs'));
+const SERVER_START_TIME = Date.now();
+const osInfo = {
+  os: {
+    arch: {
+      get value() { return os.arch(); },
+      description: 'The operating system CPU architecture for which the Node.js binary was compiled.'
+    },
+    machine: {
+      get value() { return os.machine(); },
+      description: 'Actual hardware architecture, as reported by the OS/kernel.'
+    },
+    endianness: {
+      get value() { return os.endianness(); },
+      description: "Endianness of the CPU: 'BE' (big endian) or 'LE' (little endian)."
+    },
+    homedir: {
+      get value() { return os.homedir(); },
+      description: "Path to the current user's home directory."
+    },
+    hostname: {
+      get value() { return os.hostname(); },
+      description: 'Hostname of the operating system.'
+    },
+    platform: {
+      get value() { return os.platform(); },
+      description: "Operating system platform, e.g. 'darwin', 'linux', 'win32'."
+    },
+    release: {
+      get value() { return os.release(); },
+      description: 'Operating system release/kernel version string.'
+    },
+    tmpdir: {
+      get value() { return os.tmpdir(); },
+      description: 'Default directory for temporary files.'
+    },
+    type: {
+      get value() { return os.type(); },
+      description: "OS name as returned by uname, e.g. 'Darwin', 'Linux', 'Windows_NT'."
+    },
+    userInfo: {
+      get value() { return os.userInfo(); },
+      description: 'Information about the current effective user (username, uid, gid, shell, homedir).'
+    }
+  },
+  analytics: {
+    cpus: {
+      get value() { return os.cpus(); },
+      description: 'Information about each logical CPU core.'
+    },
+    freemem: {
+      get value() { return os.freemem(); },
+      description: 'Amount of free system memory in bytes.'
+    },
+    totalmem: {
+      get value() { return os.totalmem(); },
+      description: 'Total amount of system memory in bytes.'
+    },
+    loadavg: {
+      get value() { return os.loadavg(); },
+      description: '[1, 5, 15]-minute load averages. Always [0, 0, 0] on Windows.'
+    },
+    networkInterfaces: {
+      get value() { return os.networkInterfaces(); },
+      description: 'Network interfaces on the machine, keyed by interface name.'
+    },
+    uptime: {
+      get value() { return os.uptime(); },
+      description: 'System uptime in seconds since boot.'
+    },
+    availableParallelism: {
+      get value() { return os.availableParallelism(); },
+      description: 'Estimated number of parallel threads recommended for this Node instance (respects container/cgroup CPU limits).'
+    },
+    serverRunTime: {
+      get value() { return (Date.now() - SERVER_START_TIME) / 1000; },
+      description: 'Time in seconds since the server started.'
+    }
+  }
+};
 
 
 const io = new Server(server, {
@@ -27,26 +109,28 @@ const difficultyValues = {
 
 class backEndAdmin {
   constructor() {
-    this.activeSessions = new Map(); // Map of sessionId to backEndHandler instances
+    this.activeSessions = {}; // dict of sessionId to backEndHandler instances
+    this.osInfo = osInfo; // Store the OS information for server-core.cjs access for admin panel
   }
   addSession(backEndHandlerInstanceArg) {
-    this.activeSessions.set(backEndHandlerInstanceArg.sessionId, backEndHandlerInstanceArg);
+    this.activeSessions[backEndHandlerInstanceArg.sessionId] = backEndHandlerInstanceArg;
   }
   removeSession(sessionId) {
-    this.activeSessions.delete(sessionId);
+    delete this.activeSessions[sessionId];
   }
 
   summary() {
-    //construct new map with only sessionId and frontEndHandler.gameState
-    let summaryMap = new Map();
-    this.activeSessions.forEach((handlerInstance, sessionId) => {
-      summaryMap.set(sessionId, handlerInstance.frontEndHandler ? handlerInstance.frontEndHandler.gameState : 'no frontEndHandler');
+    //construct new dict with only sessionId and frontEndHandler.gameState
+    let summary = {};
+    Object.values(this.activeSessions).forEach((handlerInstance) => {
+      summary[handlerInstance.sessionId] = handlerInstance.frontEndHandler ? handlerInstance.frontEndHandler.gameState : 'no frontEndHandler';
     });
-    return summaryMap;
+    return summary;
   }
 
 }
 let backEndAdminInstance = new backEndAdmin();
+singlePlayer.backEndAdminInstance = backEndAdminInstance
 
 class backEndHandler {
   constructor(id, timeframe, ip = null, UUID = null, frontEndHandlerArg = null) {
@@ -102,7 +186,7 @@ class backEndHandler {
       }
       rowMode = !rowMode; //toggle mode for next node
       //final validation to ensure coordinates are within bounds of the matrix
-      if (this.frontEndHandler.matrix === null || this.frontEndHandler.matrix.length === 0 || this.frontEndHandler.matrix[0].length === 0) { 
+      if (this.frontEndHandler.matrix === null || this.frontEndHandler.matrix.length === 0 || this.frontEndHandler.matrix[0].length === 0) {
         return false; //matrix is not initialized or empty, cannot validate coordinates
       }
       if (node.row < 0 || node.row >= this.frontEndHandler.matrix.length || node.col < 0 || node.col >= this.frontEndHandler.matrix[0].length) {
@@ -165,7 +249,7 @@ add eddies to user account based on scoreToEddies()
       console.log("DATABASE WRITE - TIMEOUT FALLBACK BLOCK")
       console.log("DATABASEWRITTEN STATUS BEFORE CHECK: ", backEndHandlerInstance.databaseWritten);
       if (!backEndHandlerInstance.isGuest && !backEndHandlerInstance.databaseWritten) {// Only write to the database for signed in users who haven't already triggered a database write for this round, this can help prevent duplicate writes if the user tries to trigger multiple database writes for the same round, while still allowing guests to trigger the event without causing any issues since it will simply not perform any database operations for guests
-        if (backEndHandlerInstance.isBanned) {return } //banned usrs shoudlnt get any database writes
+        if (backEndHandlerInstance.isBanned) { return } //banned usrs shoudlnt get any database writes
         backEndHandlerInstance.databaseWritten = true
         let score = backEndHandlerInstance.score || 0; //get the user's score for the round, this should have been calculated and stored in the front end handler during gameplay, if not, we can default to 0
         let userUUID = backEndHandlerInstance.userInfo.UUID;
@@ -267,23 +351,23 @@ io.use((socket, next) => {
 
 
   let sessionToken = SQL_Manager_Instance.auth.getSessionTokenFromRequest(socket.request);
-  
+
   console.log('Session token received in socket handshake:', sessionToken);
   if (!sessionToken) {
     socket.isGuest = true; //treat user as guest if no session token is found, this will allow them to play the game but with limited features and no ability to save progress or earn rewards, this can help encourage users to create an account and log in for a better experience while still allowing casual play without an account
     return next(); // Allow the connection to proceed as a guest, but log a warning about the missing session token
   }
   const verifiedUUID = SQL_Manager_Instance.sessionTokenToUUID(sessionToken);
-   if (!verifiedUUID) {
-      //token exists but isnt valid, not a big deal
-        socket.isGuest = true;
-        return next();
-    }
-    const isUUIDBanned = SQL_Manager_Instance.isUUIDBanned(verifiedUUID);
-    if (isUUIDBanned) {
-      console.warn('Banned user attempted to connect via socket. UUID:', verifiedUUID);
-      return next(new Error('banned'));
-    }
+  if (!verifiedUUID) {
+    //token exists but isnt valid, not a big deal
+    socket.isGuest = true;
+    return next();
+  }
+  const isUUIDBanned = SQL_Manager_Instance.isUUIDBanned(verifiedUUID);
+  if (isUUIDBanned) {
+    console.warn('Banned user attempted to connect via socket. UUID:', verifiedUUID);
+    return next(new Error('banned'));
+  }
   socket.UUID = verifiedUUID; // Attach the associated user ID to the request object for use in route handlers
   socket.isGuest = false
   console.log('Valid session token found in request, serving single player page');
@@ -427,26 +511,26 @@ io.on('connection', async (socket) => {
                 backEndHandlerInstance.isBanned = true; //mark the user as banned in the handler instance to prevent any further game interactions during this session, this can help mitigate potential damage from tampering attempts by immediately restricting the user's ability to continue playing or manipulating the game after a tampering attempt is detected
                 const reason = 'Client Tampering Detected'
 
-                const createBanMessage = (reason,dayLength) => {
-                    if (dayLength < 1) {
-                      //convert to minutes
-                      const minuteLength = dayLength * 1440
+                const createBanMessage = (reason, dayLength) => {
+                  if (dayLength < 1) {
+                    //convert to minutes
+                    const minuteLength = dayLength * 1440
 
 
-                      return reason + '. ' + `You have been banned for ${minuteLength} ${minuteLength === 1 ? 'minute' : 'minutes'}`
-                    }
+                    return reason + '. ' + `You have been banned for ${minuteLength} ${minuteLength === 1 ? 'minute' : 'minutes'}`
+                  }
 
-                    if (dayLength === 0) { //kick
-                      return reason + ': You have been kicked.'
-                    }
+                  if (dayLength === 0) { //kick
+                    return reason + ': You have been kicked.'
+                  }
 
-                    if (dayLength >= 1) {
-                      return reason + '. ' + `You have been banned for ${dayLength} ${dayLength === 1 ? 'day' : 'days'}`
-                    }
+                  if (dayLength >= 1) {
+                    return reason + '. ' + `You have been banned for ${dayLength} ${dayLength === 1 ? 'day' : 'days'}`
+                  }
                 }
 
 
-                socket.emit('banned', { reason: createBanMessage(reason,banLengthDays), message:'banned' , length: banLengthDays });
+                socket.emit('banned', { reason: createBanMessage(reason, banLengthDays), message: 'banned', length: banLengthDays });
                 setTimeout(() => socket.disconnect(true), 200); //race condition prevention for emit('banned') latency
                 break; // exit the loop after handling the tampering attempt to prevent multiple bans or redundant processing
               }
@@ -526,12 +610,12 @@ app.get('/singlePlayer', (req, res) => {
   const userIp = req.headers['x-forwarded-for'] || req.socket.remoteAddress;
   const queries = req.query;
   // Serve singlePlayer reference html
-    res.status(200).sendFile('singlePlayer/singlePlayerReference.html', { root: "./public" }, (err) => {
-      if (err) {
-        console.error('Error sending singlePlayerTitle.html:', err);
-        res.status(500).send('Internal Server Error');
-      }
-    });
+  res.status(200).sendFile('singlePlayer/singlePlayerReference.html', { root: "./public" }, (err) => {
+    if (err) {
+      console.error('Error sending singlePlayerTitle.html:', err);
+      res.status(500).send('Internal Server Error');
+    }
+  });
 });
 
 app.get('/singlePlayer/reference', (req, res) => {

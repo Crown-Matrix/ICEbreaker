@@ -1,15 +1,99 @@
 
 // this file exports server variables to be used by both singlePlayer and multiPlayer servers
 // they will operate on the same node process, server, and port, but will have different socketIO paths and routes
-
+//server-core.cjs
 const codeMatrix = require("../../public/js/codeMatrix.js");
 
 const express = require('express');
 const app = express();
+const os = require('node:os');
+
+const singlePlayer = {};
+
+const TESTING_MODE = process.env.TEST_MODE === 'true' ? true : false;
 
 const { createServer } = require('node:http');
 const { join } = require('node:path');
 const cookieParser = require("cookie-parser");
+const SERVER_START_TIME = Date.now(); //used to calculate server uptime
+const coreOSInfo = {
+  os: {
+    arch: {
+      get value() { return os.arch(); },
+      description: 'The operating system CPU architecture for which the Node.js binary was compiled.'
+    },
+    machine: {
+      get value() { return os.machine(); },
+      description: 'Actual hardware architecture, as reported by the OS/kernel.'
+    },
+    endianness: {
+      get value() { return os.endianness(); },
+      description: "Endianness of the CPU: 'BE' (big endian) or 'LE' (little endian)."
+    },
+    homedir: {
+      get value() { return os.homedir(); },
+      description: "Path to the current user's home directory."
+    },
+    hostname: {
+      get value() { return os.hostname(); },
+      description: 'Hostname of the operating system.'
+    },
+    platform: {
+      get value() { return os.platform(); },
+      description: "Operating system platform, e.g. 'darwin', 'linux', 'win32'."
+    },
+    release: {
+      get value() { return os.release(); },
+      description: 'Operating system release/kernel version string.'
+    },
+    tmpdir: {
+      get value() { return os.tmpdir(); },
+      description: 'Default directory for temporary files.'
+    },
+    type: {
+      get value() { return os.type(); },
+      description: "OS name as returned by uname, e.g. 'Darwin', 'Linux', 'Windows_NT'."
+    },
+    userInfo: {
+      get value() { return os.userInfo(); },
+      description: 'Information about the current effective user (username, uid, gid, shell, homedir).'
+    }
+  },
+  analytics: {
+    cpus: {
+      get value() { return os.cpus(); },
+      description: 'Information about each logical CPU core.'
+    },
+    freemem: {
+      get value() { return os.freemem(); },
+      description: 'Amount of free system memory in bytes.'
+    },
+    totalmem: {
+      get value() { return os.totalmem(); },
+      description: 'Total amount of system memory in bytes.'
+    },
+    loadavg: {
+      get value() { return os.loadavg(); },
+      description: '[1, 5, 15]-minute load averages. Always [0, 0, 0] on Windows.'
+    },
+    networkInterfaces: {
+      get value() { return os.networkInterfaces(); },
+      description: 'Network interfaces on the machine, keyed by interface name.'
+    },
+    uptime: {
+      get value() { return os.uptime(); },
+      description: 'System uptime in seconds since boot.'
+    },
+    availableParallelism: {
+      get value() { return os.availableParallelism(); },
+      description: 'Estimated number of parallel threads recommended for this Node instance (respects container/cgroup CPU limits).'
+    },
+    serverRunTime: {
+      get value() { return (Date.now() - SERVER_START_TIME) / 1000; },
+      description: 'Time in seconds since the server started.'
+    }
+  }
+};
 
 
 
@@ -83,27 +167,54 @@ app.use((req, res, next) => {
 });
 
 
-
-app.use(express.static('public')); //only after ban check middleware, so banned users cant access static files
-
 /*
     Route handling
 */
 
 app.get('/', (req, res) => {
-  //temp redirect to single player page for testing until multiplayer is created
-  res.redirect('/singlePlayer');
+    //temp redirect to single player page for testing until multiplayer is created
+    res.redirect('/singlePlayer');
 });
 
-app.use('/admin-panel', express.static(join(__dirname, '../admin-panel/')));
-app.get('/admin-panel', (req, res) => {
-  res.status(200).sendFile('admin-panel/admin.html', { root: './private' });
+app.all('/admin-panel{/*splat}', (req, res, next) => {
+    //auth , check if user UUID has admin status, if not, return 403
+  const sessionToken = req.cookies.sessionToken;
+  const UUID = sessionToken ? SQL_Manager_Instance.sessionTokenToUUID(sessionToken) : false;
+  if (!TESTING_MODE && (!UUID || !SQL_Manager_Instance.isAdmin(UUID))) {
+    return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
+  }
+  next();
 });
 
+app.get('/admin-panel/api/:endpoint', (req, res) => {
+  //auth is handled in above middleware
 
-//app.get('/auth/sign-up', (req, res) => {
-//  res.status(200).sendFile('auth/sign-up.html', { root: __dirname + '../private' });
-//});
+  const endpoint = req.params.endpoint.toLowerCase();
+
+  switch (endpoint) {
+    case 'singleplayer':
+        res.status(200).json(singlePlayer.backEndAdminInstance); //return the singlePlayer osInfo object
+        // Handle singlePlayer API request
+        break;
+    case 'multiplayer':
+        // Handle multiPlayer API request
+        break;
+    case 'all':
+        // Handle all API request
+        break;
+    case 'os':
+        const os_response = new Object();
+        for (const [key, obj] of Object.entries(coreOSInfo['os'])) {
+            os_response[key] = obj.value; //theres a value property on each osInfo object, next to the description property
+        }
+        res.status(200).json(os_response);
+        break;
+    default:
+        res.status(404).json({ error: 'Endpoint not found' });
+  }
+});
+
+app.use(express.static('public')); //only after ban check middleware, so banned users cant access static files
 
 app.post('/auth/log-out', (req, res) => {
   const sessionToken = SQL_Manager_Instance.auth.getSessionTokenFromRequest(req);
@@ -187,6 +298,15 @@ app.get('/auth/checkForUsername/:username', async (req, res) => {
 });
 
 
+app.use('/admin-panel', express.static(join(__dirname, '../admin-panel/')));
+app.get('/admin-panel', (req, res) => {
+  //auth is handled in above middleware
+  res.status(200).sendFile('admin-panel/admin.html', { root: './private' });
+});
+
+
+
+
 
 
 // Start server
@@ -201,4 +321,4 @@ server. listen(PORT, () => {
 //exports
 
 // singlePlayer and multiPlayers will both use these variables
-module.exports = { SQL_Manager_Instance, PORT, codeMatrix , express, app, createServer, cookieParser, Server, server };
+module.exports = { SQL_Manager_Instance, PORT, codeMatrix, express, app, createServer, cookieParser, Server, server, singlePlayer };

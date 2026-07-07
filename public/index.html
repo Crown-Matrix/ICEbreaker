@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICEBreaker - Menu</title>
+</head>
+<body>
+    <div class="choices">
+
+        <button>Single Player</button>
+        <button>Multi Player</button>
+    </div>
+</body>
+
+<script>
+
+document.querySelectorAll('button').forEach(button => {
+    button.addEventListener('click', () => {
+        const choice = button.textContent.replace(' ', '');
+        window.location.href = `/${choice.toLowerCase()}`;
+    });
+});
+
+</script>
+</html>
