@@ -27,7 +27,7 @@ const port = process.env.ICEBREAKER_PORT || DEFAULT_PORT;
 
 
 const singlePlayer = require('../singlePlayer/singlePlayerServer.cjs')
-//multiPlayer = require('../multiPlayer/multiPlayerServer.cjs')
+const multiPlayer = require('../multiPlayer/multiPlayerServer.cjs')
 const singlePlayerAdminInstance = singlePlayer.backEndAdminInstance;
 const singlePlayerOsInfo = singlePlayerAdminInstance.osInfo;
 

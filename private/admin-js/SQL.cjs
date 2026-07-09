@@ -145,6 +145,16 @@ const createUser = protected_sql((username, password) => {
     return UUID;
 });
 
+const getUserByUUID = (UUID) => {
+    return db.prepare('SELECT * FROM users WHERE account_UUID = ?').get(UUID)
+};
+
+const getUserProfileByUUID = (UUID) => {
+    //this is the same as getUserByUUID but without things that they wouldnt possibly need, like their password hash, account index, or UUID
+    return db.prepare('SELECT username,sp_games_played,mp_games_Played,mp_games_Won,sp_games_Finished,mp_games_Finished,account_Creation_Date,sp_average_score,mp_average_score,last_login_date,account_tier,eddies FROM users WHERE account_UUID = ?').get(UUID)
+};
+
+
 // no transaction needed — single read + bcrypt compare, no write
 const passwordMatch = (username, password_attempt) => {
     const user = getUserByUsername(username);
@@ -612,7 +622,9 @@ module.exports = {
     isIPBanned,
     isUUIDBanned,
     banUser,
-    unbanIP,
+    unbanIP, 
     unbanUUID,
     isAdmin,
+    getUserByUUID,
+    getUserProfileByUUID,
 }

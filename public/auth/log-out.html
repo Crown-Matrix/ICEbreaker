@@ -190,7 +190,7 @@
 
     <!-- action buttons -->
     <div class="d-flex border-bottom cy-divider">
-      <button class="cy-submit" onclick="window.location.replace('/auth/log-in')">Log Back In</button>
+      <button class="cy-submit" onclick="window.location.replace('/log-in')">Log Back In</button>
       <button class="cy-submit red-btn" onclick="window.location.replace('/singlePlayer')">Guest Access</button>
     </div>
 
@@ -207,7 +207,7 @@
 
   // Call the actual logout endpoint
   
-  fetch('/auth/log-out', {
+  fetch('/log-out', {
     method: 'POST',
     credentials: 'same-origin',
   }).catch((err) => {

@@ -10,10 +10,15 @@ const os = require('node:os');
 
 const singlePlayer = {};
 
+
+
 const TESTING_MODE = process.env.TEST_MODE === 'true' ? true : false;
 
 const { createServer } = require('node:http');
-const { join } = require('node:path');
+const { join, default: path } = require('node:path');
+
+const path_alias = require(join(__dirname, '../Server-Imports/General/path_alias.json'))
+
 const cookieParser = require("cookie-parser");
 const SERVER_START_TIME = Date.now(); //used to calculate server uptime
 const coreOSInfo = {
@@ -98,6 +103,7 @@ const coreOSInfo = {
 
 
 const { Server } = require('socket.io');
+const { url } = require("node:inspector");
 const server = createServer(app);
 
 const DEFAULT_PORT = 3000;
@@ -171,13 +177,64 @@ app.use((req, res, next) => {
     Route handling
 */
 
+const create_precomputed_regexes = () => {
+  const result = {}
+  for (const key of Object.keys(path_alias)) {
+    result[key] = [];
+    for (const value of path_alias[key]) {
+      if (key == value) {
+        throw Error('key must not match value in path alias regex config')
+      }
+      const escapedOld = value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`^/${escapedOld}(?=[/?]|$)`, 'i')
+      result[key].push(regex);
+    }
+  }
+  return result;
+}
+const compiledAliases = create_precomputed_regexes();
+
+app.use((req, res, next) => {
+  /*
+  This middleware targets root level alias of common endpoints using the precomputed regexes.
+  /login is redirected permanently to log-in
+  /register is redirected permanently to sign-up
+  and so on.
+  this targets all unbanned requests and only root-levels:
+  /auth/checkForUsername/register will not be replaced, because /register is not at the root level, /auth is
+
+  aliases and their correct endpoint are defined in Server-Imports/General/path_alias.json
+
+  WARNING: Do not define the actual endpoint as one of the endpoints aliases, this will cause infinite redirects until browser rejects it
+  a bad example: "profile": ["profile","account"]
+  profile[0] should not be there and can cause major problems.
+  */
+  let new_url = req.originalUrl
+  let replaced = false
+
+  outer: //broken once any match is found
+  for (const key of Object.keys(compiledAliases)) {
+    for (const regex of compiledAliases[key]) {
+      if (regex.test(new_url)) {
+        new_url = new_url.replace(regex, `/${key}`)
+        replaced = true;
+        break outer; //only one replacement is possible from the fact that only the 1 root level is considered
+      }
+    }
+  }
+  if (replaced) {
+    return res.status(308).redirect(new_url);
+  }
+  next();
+});
+
 app.get('/', (req, res) => {
-    //temp redirect to single player page for testing until multiplayer is created
-    res.redirect('/singlePlayer');
+  //temp redirect to single player page for testing until multiplayer is created
+  res.redirect('/singlePlayer');
 });
 
 app.all('/admin-panel{/*splat}', (req, res, next) => {
-    //auth , check if user UUID has admin status, if not, return 403
+  //auth , check if user UUID has admin status, if not, return 403
   const sessionToken = req.cookies.sessionToken;
   const UUID = sessionToken ? SQL_Manager_Instance.sessionTokenToUUID(sessionToken) : false;
   if (!TESTING_MODE && (!UUID || !SQL_Manager_Instance.isAdmin(UUID))) {
@@ -202,39 +259,57 @@ app.get('/admin-panel/api/:endpoint{/:subendpoint}', (req, res) => {
         res.status(200).json(singlePlayer.backEndAdminInstance) //return whole thing
       }
       break;
-        // Handle singlePlayer API request
+    // Handle singlePlayer API request
     case 'multiplayer':
-        // Handle multiPlayer API request
-        break;
+      // Handle multiPlayer API request
+      break;
     case 'all':
-        const response = {
-          singlePlayer: singlePlayer.backEndAdminInstance,
-          //multiPlayer: multiPlayer.backEndAdminInstance
-        }
-        res.status(200).json(response);
-        break;
-        // Handle all API request
-        break;
+      const response = {
+        singlePlayer: singlePlayer.backEndAdminInstance,
+        //multiPlayer: multiPlayer.backEndAdminInstance
+      }
+      res.status(200).json(response);
+      break;
+      // Handle all API request
+      break;
     case 'analytics':
-        const analytics_response = new Object();
-        for (const [key, obj] of Object.entries(coreOSInfo['analytics'])) {
-            analytics_response[key] = obj.value; //theres a value property on each osInfo object, next to the description property
-        }
-        res.status(200).json(analytics_response);
-        break;
+      const analytics_response = new Object();
+      for (const [key, obj] of Object.entries(coreOSInfo['analytics'])) {
+        analytics_response[key] = obj.value; //theres a value property on each osInfo object, next to the description property
+      }
+      res.status(200).json(analytics_response);
+      break;
     case 'os':
-        const os_response = new Object();
-        for (const [key, obj] of Object.entries(coreOSInfo['os'])) {
-            os_response[key] = obj.value; //theres a value property on each osInfo object, next to the description property
-        }
-        res.status(200).json(os_response);
-        break;
+      const os_response = new Object();
+      for (const [key, obj] of Object.entries(coreOSInfo['os'])) {
+        os_response[key] = obj.value; //theres a value property on each osInfo object, next to the description property
+      }
+      res.status(200).json(os_response);
+      break;
     default:
-        res.status(404).json({ error: 'Endpoint not found' });
+      res.status(404).json({ error: 'Endpoint not found' });
   }
 });
 
 app.use(express.static('public')); //only after ban check middleware, so banned users cant access static files
+
+app.get('/profile', (req, res) => {
+  res.status(200).sendFile('auth/profile/profile.html', { root: './public' });
+});
+
+app.get('/profile/api/user/:username', (req, res) => {
+  const sessionToken = req.cookies.sessionToken;
+  const UUID = sessionToken ? SQL_Manager_Instance.sessionTokenToUUID(sessionToken) : null;
+  if (!UUID) {
+    return res.status(401).json({ error: 'Unauthorized. Please log in.' });
+  }
+  const requestedUsername = req.params.username;
+  const user_info = SQL_Manager_Instance.getUserProfileByUUID(UUID);
+  if (!user_info || user_info.username !== requestedUsername) {
+    return res.status(403).json({ error: 'Forbidden. You can only access your own profile.' });
+  }
+  res.status(200).json(user_info);
+});
 
 app.post('/auth/log-out', (req, res) => {
   const sessionToken = SQL_Manager_Instance.auth.getSessionTokenFromRequest(req);
@@ -245,16 +320,16 @@ app.post('/auth/log-out', (req, res) => {
   res.status(200).json({ message: 'Logged out successfully' });
 });
 
-app.get('/auth/log-out', (req, res) => {
+app.get('/log-out', (req, res) => {
   res.status(200).sendFile('auth/log-out.html', { root: './public' });
 });
 
-app.get('/auth/log-in', (req, res) => {
+app.get('/log-in', (req, res) => {
   res.status(200).sendFile('auth/log-in.html', { root: './public' });
 });
 
 
-app.post('/auth/log-in', async (req, res) => {
+app.post('/log-in', async (req, res) => {
   // check if username and password pair is valid
   const { username, password } = req.body;
   if (!username || !password) {
@@ -272,11 +347,11 @@ app.post('/auth/log-in', async (req, res) => {
   }
 });
 
-app.get('/auth/sign-up', (req, res) => {
+app.get('/sign-up', (req, res) => {
   res.status(200).sendFile('auth/sign-up.html', { root: './public' });
 });
 
-app.post('/auth/sign-up', (req, res) => {
+app.post('/sign-up', (req, res) => {
   //check if username taken
   const { username, password } = req.body
 
@@ -331,7 +406,7 @@ app.get('/admin-panel', (req, res) => {
 
 // Start server
 
-server. listen(PORT, () => {
+server.listen(PORT, () => {
   console.log(`Server is running at http://localhost:${PORT}`);
   console.log(' ') //newline
 });

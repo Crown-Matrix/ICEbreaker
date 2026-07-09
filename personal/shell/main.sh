@@ -57,8 +57,10 @@ tell application \"Terminal\"
 end tell
 ")
 # the set -a ensures that the env vars are exported to the node process, and set +a disables it after sourcing the env file
+
 if [ "${ADMIN_OPEN}" == "true" ]; then
-    osascript -e "open location \"http://localhost:3000/admin-panel\" "
+    ( sleep 0.67
+    osascript -e "open location \"http://localhost:3000/admin-panel\" " ) &
 fi
 mkdir -pv /tmp/icebreaker
 echo "$windowid" > /tmp/icebreaker/admin_panel_window_id.txt
@@ -71,3 +73,4 @@ if [ "${AUTO_KILL_PREVIOUS_PROCESS}" == "true" ]; then
     echo -e "\e[38;5;208m[  Auto killed any previous processes  ] \n -------------------------------------- \n         [ Toggle this in .env ]\e[0m"
     echo -e "\n\n \e[1;32mServer Started Successfully...\e[0m"
 fi
+wait #for the sleep 3 to end

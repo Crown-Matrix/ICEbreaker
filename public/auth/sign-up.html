@@ -720,7 +720,7 @@
       btnIdle.style.opacity = '0';
       btnBusy.style.opacity = '1';
       try {
-        const res = await fetch('/auth/sign-up', {
+        const res = await fetch('/sign-up', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ username: usernameInput.value.trim(), password: passwordInput.value })

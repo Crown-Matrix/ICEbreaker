@@ -251,7 +251,7 @@
     submitBtn.disabled = true;
 
     try {
-      const res = await fetch('/auth/log-in', {
+      const res = await fetch('/log-in', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ username: u, password: p })

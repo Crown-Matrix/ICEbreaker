@@ -1,0 +1,6 @@
+{
+    "sign-up": ["signup","register"],
+    "log-in": ["sign-in","login","signin"],
+    "log-out": ["sign-out","logout"],
+    "profile": ["account"]
+}
