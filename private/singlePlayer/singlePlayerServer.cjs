@@ -35,7 +35,6 @@ class backEndHandler {
   }
 
   createRound(frontEndHandlerArg) {
-    console.log('creating round');
 
     //generate matrix and solutions
     const matrixSize = 7;
@@ -116,24 +115,11 @@ update average score using the formula in the function: updateGameStats() handle
 there is no win condition for single player, just put false for that parameter just incase
 add eddies to user account based on scoreToEddies()
 */
-    console.log('about to check time inequality?');
-    console.log(backEndHandlerInstance.roundStartTime + backEndHandlerInstance.selectedTimeFrame * 1000 + toleranceMS, "<", Date.now(), '=', backEndHandlerInstance.roundStartTime + backEndHandlerInstance.selectedTimeFrame * 1000 + toleranceMS < Date.now());
-    console.log({
-      roundStartTime: backEndHandlerInstance.roundStartTime,
-      selectedTimeFrame: backEndHandlerInstance.selectedTimeFrame,
-      now: Date.now(),
-      expiresAt:
-        backEndHandlerInstance.roundStartTime +
-        backEndHandlerInstance.selectedTimeFrame * 1000 +
-        toleranceMS
-    });
     if (backEndHandlerInstance.roundStartTime + backEndHandlerInstance.selectedTimeFrame * 1000 + toleranceMS < Date.now()) {
       //reject the end round attempt and mark the round as lost due to time out, this can help prevent cheating by trying to end the round after the time limit has been exceeded, while still providing a small grace period to account for any minor timing issues
       // If the current time has exceeded the round start time plus the selected time frame, then the player has run out of time and loses the round
 
       //this used to be where database was updated, its now a seperate socket io call triggered directly by timer, user has no incentive to want to hack that because it simply means they dont get to receive their rewards
-      console.log("DATABASE WRITE - TIMEOUT FALLBACK BLOCK")
-      console.log("DATABASEWRITTEN STATUS BEFORE CHECK: ", backEndHandlerInstance.databaseWritten);
       if (!backEndHandlerInstance.isGuest && !backEndHandlerInstance.databaseWritten) {// Only write to the database for signed in users who haven't already triggered a database write for this round, this can help prevent duplicate writes if the user tries to trigger multiple database writes for the same round, while still allowing guests to trigger the event without causing any issues since it will simply not perform any database operations for guests
         if (backEndHandlerInstance.isBanned) { return } //banned usrs shoudlnt get any database writes
         backEndHandlerInstance.databaseWritten = true
@@ -143,7 +129,6 @@ add eddies to user account based on scoreToEddies()
         SQL_Manager_Instance.updateGameStats(username, score, 'sp', false);
         SQL_Manager_Instance.addEddies(username, backEndHandlerInstance.scoreToEddies(score)); //add eddies based on the score they achieved in the round, even if they lost, to reward them for their performance and encourage continued play
       } else if (backEndHandlerInstance.isGuest) {
-        console.log('skipping database write cuz guest account')
       }
       return {
         roundResult: 'lost',
@@ -238,7 +223,6 @@ io.use((socket, next) => {
 
   let sessionToken = SQL_Manager_Instance.auth.getSessionTokenFromRequest(socket.request);
 
-  console.log('Session token received in socket handshake:', sessionToken);
   if (!sessionToken) {
     socket.isGuest = true; //treat user as guest if no session token is found, this will allow them to play the game but with limited features and no ability to save progress or earn rewards, this can help encourage users to create an account and log in for a better experience while still allowing casual play without an account
     return next(); // Allow the connection to proceed as a guest, but log a warning about the missing session token
@@ -256,14 +240,10 @@ io.use((socket, next) => {
   }
   socket.UUID = verifiedUUID; // Attach the associated user ID to the request object for use in route handlers
   socket.isGuest = false
-  console.log('Valid session token found in request, serving single player page');
   next();
 });
 
 io.on('connection', async (socket) => {
-
-  console.log('USER CONNECTED TO SINGLE PLAYER - ID:', socket.id);
-
   const defaultTimeFrame = 60; // Default time frame in seconds
   //may be updated by user automatically based on their past preferences
 
@@ -305,11 +285,8 @@ io.on('connection', async (socket) => {
 
         backEndAdminInstance.removeSession(socket.id);
         if (clientSides.includes(reason)) {
-          console.log(`Client side disconnect for socket ${socket.id}. Reason: ${reason}`);
         } else if (serverSides.includes(reason)) {
-          console.log(`Server side disconnect for socket ${socket.id}. Reason: ${reason}`);
         } else {
-          console.log(`Unknown disconnect reason for socket ${socket.id}. Reason: ${reason}`);
         }
 
         // any other cleanup, e.g. saving score, clearing timers, etc.
@@ -330,7 +307,6 @@ io.on('connection', async (socket) => {
       function gameLoopInit() {
         // wait for user start socket event
         socket.on('start_game', () => {
-          console.log('Start game event received')
 
 
           if (backEndHandlerInstance.frontEndHandler.gameState === 'active') {
@@ -433,7 +409,6 @@ io.on('connection', async (socket) => {
         });
 
         socket.on('end_game', (sequence_data) => {
-          console.log('End game event received for socket ID:', socket.id);
           let round_results = backEndHandlerInstance.endRound(backEndHandlerInstance, sequence_data);
           backEndHandlerInstance.frontEndHandler.gameState = round_results.roundResult;
           backEndHandlerInstance.totalSequencesUploaded += round_results.sequencesUploaded || 0; //keep a running total of sequences uploaded across rounds, this is used for end game stats in the result page
@@ -441,7 +416,7 @@ io.on('connection', async (socket) => {
         });
 
         socket.once('database_write', (data) => {
-          console.log('Database write event received for socket ID:', socket.id);
+
           let score = backEndHandlerInstance.score || 0; //get the user's score for the round, this should have been calculated and stored in the front end handler during gameplay, if not, we can default to 0
 
           if (!backEndHandlerInstance.isGuest && !backEndHandlerInstance.databaseWritten) {// Only write to the database for signed in users who haven't already triggered a database write for this round, this can help prevent duplicate writes if the user tries to trigger multiple database writes for the same round, while still allowing guests to trigger the event without causing any issues since it will simply not perform any database operations for guests
@@ -450,8 +425,6 @@ io.on('connection', async (socket) => {
             let username = SQL_Manager_Instance.getUsernameFromUUID(userUUID);
             SQL_Manager_Instance.updateGameStats(username, score, 'sp', false);
             SQL_Manager_Instance.addEddies(username, backEndHandlerInstance.scoreToEddies(score)); //add eddies based on the score they achieved in the round, even if they lost, to reward them for their performance and encourage continued play
-          } else if (backEndHandlerInstance.isGuest) {
-            console.log('skipping database write cuz guest account #2')
           }
 
         });

@@ -171,12 +171,6 @@ const deleteUser = protected_sql((username) => {
 
 
 const updateGameStats = protected_sql((username, appended_score, gameType, gameWon) => {
-    console.log('updateGameStats called', {
-        username,
-        appended_score,
-        gameType,
-        gameWon
-    });
 
     if (!['sp', 'mp'].includes(gameType)) {
         throw new Error('Invalid gameType');
@@ -304,31 +298,6 @@ const friendsCount = (userId) => db.prepare(`
 
 
 
-const addTestingData = () => {
-    const testUsers = [
-        { username: 'alice', password: 'password123' },
-        { username: 'bob', password: 'password456' },
-        { username: 'charlie', password: 'password789' },
-    ];
-
-    testUsers.forEach(user => {
-        try {
-            createUser(user.username, user.password);
-            console.log(`Created user: ${user.username}`);
-        } catch (err) {
-            console.error(`Error creating user ${user.username}:`, err.message);
-        }
-    });
-
-    const alice = getUserByUsername('alice');
-    const bob = getUserByUsername('bob');
-    const charlie = getUserByUsername('charlie');
-
-    sendFriendRequest(alice.id, bob.id);
-    sendFriendRequest(charlie.id, alice.id);
-    acceptFriendRequest(alice.id, charlie.id);
-    console.log('Friend requests/accepts sent')
-}
 
 
 const wipeDatabase = () => {
@@ -560,7 +529,6 @@ const unbanUUID = protected_sql((UUID) => {
 
 const isAdmin = (UUID) => {
     if (TESTING_MODE) {
-        console.log('Testing Mode: Admin Auto Approved')
         return true; // In testing mode, all users are considered admins
     }
     //they are usually more than 30, this is just a lower bound
@@ -606,7 +574,6 @@ module.exports = {
     sendFriendRequest,
     acceptFriendRequest,
     scoreToEddies,
-    addTestingData,
     wipeDatabase,
     getUsernameFromUUID,
     addEddies,

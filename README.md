@@ -1,10 +1,17 @@
 
-
-<div align='center'>
+<div justify-content='center'  style='text-align: center;width:100%;align-items:center;'>
+<div style='width:90%'>
 
 # <span style='color: rgb(0, 255, 255)'>🧊🔨ICE</span><span style='color: rgb(255, 45, 120)'>Breaker🧊🔨</span>
+</div>
 
+<div justify-content='space-between' style="width:10%">
 
+#### Repo Details
+
+</div>
+
+<div justify-content='center' style="width: 90%"> 
 
 ![License](https://img.shields.io/badge/license-All%20Rights%20Reserved-red?style=for-the-badge)
 &emsp;
@@ -12,9 +19,25 @@
 &emsp;
 &emsp;
 ![GitHub last commit](https://img.shields.io/github/last-commit/Crown-Matrix/ICEbreaker?style=for-the-badge)
-
-
 ---
+</div>
+
+
+
+<div justify-content='space-between'>
+
+
+
+
+
+<div justify-content='space-between' style="width:10%">
+
+#### Familiar Tech Stack
+
+</div>
+
+<div style="width:90%">
+
 ![npm](https://img.shields.io/badge/npm-CB3837?style=for-the-badge&logo=npm&logoColor=white)
 ![Node.js](https://img.shields.io/badge/Node.js-339933?style=for-the-badge&logo=nodedotjs&logoColor=white)
 ![JavaScript](https://img.shields.io/badge/JavaScript-F7DF1E?style=for-the-badge&logo=javascript&logoColor=black)
@@ -26,6 +49,16 @@
 ![CSS3](https://img.shields.io/badge/CSS3-1572B6?style=for-the-badge&logo=css3&logoColor=white)
 ![Bootstrap](https://img.shields.io/badge/Bootstrap-v5.3-7952B3?style=for-the-badge&logo=bootstrap&logoColor=white)
 ---
+
+</div>
+
+<div justify-content='space-between' style="width:10%">
+
+#### Additions to Tech Stack
+
+</div>
+
+<div justify-content='space-between' style="width: 90%">
 
 ![Express.js](https://img.shields.io/badge/Express.js-000000?logo=express&logoColor=white)
 ![Socket.IO](https://img.shields.io/badge/Socket.IO-000000?logo=socketdotio&logoColor=white)
@@ -40,11 +73,16 @@
 <img src="https://img.shields.io/badge/Shell_Script-121011?logo=gnu-bash&logoColor=white" style="box-shadow: 0 0 0 0.5px white; border-radius: 4px;"/>
 </div>
 
+</div>
+</div>
+
 #
 ---
 # Table of Contents
 ---
 - [Introduction](#introduction)
+- [Game Tutorial](#game-tutorial)
+    + └─ [Single Player](#single-player)
 - [Usage/Installation](#usage)
     + └─ [Usage](#usage)
     + └─ [Installation](#first-time-installation)
@@ -57,12 +95,56 @@
 #
 # Introduction
 
-ICEbreaker is a browser-based single-player hacking minigame inspired by the
-Cyberpunk 2077 "Breach Protocol" mechanic. Players are presented with a 7x7
-matrix of 2-character hex codes and must select a sequence of cells following
-alternating row/column constraints, with the goal of matching as many "daemon" solution
-sequences as possible before a countdown timer expires. The GUI aesthetic is cyberpunk with
-neon green/red terminal effects.
+**ICEBreaker** is a cyberpunk hacking simulation game that brings the tension of digital infiltration to the browser. Inspired by *Cyberpunk 2077's* Breach Protocol, players take on the role of a system intruder navigating encrypted networks, decoding hexadecimal matrices, and deploying powerful daemon sequences while racing against an unforgiving countdown.
+
+Every breach is a strategic puzzle: analyze the grid, predict the optimal path, chain together valuable exploits, and push the system as far as possible before security locks you out. With a neon terminal aesthetic, immersive cyberpunk atmosphere, and fast-paced decision-making, ICEBreaker turns the process of "hacking" into a high-pressure tactical experience.
+
+Behind the interface is a full-stack architecture built for reliability and scale, featuring real-time communication, custom authentication, persistent user data, and server-authoritative validation. ICEBreaker combines the creativity of a cyberpunk game with the engineering principles of a production-style web application.
+
+---
+# Game Tutorial
+
+## Single Player
+1. Select a timeframe:
+    + This is how long you have to play, longer is easier, shorter is harder
+    + Options are 30 / 45 / 60 seconds, with 60 being the default
+2. After starting the game:
+    + There are 3 main parts of the game for you to keep in mind:
+        - Matrix
+        - Sequences List
+        - Buffer
+    + The matrix - an array of nodes that you can move around either one row or one column at a time, your goal is with this matrix is to plan a route that makes the patterns in the sequences list
+    + The sequences list -  a list of node patterns that you try to make from the matrix, the nodes you select can be in any order and can overlap, so long as they are in your selected node list in the correct adjacent order
+    + Buffer - this is the catch, you can only select a certain amount of nodes per round, the buffer shows you the current nodes you've used and also how many left you can use.
+
+3. How scoring works:
+    + Each pattern in the sequence list has a specific difficulty easy/medium/hard, which means shorter to longer lengths.
+    + Higher difficulties are worth more length, but are also harder to achieve because of their longer length.
+    + At the end of a round, assuming the timer hasn't ended yet, a new one starts with new sequences. These new sequences will add to your achieved score from the last round, until the timer rounds out.
+    + You are not given points for a sequence just by installment, they are scored at the end of round, not including the round ending because of the timer running out.
+    + Your score directly contributes to the earning of "eddies", the in-game currency, allowing you to upgrade your future runs with customization and perks. (Assuming you are not playing as a guest account)
+4. In game screenshots:
+<div style="display: flex; flex-direction: column; align-items: center; gap: 30px; justify-content: center; text-align: center;">
+    <div style="display: flex; flex-direction: row; align-items: center; gap: 10px; margin-right: 30%; text-align: center;">
+    <span style="width: min(500px, 80%);">TimeFrame Selection</span><img style="width: min(650px, 80%); height: auto;" src="./README-CONTENT/timeframe-selection.png" alt="Timeframe Selection">
+    </div>
+    <div style="display: flex; flex-direction: row; align-items: center; gap: 10px; margin-right: 30%; text-align: center;">
+        <span style="width: min(500px, 80%);">Labeled Game GUI</span><img style="width: min(650px, 80%); height: auto;" src="./README-CONTENT/game-elements-labeled.png" alt="Game Elements Labeled">
+    </div>
+    <div style="display: flex; flex-direction: row; align-items: center; gap: 10px; margin-right: 30%; text-align: center;">
+        <span style="width: min(500px, 80%);">Game Round Won</span><img style="width: min(650px, 80%); height: auto;" src="./README-CONTENT/round-won.png" alt="Game Won">
+    </div>
+    <div style="display: flex; flex-direction: row; align-items: center; gap: 10px; margin-right: 30%; text-align: center;">
+        <span style="width: min(500px, 80%);">Game Round Lost</span><img style="width: min(650px, 80%); height: auto;" src="./README-CONTENT/round-lost.png" alt="Game Lost">
+    </div>
+    <div style="display: flex; flex-direction: row; align-items: center; gap: 10px; margin-right: 30%; text-align: center;">
+        <span style="width: min(650px, 80%);">How the Matrix works<br><br>Gameplay Example</span><video style="width: min(650px, 80%); height: auto;" controls poster="./README-CONTENT/gameplay-vid/matrix-game-thumbnail.png">
+        <source src="./README-CONTENT/gameplay-vid/matrix-gameplay-example.mov" type="video/mov">
+        <source src="./README-CONTENT/gameplay-vid/matrix-gameplay-example.mp4" type="video/mp4">
+        <source src="./README-CONTENT/gameplay-vid/matrix-gameplay-example.webm" type="video/webm">
+        Your browser does not support the video tag.</video>
+    </div>
+</div>
 
 ---
 # Usage
@@ -70,9 +152,10 @@ neon green/red terminal effects.
 ### First-Time Installation
 
 #### Environment Dependencies:
-- Node (required)
+- Node (required) - 
 
-#### Install Node (skip if you already have it installed)
+#### ([Skip to this step if already Installed](#once-node-is-installed))
+#### Install Node 
 
 You just need Node installed by whatever method works for you. A few options:
 
@@ -159,64 +242,30 @@ npm install
     + Auto opens the admin-panel after ```npm run main```
 5. TEST_MODE= "true"/"false"
     + Enables/Disables (respectively) the REPL admin console
+6. MAC_TAB_USE_EXEC= "true"/"false"
+    + Disables/Enables (respectively) the usage of a subshell for the node process running the server
 
 ---
 # Architecture
-
-Original Overview - [ICEBreaker-Architecture](https://github.com/crown-matrix/ICEbreaker/blob/main/personal/ICEBreaker_Architecture.png)
-
-```
-┌─────────────────────────────────────────────────────────────────────────────┐
-│  FRONTEND                                                                   │
-│  ┌─────────────────┐ ┌────────────────────┐ ┌──────────────────────────────┐│
-│  │ HTML Pages      │ │     Styling        │ │  Frontend JS (ESM)           ││
-│  │ singlePlayer    │ │   Bootstrap 5.3    │ │  singlePlayerFrontend.js     ││
-│  │ Reference · Res │ │ vibe-cyberpunk.css │ │  codeMatrix.js               ││
-│  │ Auth (login/up) │ │ singlePlayerStyles │ │  audio.js                    ││
-│  └────────┬────────┘ └────────┬───────────┘ └──────────────┬───────────────┘│
-└───────────┼───────────────────┼────────────────────────────┼────────────────┘
-            │                   │  HTTP / Socket.IO          │
-┌───────────▼───────────────────▼────────────────────────────▼────────────────┐
-│  TRANSPORT                                                                  │
-│  ┌───────────────────────────┐  ┌──────────────────────┐  ┌───────────────┐ │
-│  │   HTTP / REST (Express)   │  │    Socket.IO v4      │  │  Auth layer   │ │
-│  │    Static · Auth · API    │  │ Real-time game events│  │ cookie-parser │ │
-│  └─────────────┬─────────────┘  └──────────┬───────────┘  └──────┬────────┘ │
-└────────────────┼────────────────────────────┼────────────────────┼──────────┘
-                 │                            │                    │
-┌────────────────▼────────────────────────────▼────────────────────▼──────────┐
-│  BACKEND                                                                    │
-│   ┌─────────────────────────────┐  ┌──────────────────┐ ┌─────────────────┐ │
-│   │  singlePlayerServer.cjs     │  │ admin-panel.cjs  │ │  main.cjs       │ │
-│   │  backEndHandler (sessions)  │  │ Admin REST API   │ │  Entry + REPL   │ │
-│   │  Anti-cheat · Scoring       │  │ Ban · user mgmt  │ │  console        │ │
-│   └──────────────────┬──────────┘  └────────┬─────────┘ └────────┬────────┘ │
-│                      └─────────────────────┬┘                    │          │
-│  ┌─────────────────────────────────────────▼─────────────────────▼─────────┐│
-│  │  SQL.cjs + auth.cjs — Data Access Layer                                 ││
-│  │  Users · Sessions · Friends · Bans · bcrypt · crypto.randomUUID         ││ 
-│  └──────────────────────────────────────┬──────────────────────────────────┘│ 
-└─────────────────────────────────────────┼───────────────────────────────────┘
-                                          │
-┌─────────────────────────────────────────▼───────────────────────────────────┐
-│  DATABASE                                                                   │
-│  SQLite (better-sqlite3) — ICEbreaker.db                                    │
-│  WAL journal · foreign keys · synchronous ops                               │
-│  Tables: users · sessions · friends · banned                                │
-└─────────────────────────────────────────────────────────────────────────────┘
-```
 
 
 ```mermaid
 graph LR
 
-A[Frontend] --> B[HTTP REST and/or Socket.IO]
+A[Frontend] --> B[Socket.IO]
 B --> C[Express/Socket Middleware\nCookies/Auth/Rate Limiting]
-C --> D[Single-player server]
-C --> E[Multi-player server]
-D --> F[SQLite3\nDatabase]
-E --> F
+A --> Z[HTTP REST]
+Z --> C
+C --> D[Server-Core\nGlobal Handling]
+C --> E[Single-player server]
+E <--> D
+C --> F[Multi-player server]
+F <--> D
+D --> E
+D <--> G[SQLite3\nDatabase]
 ```
+
+Original Overview - [ICEBreaker-Architecture](https://github.com/crown-matrix/ICEbreaker/blob/main/personal/ICEBreaker_Architecture.png)
 
 ## Routes
 
@@ -225,14 +274,21 @@ E --> F
 | `GET` | `/` | Redirect to `/singlePlayer` |
 | `GET` | `/singlePlayer` | Reference/lobby page |
 | `GET` | `/singlePlayer/result` | Post-game results |
-| `GET` | `/auth/log-in` | Login page |
-| `GET` | `/auth/sign-up` | Sign-up page |
-| `GET` | `/auth/log-out` | Logout page |
+| `GET` | `/log-in` | Login page |
+| `GET` | `/sign-up` | Sign-up page |
+| `GET` | `/log-out` | Logout page |
 | `GET` | `/auth/checkForUsername/:u` | `{ available: bool }` for username availability |
-| `POST` | `/auth/log-in` | Login handler |
-| `POST` | `/auth/sign-up` | Registration handler |
-| `POST` | `/auth/log-out` | Logout + clear cookie |
+| `POST` | `/log-in` | Login handler |
+| `POST` | `/sign-up` | Registration handler |
+| `POST` | `/log-out` | Logout + clear cookie |
+| `GET` | `/profile` | View your signed-in account |
 | `GET` | `/banned` | Ban notice page |
+| `GET` | `/admin-panel` | admin-panel html page
+| `GET` | `/admin-panel/api` | admin-panel api endpoint , takes subendpoints for specific desired data
+| `GET` | `/admin-panel/api/[singlePlayer,multiplayer,all(default)]/[os,analytics,all(default)]` | subendpoint key
+
+### Alias System:
+In ```private/Server-Imports/General/path_alias.json```, multiple paths have been aliased, allowing a user to request a synonym of an endpoint and be redirected(with permanent status 308) to the correct endpoint
 
 
 # Features
@@ -277,8 +333,7 @@ E --> F
 | Node symbols | `7A 1C BD 55 E9 FF` | 6 possible values |
 | Max buffer | 9 cells | Server-enforced |
 | Difficulties | Easy / Medium / Hard | 200 / 300 / 500 points |
-| Max score | 1000 per round | All 3 daemons installed |
-| Eddies formula | `((3 × score) / 100) + 25` | Always integer (score is multiple of 100) |
+| Eddies formula | `((3 × score) / 100) + 25` |
 | Time options | 30 / 45 / 60 s | Changeable before round start only, final decision is server-stored |
 | Anti-cheat | Server-side validation | Immutable keys; tampering = auto-ban |
 
@@ -289,10 +344,11 @@ E --> F
 | macOS integration | `main.sh` opens a new Terminal tab for the admin REPL; auto-opens admin panel; configurable in .env |
 | Admin REPL | `readline`-based eval console in `main.cjs` with live access to `db`, `sql`, `auth` |
 | Environment | `.env` file with `ICEBREAKER_PORT`, `AUTO_KILL_PREVIOUS_PROCESS`, `MAC_TAB`, `ADMIN_OPEN` |
+| TEST_MODE | `disables auth ; unlocks applicable parts of the application for testing purposes` |
 
 
 # Planned Features (not yet active)
-- **Admin Panel** - route & structure initialized - awaiting full backend implementation
-- **Multiplayer** — `main.cjs` has a commented-out `require()` for a future MP server
+- **Admin Panel** - route & api structure initialized - awaiting full frontend implementation
+- **Multiplayer** — `backend game logic remaining` for a future MP server
 - **Friends** — Tables and SQL functions complete, no routes or UI yet
-- **Account tiers** — VIP (emotes, costs eddies or IRL money), PREMIUM (emotes + animation skips + opponent distractions, IRL money only)
+- **Account tiers** — VIP (emotes, costs eddies or IRL money), PREMIUM (emotes + animation skips + opponent distractions, IRL money only), ADMIN (full access to everything including admin endpoints, not regular-user obtainable)
