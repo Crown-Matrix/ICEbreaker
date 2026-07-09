@@ -1,3 +1,5 @@
+const os = (function get_value() { return require('node:os'); })()
+const SERVER_START_TIME = Date.now()
 
 const osInfo = {
   os: {

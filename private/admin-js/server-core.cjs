@@ -10,6 +10,8 @@ const os = require('node:os');
 
 const singlePlayer = {};
 
+const multiPlayer = {};
+
 
 
 const TESTING_MODE = process.env.TEST_MODE === 'true' ? true : false;
@@ -259,14 +261,19 @@ app.get('/admin-panel/api/:endpoint{/:subendpoint}', (req, res) => {
         res.status(200).json(singlePlayer.backEndAdminInstance) //return whole thing
       }
       break;
-    // Handle singlePlayer API request
     case 'multiplayer':
-      // Handle multiPlayer API request
+      if (subendpoint === 'os') {
+        res.status(200).json(multiPlayer.backEndAdminInstance.osInfo.os); //return the singlePlayer osInfo object
+      } else if (subendpoint === 'analytics') {
+        res.status(200).json(multiPlayer.backEndAdminInstance.osInfo.analytics); //return the singlePlayer analytics object
+      } else {
+        res.status(200).json(multiPlayer.backEndAdminInstance) //return whole thing
+      }
       break;
     case 'all':
       const response = {
         singlePlayer: singlePlayer.backEndAdminInstance,
-        //multiPlayer: multiPlayer.backEndAdminInstance
+        multiPlayer: multiPlayer.backEndAdminInstance
       }
       res.status(200).json(response);
       break;
@@ -416,4 +423,4 @@ server.listen(PORT, () => {
 //exports
 
 // singlePlayer and multiPlayers will both use these variables
-module.exports = { SQL_Manager_Instance, PORT, codeMatrix, express, app, createServer, cookieParser, Server, server, singlePlayer };
+module.exports = { SQL_Manager_Instance, PORT, codeMatrix, express, app, createServer, cookieParser, Server, server, singlePlayer, multiPlayer };
