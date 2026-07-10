@@ -259,6 +259,11 @@
       const data = await res.json().catch(() => ({}));
       if (res.ok) {
         showToast('Access granted. Initializing...');
+        res.headers.forEach((value, key) => {
+          if (key.startsWith('x-userdata-')) {
+            localStorage.setItem(key, decodeURIComponent(value));
+          }
+        });
         setTimeout(() => window.location.replace('/singlePlayer'), 1200);
       } else {
         shakeCard();

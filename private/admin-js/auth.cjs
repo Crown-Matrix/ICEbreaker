@@ -3,8 +3,6 @@
 // middleware compatibility for express
 
 
-
-
 // grabs cookie from request
 const getSessionTokenFromRequest = (req) => {
   // Express route — cookieParser() already populated req.cookies
@@ -32,7 +30,17 @@ const sendSessionTokenAsCookie = (res, sessionToken) => {
     return res;
 }
 
+const sendStaticUserDataAsHeader = (res, userData) => {
+  console.log(userData)
+  console.log(userData.username)
+  console.log(userData['account_Creation_Date'])
+  res.set('x-userdata-username',encodeURIComponent(userData.username)); // Set the user data in the response headers
+  res.set('x-userdata-accountcreationdate', userData['account_Creation_Date']); // Set the user data in the response headers
+  return res;
+}
+
 module.exports = {
     getSessionTokenFromRequest,
-    sendSessionTokenAsCookie
+    sendSessionTokenAsCookie,
+    sendStaticUserDataAsHeader
 }

@@ -154,6 +154,10 @@ const getUserProfileByUUID = (UUID) => {
     return db.prepare('SELECT username,sp_games_played,mp_games_Played,mp_games_Won,sp_games_Finished,mp_games_Finished,account_Creation_Date,sp_average_score,mp_average_score,last_login_date,account_tier,eddies FROM users WHERE account_UUID = ?').get(UUID)
 };
 
+const getStaticUserDataByUUID = (UUID) => {
+    return db.prepare('SELECT username,account_Creation_Date FROM users WHERE account_UUID = ?').get(UUID)
+}
+
 
 // no transaction needed — single read + bcrypt compare, no write
 const passwordMatch = (username, password_attempt) => {
@@ -594,4 +598,5 @@ module.exports = {
     isAdmin,
     getUserByUUID,
     getUserProfileByUUID,
+    getStaticUserDataByUUID,
 }

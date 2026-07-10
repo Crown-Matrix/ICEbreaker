@@ -12,9 +12,31 @@ const singlePlayer = {};
 
 const multiPlayer = {};
 
+const DISABLE_RATE_LIMIT = process.env.DISABLE_RATE_LIMIT === 'true'
 
 
-const TESTING_MODE = process.env.TEST_MODE === 'true' ? true : false;
+const { rateLimit } = require('express-rate-limit')
+const ipLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 500, // Limit each IP to 500 requests per `window` (here, per 15 minutes).
+  standardHeaders: 'draft-7', //standard
+  legacyHeaders: true, // Enables the `X-RateLimit-*` headers.
+  ipv6Subnet: 56, // Lower is more aggressive, higher is less aggressive
+  skip: () => { return DISABLE_RATE_LIMIT }, // Skip rate limiting if DISABLE_RATE_LIMIT is true
+})
+
+const sessionTokenLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  limit: 500, // Limit each sessionToken to 500 requests per `window` (here, per 15 minutes).
+  standardHeaders: 'draft-7', //standard
+  legacyHeaders: true, // Enables the `X-RateLimit-*` headers.
+  skip: (req) => { return DISABLE_RATE_LIMIT || !req.cookies?.sessionToken; }, // Skip rate limiting if DISABLE_RATE_LIMIT is true
+  keyGenerator: (req) => {
+    return req.cookies?.sessionToken;
+  },
+})
+
+const TESTING_MODE = process.env.TEST_MODE === 'true'
 
 const { createServer } = require('node:http');
 const { join, default: path } = require('node:path');
@@ -132,7 +154,8 @@ app.get('/banned', (req, res) => {
 });
 app.use(cookieParser()); //parse cookies from incoming requests
 app.use(express.json()); //parse JSON bodies]
-
+app.use(ipLimiter); //apply rate limiting to all requests based on ip
+app.use(sessionTokenLimiter); //apply rate limiting to all requests based on sessionToken
 /*
     BAN CHECK MIDDLEWARE
     checks banned table for ip or UUID, if found, redirects to /banned page
@@ -318,12 +341,13 @@ app.get('/profile/api/user/:username', (req, res) => {
   res.status(200).json(user_info);
 });
 
-app.post('/auth/log-out', (req, res) => {
+app.post('/log-out', (req, res) => {
   const sessionToken = SQL_Manager_Instance.auth.getSessionTokenFromRequest(req);
   if (sessionToken) {
     SQL_Manager_Instance.deleteSessionToken(sessionToken); // Invalidate the session token on the server side to log the user out
   }
   res.clearCookie('sessionToken'); // Clear the session token cookie on the client side
+  res.clearCookie('userData'); // Clear the user data cookie on the client side
   res.status(200).json({ message: 'Logged out successfully' });
 });
 
@@ -348,6 +372,7 @@ app.post('/log-in', async (req, res) => {
     const userUUID = SQL_Manager_Instance.getUUIDFromUsername(username);
     const sessionToken = SQL_Manager_Instance.createSessionTokenForUUID(userUUID);
     SQL_Manager_Instance.auth.sendSessionTokenAsCookie(res, sessionToken);
+    SQL_Manager_Instance.auth.sendStaticUserDataAsHeader(res, SQL_Manager_Instance.getStaticUserDataByUUID(userUUID));
     return res.status(200).json({ message: 'Logged in successfully' });
   } else {
     return res.status(401).json({ message: 'Invalid username or password.' });

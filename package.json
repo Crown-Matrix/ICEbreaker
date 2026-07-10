@@ -5,6 +5,7 @@
     "bootstrap": "^5.3.8",
     "cookie-parser": "^1.4.7",
     "express": "^5.2.1",
+    "express-rate-limit": "^8.5.2",
     "socket.io": "^4.8.3"
   },
   "scripts": {
