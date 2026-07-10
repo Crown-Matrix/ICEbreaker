@@ -1490,7 +1490,7 @@ socket.on('banned', (data) => {
     if (data.message === 'banned') {
         window.location.href = '/banned';
     }
-    localStorage.setItem('ban_reason', data.reason);
+    localStorage.setItem('latest_ban_reason', data.reason);
 });
 
 socket.on('disconnect', (reason) => {

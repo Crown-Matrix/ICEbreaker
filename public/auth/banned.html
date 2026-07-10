@@ -809,10 +809,6 @@
         requestAnimationFrame(loop);
       })();
 
-
-
-
-
       function placeCursor(base64) {
         const img = document.createElement('img');
         img.src = base64.startsWith('data:') ? base64 : `data:image/png;base64,${base64}`;
@@ -847,8 +843,7 @@
     <p class="caption">Your account has been banned. If you believe this is a mistake, please contact support.</p>
     <p class="reason-caption" id="ban-reason"></p>
     <script>
-      const ban_reason = localStorage.getItem('ban_reason');
-      console.log(ban_reason);
+      const ban_reason = localStorage.getItem('latest_ban_reason');
       if (ban_reason) {
         document.documentElement.style.setProperty('--ban-reason', `'Ban Reason: ${ban_reason}'`);
         document.getElementById('ban-reason').textContent = 'Ban Reason: ' + ban_reason;

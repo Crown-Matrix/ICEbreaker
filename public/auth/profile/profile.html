@@ -1,28 +1,216 @@
+
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile - Loading</title>
+
+    <title>ICEbreaker // Profile Node</title>
+
+    <!-- Bootstrap 5.3.8 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+
+    <!-- Cyberpunk Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
+
     <link rel="stylesheet" href="./auth/profile/profile.css">
-    <script src="./auth/profile/profile.js"></script>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
-        onerror="this.href='/css/bootstrap.min.css'">
-    <link rel="icon" type="image/png" href="/favicon.ico">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
-        onerror="this.href = '/css/bootstrap-icons.css'">
-
-
-
 
 </head>
 
+
 <body>
-    /*TODO*/
-</body>
+
+
+<div id="syncOverlay">
+    [ DATA STREAM SYNCHRONIZING ]
+</div>
+
+
+<div class="container-fluid">
+
+    <div class="terminal">
+
+
+        <div class="terminal-header">
+
+            ICEBREAKER // USER PROFILE NODE
+
+            <span id="system-status">
+                ● CONNECTION PENDING
+            </span>
+
+        </div>
+
+
+
+        <div class="row g-4">
+
+
+            <!-- Identity -->
+
+            <div class="col-lg-4">
+
+
+                <div class="panel text-center">
+
+
+                    <div id="username" class="identity-name">
+                        UNKNOWN
+                    </div>
+
+                    <div id="eddies" class="currency">
+                        ₿ ███ EDDIES
+                    </div>
+
+                    <div id="tier" class="tier">
+                        UNKNOWN
+                    </div>
+
+                    
+
+
+                    
+
+
+                </div>
+
+
+            </div>
+
+
+
+
+            <!-- Stats -->
+
+            <div class="col-lg-8">
+
+
+                <div class="panel">
+
+
+                    <div class="panel-title">
+                        PLAYER TELEMETRY
+                    </div>
+
+
+
+                    <div class="row">
+
+
+                        <div class="col-md-6">
+
+
+                            <div class="stat-box">
+
+                                <div class="stat-header">
+                                    SINGLE PLAYER NODE
+                                </div>
+
+
+                                <div class="stat-row">
+                                    RUNS
+                                    <span id="sp_games_Played" class="stat-value"></span>
+                                </div>
+
+
+                                <div class="stat-row">
+                                    FINISHED
+                                    <span id="sp_games_Finished" class="stat-value"></span>
+                                </div>
+
+
+                                <div class="stat-row">
+                                    AVG SCORE
+                                    <span id="sp_average_score" class="stat-value"></span>
+                                </div>
+
+                            </div>
+
+
+                        </div>
+
+
+
+
+                        <div class="col-md-6">
+
+
+                            <div class="stat-box">
+
+                                <div class="stat-header">
+                                    MULTIPLAYER NODE
+                                </div>
+
+
+                                <div class="stat-row">
+                                    MATCHES
+                                    <span id="mp_games_Played" class="stat-value"></span>
+                                </div>
+
+
+                                <div class="stat-row">
+                                    WINS
+                                    <span id="mp_games_Won" class="stat-value"></span>
+                                </div>
+
+
+                                <div class="stat-row">
+                                    FINISHED
+                                    <span id="mp_games_Finished" class="stat-value"></span>
+                                </div>
+
+
+                                <div class="stat-row">
+                                    AVG SCORE
+                                    <span id="mp_average_score" class="stat-value"></span>
+                                </div>
+
+
+                            </div>
+
+
+                        </div>
+
+
+                    </div>
+
+
+                </div>
+
+
+            </div>
+
+
+        </div>
+
+
+
+        <div class="telemetry">
+
+            ACCOUNT CREATED:
+            <span id="account_Creation_Date"></span>
+
+            <br>
+
+            LAST LOGIN:
+            <span id="last_Login_Date"></span>
+
+        </div>
+
+
+    </div>
+
+</div>
+
+
+
+
 <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
     onerror="loadLocalBootstrap()"></script>
 <script>function loadLocalBootstrap() { var script = document.createElement('script'); script.src = '/js/bootstrap.bundle.min.js'; document.body.appendChild(script); }</script>
 
+
+<script src="./auth/profile/profile.js"></script>
+
+</body>
 </html>

@@ -347,7 +347,6 @@ app.post('/log-out', (req, res) => {
     SQL_Manager_Instance.deleteSessionToken(sessionToken); // Invalidate the session token on the server side to log the user out
   }
   res.clearCookie('sessionToken'); // Clear the session token cookie on the client side
-  res.clearCookie('userData'); // Clear the user data cookie on the client side
   res.status(200).json({ message: 'Logged out successfully' });
 });
 
@@ -394,6 +393,7 @@ app.post('/sign-up', (req, res) => {
 
   if (!username_existence) {
     let newUUID = SQL_Manager_Instance.createUser(username, password);
+    SQL_Manager_Instance.auth.sendStaticUserDataAsHeader(res, SQL_Manager_Instance.getStaticUserDataByUUID(newUUID));
     return res.status(201).cookie('sessionToken', SQL_Manager_Instance.createSessionTokenForUUID(newUUID)).json({
       message: 'User created successfully.',
       UUID: newUUID,
