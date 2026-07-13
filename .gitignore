@@ -172,3 +172,5 @@ public/imgs/source-examples/
 admin_panel_blueprint.html
 ICEBreaker_Admin_Panel.png
 md.md
+os_documentation/
+#its just gonna be used for development anyway, not needed for anyone else to worry themselves with
