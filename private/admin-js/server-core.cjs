@@ -8,38 +8,63 @@ const express = require('express');
 const app = express();
 const os = require('node:os');
 
+const { join, default: path } = require('node:path');
+
+const rateLimitConfig = require(join(__dirname, '../Server-Imports/General/rateLimitConfig.json'));
+//ip - low - long
+//ip - low - short
+//ip - high - long
+//ip - high - short
+//
+//sessionToken - low - long
+//sessionToken - low - short
+//sessionToken - high - long
+//sessionToken - high - short
+// these are all the rate limiters
+
 const singlePlayer = {};
 
 const multiPlayer = {};
 
 const DISABLE_RATE_LIMIT = process.env.DISABLE_RATE_LIMIT === 'true'
 
+const { rateLimit } = require('express-rate-limit');
 
-const { rateLimit } = require('express-rate-limit')
-const ipLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 500, // Limit each IP to 500 requests per `window` (here, per 15 minutes).
-  standardHeaders: 'draft-7', //standard
-  legacyHeaders: true, // Enables the `X-RateLimit-*` headers.
-  ipv6Subnet: 56, // Lower is more aggressive, higher is less aggressive
-  skip: () => { return DISABLE_RATE_LIMIT }, // Skip rate limiting if DISABLE_RATE_LIMIT is true
-})
+// Common settings for all IP-based limiters
+const ipBaseOptions = {
+  standardHeaders: 'draft-7',
+  legacyHeaders: true,
+  ipv6Subnet: 56,
+  skip: () => DISABLE_RATE_LIMIT
+};
 
-const sessionTokenLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  limit: 500, // Limit each sessionToken to 500 requests per `window` (here, per 15 minutes).
-  standardHeaders: 'draft-7', //standard
-  legacyHeaders: true, // Enables the `X-RateLimit-*` headers.
-  skip: (req) => { return DISABLE_RATE_LIMIT || !req.cookies?.sessionToken; }, // Skip rate limiting if DISABLE_RATE_LIMIT is true
-  keyGenerator: (req) => {
-    return req.cookies?.sessionToken;
-  },
-})
+// Common settings for all Token-based limiters
+const tokenBaseOptions = {
+  standardHeaders: 'draft-7',
+  legacyHeaders: true,
+  skip: (req) => DISABLE_RATE_LIMIT || !req.cookies?.sessionToken,
+  keyGenerator: (req) => req.cookies?.sessionToken
+};
+
+// --- IP Limiters ---
+const ipLimiter_lowCost_longTerm = rateLimit({ ...rateLimitConfig.lowCost.longTerm, ...ipBaseOptions });
+const ipLimiter_lowCost_shortTerm = rateLimit({ ...rateLimitConfig.lowCost.shortTerm, ...ipBaseOptions });
+const ipLimiter_highCost_longTerm = rateLimit({ ...rateLimitConfig.highCost.longTerm, ...ipBaseOptions });
+const ipLimiter_highCost_shortTerm = rateLimit({ ...rateLimitConfig.highCost.shortTerm, ...ipBaseOptions });
+
+// --- Session Token Limiters ---
+const sessionTokenLimiter_lowCost_longTerm = rateLimit({ ...rateLimitConfig.lowCost.longTerm, ...tokenBaseOptions });
+const sessionTokenLimiter_lowCost_shortTerm = rateLimit({ ...rateLimitConfig.lowCost.shortTerm, ...tokenBaseOptions });
+const sessionTokenLimiter_highCost_longTerm = rateLimit({ ...rateLimitConfig.highCost.longTerm, ...tokenBaseOptions });
+const sessionTokenLimiter_highCost_shortTerm = rateLimit({ ...rateLimitConfig.highCost.shortTerm, ...tokenBaseOptions });
+
+
+
 
 const TESTING_MODE = process.env.TEST_MODE === 'true'
 
 const { createServer } = require('node:http');
-const { join, default: path } = require('node:path');
+
 
 const path_alias = require(join(__dirname, '../Server-Imports/General/path_alias.json'))
 
@@ -148,14 +173,35 @@ const SQL_Manager_Instance = new SQLManager();
 /*
     APP MIDDLEWARE
 */
+const static_cheap_paths = ['/js', '/css', '/imgs'];
+
+app.use(static_cheap_paths, [
+  ipLimiter_lowCost_shortTerm,
+  ipLimiter_lowCost_longTerm,
+  sessionTokenLimiter_lowCost_shortTerm,
+  sessionTokenLimiter_lowCost_longTerm
+]);
+
+static_cheap_paths.forEach(urlPath => {
+  app.use(urlPath, express.static(join("public", urlPath)));
+});
+
+app.use([
+  ipLimiter_highCost_shortTerm,
+  ipLimiter_highCost_longTerm,
+  sessionTokenLimiter_highCost_shortTerm,
+  sessionTokenLimiter_highCost_longTerm
+]);
+
+
+
 
 app.get('/banned', (req, res) => {
-  res.status(403).sendFile('/auth/banned.html', { root: './public' });
+  res.status(403).sendFile('/auth/banned.html');
 });
 app.use(cookieParser()); //parse cookies from incoming requests
 app.use(express.json()); //parse JSON bodies]
-app.use(ipLimiter); //apply rate limiting to all requests based on ip
-app.use(sessionTokenLimiter); //apply rate limiting to all requests based on sessionToken
+
 /*
     BAN CHECK MIDDLEWARE
     checks banned table for ip or UUID, if found, redirects to /banned page
@@ -253,10 +299,14 @@ app.use((req, res, next) => {
   next();
 });
 
+
+
 app.get('/', (req, res) => {
   //temp redirect to single player page for testing until multiplayer is created
   res.redirect('/singlePlayer');
 });
+
+
 
 
 
@@ -326,9 +376,14 @@ app.get('/admin-panel/api/:endpoint{/:subendpoint}', (req, res) => {
 
 app.use(express.static('public')); //only after ban check middleware, so banned users cant access static files
 
+
+
+
 app.get('/profile', (req, res) => {
   res.status(200).sendFile('auth/profile/profile.html', { root: './public' });
 });
+
+
 
 app.get('/profile/api/user/:username', (req, res) => {
   const sessionToken = req.cookies.sessionToken;
@@ -344,6 +399,8 @@ app.get('/profile/api/user/:username', (req, res) => {
   }
   res.status(200).json(user_info);
 });
+
+
 
 app.post('/log-out', (req, res) => {
   const sessionToken = SQL_Manager_Instance.auth.getSessionTokenFromRequest(req);
@@ -361,6 +418,8 @@ app.get('/log-out', (req, res) => {
 app.get('/log-in', (req, res) => {
   res.status(200).sendFile('auth/log-in.html', { root: './public' });
 });
+
+
 
 
 app.post('/log-in', async (req, res) => {
@@ -382,6 +441,8 @@ app.post('/log-in', async (req, res) => {
     return res.status(401).json({ message: 'Invalid username or password.' });
   }
 });
+
+
 
 app.get('/sign-up', (req, res) => {
   res.status(200).sendFile('auth/sign-up.html', { root: './public' });
@@ -411,6 +472,8 @@ app.post('/sign-up', (req, res) => {
   }
 })
 
+
+
 app.get('/auth/checkForUsername/:username', async (req, res) => {
   try {
     const username = req.params.username?.trim().toLowerCase();
@@ -430,6 +493,8 @@ app.get('/auth/checkForUsername/:username', async (req, res) => {
     return res.status(500).json({ error: "Server error" });
   }
 });
+
+
 
 
 app.use('/admin-panel', express.static(join(__dirname, '../admin-panel/')));

@@ -1,0 +1,10 @@
+{
+  "lowCost": {
+    "longTerm": { "windowMs": 900000, "limit": 5000 },
+    "shortTerm": { "windowMs": 30000, "limit": 750 }
+  },
+  "highCost": {
+    "longTerm": { "windowMs": 900000, "limit": 500 },
+    "shortTerm": { "windowMs": 15000, "limit": 45 }
+  }
+}
