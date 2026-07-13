@@ -1,216 +1,152 @@
+  <!DOCTYPE html>
+  <html lang="en">
 
-<!DOCTYPE html>
-<html lang="en">
-<head>
+  <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
-    <title>ICEbreaker // Profile Node</title>
-
-    <!-- Bootstrap 5.3.8 -->
+    <title>Profile - Loading</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
-
-    <!-- Cyberpunk Fonts -->
-    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&family=Rajdhani:wght@400;500;600;700&family=Share+Tech+Mono&display=swap" rel="stylesheet">
-
+    <link
+      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&amp;family=Rajdhani:wght@400;500;600;700&amp;family=Share+Tech+Mono&amp;display=swap"
+      rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
     <link rel="stylesheet" href="./auth/profile/profile.css">
-
-</head>
-
-
-<body>
-
-
-<div id="syncOverlay">
-    [ DATA STREAM SYNCHRONIZING ]
-</div>
-
-
-<div class="container-fluid">
-
-    <div class="terminal">
-
-
-        <div class="terminal-header">
-
-            ICEBREAKER // USER PROFILE NODE
-
-            <span id="system-status">
-                ● CONNECTION PENDING
-            </span>
-
-        </div>
-
-
-
-        <div class="row g-4">
-
-
-            <!-- Identity -->
-
-            <div class="col-lg-4">
-
-
-                <div class="panel text-center">
-
-
-                    <div id="username" class="identity-name">
-                        UNKNOWN
-                    </div>
-
-                    <div id="eddies" class="currency">
-                        ₿ ███ EDDIES
-                    </div>
-
-                    <div id="tier" class="tier">
-                        UNKNOWN
-                    </div>
-
-                    
-
-
-                    
-
-
-                </div>
-
-
-            </div>
-
-
-
-
-            <!-- Stats -->
-
-            <div class="col-lg-8">
-
-
-                <div class="panel">
-
-
-                    <div class="panel-title">
-                        PLAYER TELEMETRY
-                    </div>
-
-
-
-                    <div class="row">
-
-
-                        <div class="col-md-6">
-
-
-                            <div class="stat-box">
-
-                                <div class="stat-header">
-                                    SINGLE PLAYER NODE
-                                </div>
-
-
-                                <div class="stat-row">
-                                    RUNS
-                                    <span id="sp_games_Played" class="stat-value"></span>
-                                </div>
-
-
-                                <div class="stat-row">
-                                    FINISHED
-                                    <span id="sp_games_Finished" class="stat-value"></span>
-                                </div>
-
-
-                                <div class="stat-row">
-                                    AVG SCORE
-                                    <span id="sp_average_score" class="stat-value"></span>
-                                </div>
-
-                            </div>
-
-
-                        </div>
-
-
-
-
-                        <div class="col-md-6">
-
-
-                            <div class="stat-box">
-
-                                <div class="stat-header">
-                                    MULTIPLAYER NODE
-                                </div>
-
-
-                                <div class="stat-row">
-                                    MATCHES
-                                    <span id="mp_games_Played" class="stat-value"></span>
-                                </div>
-
-
-                                <div class="stat-row">
-                                    WINS
-                                    <span id="mp_games_Won" class="stat-value"></span>
-                                </div>
-
-
-                                <div class="stat-row">
-                                    FINISHED
-                                    <span id="mp_games_Finished" class="stat-value"></span>
-                                </div>
-
-
-                                <div class="stat-row">
-                                    AVG SCORE
-                                    <span id="mp_average_score" class="stat-value"></span>
-                                </div>
-
-
-                            </div>
-
-
-                        </div>
-
-
-                    </div>
-
-
-                </div>
-
-
-            </div>
-
-
-        </div>
-
-
-
-        <div class="telemetry">
-
-            ACCOUNT CREATED:
-            <span id="account_Creation_Date"></span>
-
-            <br>
-
-            LAST LOGIN:
-            <span id="last_Login_Date"></span>
-
-        </div>
-
-
+    
+  </head>
+  <body>
+    <div id="syncOverlay">
+      [ DATA STREAM SYNCHRONIZING ]
     </div>
+    <header class="topbar justify-content-center justify-content-sm-between flex-wrap flex-sm-nowrap">
+      <div class="topbar-left">
+        <div class="avatar-icon">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <circle cx="12" cy="8" r="3.5"></circle>
+            <path d="M4.5 20c0-4.1 3.4-7 7.5-7s7.5 2.9 7.5 7"></path>
+          </svg>
+        </div>
+        <div class="brand"><span class="b1">NET</span><span class="b2">RUNNER</span> <span class="b3">OS</span></div>
+      </div>
+      <div class="topbar-right">
+        <div class="page-tag">
+          <div class="page-tag-title d-none d-md-block">OPERATIVE PROFILE</div>
+          <div class="page-tag-sub">// IDENTITY FILE</div>
+        </div>
+        <button class="fullscreen-btn d-none d-sm-block" id="fsToggle" type="button" aria-label="Toggle fullscreen"
+          title="Toggle fullscreen">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+            <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"></path>
+          </svg>
+        </button>
+      </div>
+    </header>
+    <div class="panel text-center d-flex flex-column align-items-center">
+      <div id='username-title'>
+        Username
+      </div>
+      <span id="system-status">● CONNECTION PENDING</span>
+    </div>
+    <div id='app' class="container-fluid">
+      <div class="row">
+        <div id='col-circle-image' class="d-none d-lg-block col-2 col-lg-3">
+          <img src="./auth/profile/decorations/red-circle.png" alt="" id="circle-image">
+        </div>
+        <div id="top-decoration" class="col-12 col-lg-9">
+          <img src="./auth/profile/decorations/red-top-decoration.png" alt="" id="top-decoration-image">
+          <div id="main-content" class="col-12 col-lg-7 mt-5">
+            <div class="frame p-3 pt-0">
+              <div class="frame-body">
+                <div class="container-fluid">
+                  <div class="row">
+                    <div class="col-12 col-lg-8" id="stat-frame">
 
-</div>
+                      <div class="stat-card" id="sp_games_Played" group="singleplayer">
+                        <p class="stat-p">sp_games_Played</p>
+                      </div>
 
+                      <div class="stat-card" id="mp_games_Played" group="multiplayer">
+                        <p class="stat-p">mp_games_Played</p>
+                      </div>
 
+                      <div class="stat-card" id="mp_games_Won" group="multiplayer">
+                        <p class="stat-p">mp_games_Won</p>
+                      </div>
 
+                      <div class="stat-card" id="sp_games_Finished" group="singleplayer">
+                        <p class="stat-p">sp_games_Finished</p>
+                      </div>
 
-<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
-    onerror="loadLocalBootstrap()"></script>
-<script>function loadLocalBootstrap() { var script = document.createElement('script'); script.src = '/js/bootstrap.bundle.min.js'; document.body.appendChild(script); }</script>
+                      <div class="stat-card" id="mp_games_Finished" group="multiplayer">
+                        <p class="stat-p">mp_games_Finished</p>
+                      </div>
 
+                      <div class="stat-card" id="sp_average_score" group="singleplayer">
+                        <p class="stat-p">sp_average_Score</p>
+                      </div>
 
-<script src="./auth/profile/profile.js"></script>
+                      <div class="stat-card" id="mp_average_score" group="multiplayer">
+                        <p class="stat-p">mp_average_Score</p>
+                      </div>
 
-</body>
-</html>
+                      <div class="stat-card" id="eddies" group="account">
+                        <p class="stat-p">Eddies</p>
+                      </div>
+
+                      <div class="stat-card" id="tier" group="account">
+                        <p class="stat-p">Account Tier: <span id="tier-value"></span></p>
+                      </div>
+
+                      <div class="stat-card" id="account_Creation_Date" group="account">
+                        <p class="stat-p">account_Creation_Date</p>
+                      </div>
+
+                      <div class="stat-card" id="last_Login_Date" group="account">
+                        <p class="stat-p">last_Login_Date</p>
+                      </div>
+
+                      
+                    </div>
+                    <div id='tab-list'
+                      class="col-12 col-lg-3  d-flex flex-row flex-lg-column justify-content-center container-lg order-lg-last order-first mb-3 mb-lg-0 text-wrap text-lg-nowrap">
+                      <div class="tab" id="account-tab">
+                        <p>Account</p>
+                      </div>
+                      <div class="tab" id="singleplayer-tab">
+                        <p>Single Player</p>
+                      </div>
+                      <div class="tab" id="multiplayer-tab">
+                        <p>Multi Player</p>
+                      </div>
+                      <div class="tab" id="friends-tab">
+                        <p>Friends</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </body>
+  <script>
+    var fsBtn = document.getElementById('fsToggle');
+    if (fsBtn) {
+      fsBtn.addEventListener('click', function () {
+        if (!document.fullscreenElement) {
+          document.documentElement.requestFullscreen().catch(function () { });
+        } else {
+          document.exitFullscreen().catch(function () { });
+        }
+      });
+
+    }
+
+  </script>
+  <script src="./auth/profile/profile.js"></script>
+  
+
+  </html>

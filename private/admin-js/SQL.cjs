@@ -27,7 +27,7 @@ function initializeUserTable() {
     const createTableStmt = `
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE COLLATE NOCASE NOT NULL,
+            username TEXT UNIQUE COLLATE NOCASE NOT NULL CHECK(LENGTH(username) < 20),
             password TEXT NOT NULL,
             account_UUID TEXT UNIQUE NOT NULL,
             sp_games_Played INTEGER DEFAULT 0,
@@ -132,14 +132,23 @@ const getUserByUsername = (username) => db.prepare('SELECT * FROM users WHERE LO
 
 // needs transaction — read then write
 const createUser = protected_sql((username, password) => {
-    if (username.length > 64) {
-        throw new Error('Max name length exceeded')
+    const character_regex = !/^[A-Za-z0-9_]+$/
+    
+    if (username.length > 20) {
+        return {ErrorCode : 1, ErrorMessage : 'Max username length exceeded'}
     } else if (password.length > 64) {
-        throw new Error('Max password length exceeded')
+        return {ErrorCode : 2, ErrorMessage : 'Max password length exceeded'}
     }
+    if (!character_regex.test(username)) {
+        return {ErrorCode : 3, ErrorMessage : 'Invalid username characters'}
+    }
+    if (!character_regex.test(password)) {
+        return {ErrorCode : 4, ErrorMessage : 'Invalid password characters'}
+    }
+    console.log('we should not be here if info is too long')
     const existing = getUserByUsername(username);
     const UUID = randomUUID()
-    if (existing) throw new Error('Username already taken');
+    if (existing) return {ErrorCode : 5, ErrorMessage : 'Username already taken'};
     const info = db.prepare('INSERT INTO users (username, password, account_UUID) VALUES (?, ?, ?)')
         .run(username, hashPassword(password), UUID);
     return UUID;

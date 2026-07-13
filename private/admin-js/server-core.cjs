@@ -393,6 +393,9 @@ app.post('/sign-up', (req, res) => {
 
   if (!username_existence) {
     let newUUID = SQL_Manager_Instance.createUser(username, password);
+    if (typeof newUUID === 'object' && newUUID.ErrorCode) { //server side validation failed, return error to client
+      return res.status(400).json({ message: newUUID.ErrorMessage });
+    }
     SQL_Manager_Instance.auth.sendStaticUserDataAsHeader(res, SQL_Manager_Instance.getStaticUserDataByUUID(newUUID));
     return res.status(201).cookie('sessionToken', SQL_Manager_Instance.createSessionTokenForUUID(newUUID)).json({
       message: 'User created successfully.',

@@ -651,6 +651,13 @@
         return false;
       }
 
+      if (v.length > 20) {
+        usernameHint.textContent = 'Too long.';
+        usernameHint.className = 'field-hint err';
+        usernameInput.className = 'cy-input error';
+        return false;
+      }
+
       if (!/^[A-Za-z0-9_]+$/.test(v)) {
         usernameHint.textContent = 'Invalid characters detected.';
         usernameHint.className = 'field-hint err';
@@ -714,7 +721,7 @@
       submitBtn.disabled = !(uOk && pOk && cOk);
     }
     usernameInput.addEventListener('input', debounce(checkSubmit, 1000));
-    passwordInput.addEventListener('input', () => { updateStrengthBar(scorePassword(passwordInput.value)); if (confirmInput.value) { validateConfirm(); submitBtn.disabled = !(scorePassword(passwordInput.value) >= 1 && passwordInput.value.length >= 8) } });
+    passwordInput.addEventListener('input', () => { updateStrengthBar(scorePassword(passwordInput.value)); if (confirmInput.value) { validateConfirm(); submitBtn.disabled = !(scorePassword(passwordInput.value) >= 1 && passwordInput.value.length >= 8 && passwordInput.value.length < 20) } });
     confirmInput.addEventListener('input', () => { submitBtn.disabled = !(validateConfirm()) });
 
     function showToast(msg, isErr = false) {

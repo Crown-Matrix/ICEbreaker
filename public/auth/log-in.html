@@ -251,6 +251,11 @@ if (localStorage.getItem('x-userdata-username') != null) {
     const u = usernameInput.value.trim();
     const p = passwordInput.value;
 
+    if (u.length > 20) { usernameInput.classList.add('error'); document.getElementById('username-hint').textContent = 'Handle too long.'; document.getElementById('username-hint').className = 'field-hint err'; return; }
+    if (p.length > 64) { passwordInput.classList.add('error'); document.getElementById('password-hint').textContent = 'Access code too long.'; document.getElementById('password-hint').className = 'field-hint err'; return; }
+    if (!/^[a-z0-9_]+$/.test(u)) { usernameInput.classList.add('error'); document.getElementById('username-hint').textContent = 'Invalid handle characters.'; document.getElementById('username-hint').className = 'field-hint err'; return; }
+    if (!/^[a-z0-9_]+$/.test(p)) { passwordInput.classList.add('error'); document.getElementById('password-hint').textContent = 'Invalid access code characters.'; document.getElementById('password-hint').className = 'field-hint err'; return; }
+
     if (!u) { usernameInput.classList.add('error'); document.getElementById('username-hint').textContent = 'Handle required.'; document.getElementById('username-hint').className = 'field-hint err'; return; }
     if (!p) { passwordInput.classList.add('error'); document.getElementById('password-hint').textContent = 'Access code required.'; document.getElementById('password-hint').className = 'field-hint err'; return; }
 
