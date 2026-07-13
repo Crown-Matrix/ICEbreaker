@@ -336,6 +336,7 @@ app.get('/profile/api/user/:username', (req, res) => {
   if (!UUID) {
     return res.status(401).json({ error: 'Unauthorized. Please log in.' });
   }
+  SQL_Manager_Instance.updateLastLoginDateFromUUID(UUID);
   const requestedUsername = req.params.username;
   const user_info = SQL_Manager_Instance.getUserProfileByUUID(UUID);
   if (!user_info || user_info.username !== requestedUsername) {
