@@ -603,6 +603,7 @@
 
     function scorePassword(pw) {
       let score = 0;
+      if (pw.length < 8) return 0;
       if (pw.length >= 8) score++;
       if (pw.length >= 12) score++;
       if (/[A-Z]/.test(pw) && /[a-z]/.test(pw)) score++;
@@ -644,7 +645,7 @@
         return false;
       }
 
-      if (v.length < 3) {
+      if (v.length < 1) {
         usernameHint.textContent = 'Too short.';
         usernameHint.className = 'field-hint err';
         usernameInput.className = 'cy-input error';
@@ -716,12 +717,12 @@
 
     async function checkSubmit() {
       const uOk = await validateUsername();
-      const pOk = scorePassword(passwordInput.value) >= 1 && passwordInput.value.length >= 8;
+      const pOk = scorePassword(passwordInput.value) >= 1 && passwordInput.value.length >= 8 && passwordInput.value.length < 64;
       const cOk = validateConfirm();
       submitBtn.disabled = !(uOk && pOk && cOk);
     }
     usernameInput.addEventListener('input', debounce(checkSubmit, 1000));
-    passwordInput.addEventListener('input', () => { updateStrengthBar(scorePassword(passwordInput.value)); if (confirmInput.value) { validateConfirm(); submitBtn.disabled = !(scorePassword(passwordInput.value) >= 1 && passwordInput.value.length >= 8 && passwordInput.value.length < 20) } });
+    passwordInput.addEventListener('input', () => { updateStrengthBar(scorePassword(passwordInput.value)); if (confirmInput.value) { validateConfirm(); submitBtn.disabled = !(scorePassword(passwordInput.value) >= 1 && passwordInput.value.length >= 8 && passwordInput.value.length < 64) } });
     confirmInput.addEventListener('input', () => { submitBtn.disabled = !(validateConfirm()) });
 
     function showToast(msg, isErr = false) {

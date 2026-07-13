@@ -25,7 +25,6 @@ async function fetchUserData() {
         return null;
     }
     const userData = await res.json();
-    console.log('Fetched user data:', userData);
     return userData;
 }
 

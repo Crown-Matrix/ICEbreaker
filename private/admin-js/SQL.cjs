@@ -13,11 +13,31 @@ db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
 
-function hashPassword(password) {
+function hashPassword(password, override_safety = false) {
+    if (!(checkPassword(password) || ovverride_safety)) {
+        throw new Error('Invalid password')
+    }
     const SALT_ROUNDS = 12;
     let hash = bcrypt.hashSync(password, SALT_ROUNDS);
     return hash
 }
+
+
+
+const checkUsername = (username) => {
+    if (username.length > 20 || username.length < 1 || !/^[a-z0-9_]+$/.test(username)) {
+        return false;
+    }
+    return true;
+};
+
+
+const checkPassword = (password) => {
+    if (password.length < 8 || password.length > 64 || !/^[a-z0-9_]+$/.test(password)) {
+        return false;
+    }
+    return true;
+};
 
 //name convention:
 //foo_Bar
@@ -27,8 +47,8 @@ function initializeUserTable() {
     const createTableStmt = `
         CREATE TABLE IF NOT EXISTS users (
             id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE COLLATE NOCASE NOT NULL CHECK(LENGTH(username) < 20),
-            password TEXT NOT NULL,
+            username TEXT UNIQUE COLLATE NOCASE NOT NULL CHECK(LENGTH(username) BETWEEN 1 AND 19),
+            password TEXT NOT NULL CHECK(LENGTH(password) BETWEEN 8 AND 63),
             account_UUID TEXT UNIQUE NOT NULL,
             sp_games_Played INTEGER DEFAULT 0,
             mp_games_Played INTEGER DEFAULT 0,
@@ -134,21 +154,24 @@ const getUserByUsername = (username) => db.prepare('SELECT * FROM users WHERE LO
 const createUser = protected_sql((username, password) => {
     const character_regex = !/^[A-Za-z0-9_]+$/
     
-    if (username.length > 20) {
+    if ( username.length > 20) {
         return {ErrorCode : 1, ErrorMessage : 'Max username length exceeded'}
+    } else if (password.length < 8) {
+        return {ErrorCode : 2, ErrorMessage : 'Minimum password length not met'}
+    } else if (username.length < 1) {
+        return {ErrorCode : 3, ErrorMessage : 'Username is required'}
     } else if (password.length > 64) {
-        return {ErrorCode : 2, ErrorMessage : 'Max password length exceeded'}
-    }
+        return {ErrorCode : 4, ErrorMessage : 'Max password length exceeded'}
+    } 
     if (!character_regex.test(username)) {
-        return {ErrorCode : 3, ErrorMessage : 'Invalid username characters'}
+        return {ErrorCode : 5, ErrorMessage : 'Invalid username characters'}
     }
     if (!character_regex.test(password)) {
-        return {ErrorCode : 4, ErrorMessage : 'Invalid password characters'}
+        return {ErrorCode : 6, ErrorMessage : 'Invalid password characters'}
     }
-    console.log('we should not be here if info is too long')
     const existing = getUserByUsername(username);
     const UUID = randomUUID()
-    if (existing) return {ErrorCode : 5, ErrorMessage : 'Username already taken'};
+    if (existing) return {ErrorCode : 7, ErrorMessage : 'Username already taken'};
     const info = db.prepare('INSERT INTO users (username, password, account_UUID) VALUES (?, ?, ?)')
         .run(username, hashPassword(password), UUID);
     return UUID;
@@ -170,6 +193,9 @@ const getStaticUserDataByUUID = (UUID) => {
 
 // no transaction needed — single read + bcrypt compare, no write
 const passwordMatch = (username, password_attempt) => {
+    if (checkUsername(username) === false || checkPassword(password_attempt) === false) {
+        return false;
+    }
     const user = getUserByUsername(username);
     if (!user) return false;
     return bcrypt.compareSync(password_attempt, user.password);
@@ -177,6 +203,9 @@ const passwordMatch = (username, password_attempt) => {
 
 
 const deleteUser = protected_sql((username) => {
+    if (checkUsername(username) === false) {
+        throw new Error('Invalid username');
+    }
     const existing = getUserByUsername(username);
     if (!existing) throw new Error('User not found');
     db.prepare('DELETE FROM users WHERE LOWER(username) = ?').run(username.toLowerCase());
@@ -184,6 +213,10 @@ const deleteUser = protected_sql((username) => {
 
 
 const updateGameStats = protected_sql((username, appended_score, gameType, gameWon) => {
+
+    if (!checkUsername(username)) {
+        throw new Error('Invalid username');
+    }
 
     if (!['sp', 'mp'].includes(gameType)) {
         throw new Error('Invalid gameType');
@@ -230,6 +263,9 @@ const updateGameStats = protected_sql((username, appended_score, gameType, gameW
 
 
 const incrementGame = protected_sql((username, gameType) => {
+    if (!checkUsername(username)) {
+        throw new Error('Invalid username');
+    }
     if (gameType !== 'sp' && gameType !== 'mp') {
         throw new Error('Invalid game type');
     }
@@ -327,6 +363,9 @@ const wipeDatabase = () => {
 
 
 const addEddies = protected_sql((username, eddiesToAdd) => {
+    if (!checkUsername(username)) {
+        throw new Error('Invalid username');
+    }
     const query = db.prepare('UPDATE users SET eddies = eddies + ? WHERE username = ?').run(eddiesToAdd, username);
     if (query.changes === 0) {
         throw new Error('User not found');
@@ -346,6 +385,9 @@ const getUsernameFromUUID = (UUID) => {
 }
 
 const getUUIDFromUsername = (username) => {
+    if (!checkUsername(username)) {
+        throw new Error('Invalid username');
+    }
     const query = db.prepare('SELECT account_UUID FROM users WHERE LOWER(username) = ?').get(username.toLowerCase())
 
     if (!query) {
@@ -355,6 +397,9 @@ const getUUIDFromUsername = (username) => {
 }
 
 const updateLastLoginDate = protected_sql((username) => {
+    if (!checkUsername(username)) {
+        throw new Error('Invalid username')
+    }
     const query = db.prepare('UPDATE users SET last_Login_Date = CURRENT_TIMESTAMP WHERE LOWER(username) = ?').run(username.toLowerCase());
     if (query.changes === 0) {
         throw new Error('User not found');
@@ -608,4 +653,6 @@ module.exports = {
     getUserByUUID,
     getUserProfileByUUID,
     getStaticUserDataByUUID,
+    checkUsername,
+    checkPassword,
 }

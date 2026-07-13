@@ -409,9 +409,8 @@ app.post('/sign-up', (req, res) => {
 app.get('/auth/checkForUsername/:username', async (req, res) => {
   try {
     const username = req.params.username?.trim().toLowerCase();
-    console.log(username)
 
-    if (!username || username.length < 3) {
+    if (!username || username.length < 1) {
       return res.status(400).json({ error: "Invalid username" });
     }
 
