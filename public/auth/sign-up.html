@@ -659,7 +659,7 @@
         return false;
       }
 
-      if (!/^[A-Za-z0-9_]+$/.test(v)) {
+      if (!/^[a-zA-Z0-9_-]{1,19}$/.test(v)) {
         usernameHint.textContent = 'Invalid characters detected.';
         usernameHint.className = 'field-hint err';
         usernameInput.className = 'cy-input error';
@@ -709,11 +709,25 @@
       }
     }
 
+    function validatePassword(password, score) {
+    const minLength = 8;
+    const maxLength = 63;
+    const passwordRegex = /^[A-Za-z0-9!`@#\$%\^&\*\(\)-_=\+\[\]\{\}\\|;:'",<\.>\/\? ]{8,63}$/;
+
+    return (
+        score >= 1 &&
+        password.length >= minLength &&
+        password.length <= maxLength &&
+        passwordRegex.test(password)
+    );
+}
+
     function validateConfirm() {
       if (!confirmInput.value) { confirmHint.textContent = ''; confirmHint.className = 'field-hint'; confirmInput.className = 'cy-input'; return false; }
       if (confirmInput.value !== passwordInput.value) { confirmHint.textContent = 'Codes do not match.'; confirmHint.className = 'field-hint err'; confirmInput.className = 'cy-input error'; return false; }
       confirmHint.textContent = 'Codes match.'; confirmHint.className = 'field-hint ok'; confirmInput.className = 'cy-input success'; return true;
     }
+
 
     async function checkSubmit() {
       const uOk = await validateUsername();
@@ -722,7 +736,7 @@
       submitBtn.disabled = !(uOk && pOk && cOk);
     }
     usernameInput.addEventListener('input', debounce(checkSubmit, 1000));
-    passwordInput.addEventListener('input', () => { updateStrengthBar(scorePassword(passwordInput.value)); if (confirmInput.value) { validateConfirm(); submitBtn.disabled = !(scorePassword(passwordInput.value) >= 1 && passwordInput.value.length >= 8 && passwordInput.value.length < 64) } });
+    passwordInput.addEventListener('input', () => {const password = passwordInput.value;const score = scorePassword(password);updateStrengthBar(score);if (confirmInput.value) {validateConfirm();}submitBtn.disabled = !isPasswordValid(password, score);});
     confirmInput.addEventListener('input', () => { submitBtn.disabled = !(validateConfirm()) });
 
     function showToast(msg, isErr = false) {

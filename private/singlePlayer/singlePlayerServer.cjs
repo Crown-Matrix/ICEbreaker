@@ -239,6 +239,7 @@ io.use((socket, next) => {
     return next(new Error('banned'));
   }
   socket.UUID = verifiedUUID; // Attach the associated user ID to the request object for use in route handlers
+  SQL_Manager_Instance.updateLastLoginDateFromUUID(verifiedUUID);
   socket.isGuest = false
   next();
 });
@@ -477,23 +478,6 @@ app.get('/singlePlayer', (req, res) => {
   });
 });
 
-app.get('/singlePlayer/reference', (req, res) => {
-  res.status(200).sendFile('singlePlayer/singlePlayerReference.html', { root: "./public" });
-});
-
-app.get('/singlePlayer/result', (req, res) => {
-  res.status(200).sendFile('singlePlayer/singlePlayerResult.html', { root: "./public" });
-});
-
-app.get('/singlePlayer/auth/:page', (req, res) => {
-  const allowed = ['log-in', 'log-out', 'sign-up'];
-  const page = req.params.page;
-
-  if (!allowed.includes(page)) {
-    return res.status(404).send('Not found');
-  }
-  res.sendFile(`auth/${page}.html`, { root: './public' });
-});
 
 
 

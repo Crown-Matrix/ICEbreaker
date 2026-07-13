@@ -25,7 +25,7 @@ function hashPassword(password, override_safety = false) {
 
 
 const checkUsername = (username) => {
-    if (username.length > 20 || username.length < 1 || !/^[a-z0-9_]+$/.test(username)) {
+    if (username.length > 20 || username.length < 1 || !/^[a-zA-Z0-9_-]{1,19}$/.test(username)) {
         return false;
     }
     return true;
@@ -33,7 +33,7 @@ const checkUsername = (username) => {
 
 
 const checkPassword = (password) => {
-    if (password.length < 8 || password.length > 64 || !/^[a-z0-9_]+$/.test(password)) {
+    if (password.length < 8 || password.length > 64 || !/^[a-zA-Z0-9!`@#\$%\^&\*\(\)-_=\+\[\]\{\}\\|;:'",<\.>\/\? ]{8,63}$/.test(password)) {
         return false;
     }
     return true;
@@ -60,7 +60,8 @@ function initializeUserTable() {
             mp_average_Score REAL DEFAULT NULL,
             last_Login_Date TEXT DEFAULT CURRENT_TIMESTAMP,
             account_Tier INTEGER DEFAULT 0,
-            eddies INTEGER DEFAULT 0
+            eddies INTEGER DEFAULT 0,
+            settings TEXT DEFAULT '{}'
         )
     `
     db.prepare(createTableStmt).run()
@@ -152,7 +153,7 @@ const getUserByUsername = (username) => db.prepare('SELECT * FROM users WHERE LO
 
 // needs transaction — read then write
 const createUser = protected_sql((username, password) => {
-    const character_regex = !/^[A-Za-z0-9_]+$/
+    
     
     if ( username.length > 20) {
         return {ErrorCode : 1, ErrorMessage : 'Max username length exceeded'}
@@ -163,10 +164,10 @@ const createUser = protected_sql((username, password) => {
     } else if (password.length > 64) {
         return {ErrorCode : 4, ErrorMessage : 'Max password length exceeded'}
     } 
-    if (!character_regex.test(username)) {
+    if (!checkUsername(username)) {
         return {ErrorCode : 5, ErrorMessage : 'Invalid username characters'}
     }
-    if (!character_regex.test(password)) {
+    if (!checkPassword(password)) {
         return {ErrorCode : 6, ErrorMessage : 'Invalid password characters'}
     }
     const existing = getUserByUsername(username);
@@ -396,11 +397,22 @@ const getUUIDFromUsername = (username) => {
     return query.account_UUID
 }
 
-const updateLastLoginDate = protected_sql((username) => {
+const updateLastLoginDateFromUsername = protected_sql((username) => {
     if (!checkUsername(username)) {
         throw new Error('Invalid username')
     }
     const query = db.prepare('UPDATE users SET last_Login_Date = CURRENT_TIMESTAMP WHERE LOWER(username) = ?').run(username.toLowerCase());
+    if (query.changes === 0) {
+        throw new Error('User not found');
+    }
+    return true
+});
+
+const updateLastLoginDateFromUUID = protected_sql((UUID) => {
+    if (!UUID || UUID.length < 30) {
+        throw new Error('Invalid UUID');
+    }
+    const query = db.prepare('UPDATE users SET last_Login_Date = CURRENT_TIMESTAMP WHERE account_UUID = ?').run(UUID);
     if (query.changes === 0) {
         throw new Error('User not found');
     }
@@ -635,7 +647,8 @@ module.exports = {
     wipeDatabase,
     getUsernameFromUUID,
     addEddies,
-    updateLastLoginDate,
+    updateLastLoginDateFromUsername,
+    updateLastLoginDateFromUUID,
     createSessionTokenForUUID,
     sessionTokenToUUID,
     deleteSessionTokenFromUUID,

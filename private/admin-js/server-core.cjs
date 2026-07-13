@@ -258,6 +258,9 @@ app.get('/', (req, res) => {
   res.redirect('/singlePlayer');
 });
 
+
+
+
 app.all('/admin-panel{/*splat}', (req, res, next) => {
   //auth , check if user UUID has admin status, if not, return 403
   const sessionToken = req.cookies.sessionToken;
@@ -372,6 +375,7 @@ app.post('/log-in', async (req, res) => {
     const sessionToken = SQL_Manager_Instance.createSessionTokenForUUID(userUUID);
     SQL_Manager_Instance.auth.sendSessionTokenAsCookie(res, sessionToken);
     SQL_Manager_Instance.auth.sendStaticUserDataAsHeader(res, SQL_Manager_Instance.getStaticUserDataByUUID(userUUID));
+    SQL_Manager_Instance.updateLastLoginDateFromUsername(username);
     return res.status(200).json({ message: 'Logged in successfully' });
   } else {
     return res.status(401).json({ message: 'Invalid username or password.' });
