@@ -6,6 +6,7 @@ const codeMatrix = require("../../public/js/codeMatrix.js");
 
 const express = require('express');
 const app = express();
+app.set('trust proxy', process.env.PROXY_HOP_AMOUNT ? parseInt(process.env.PROXY_HOP_AMOUNT) : 0);
 const os = require('node:os');
 
 const { join, default: path } = require('node:path');

@@ -210,7 +210,7 @@ npm install
 
 ## Environment Variable Usage
 
-1. ICEBREAKER_PORT = INT
+1. ICEBREAKER_PORT = POSITIVE INTEGER
     + Sets port to host icebreaker endpoints
 2. AUTO_KILL_PREVIOUS_PROCESS= "true"/"false"
     + Whether or not ```npm run main``` should kill previous processes or not, disable if you want to run multiple instances
@@ -222,6 +222,10 @@ npm install
     + Enables/Disables (respectively) the REPL admin console
 6. MAC_TAB_USE_EXEC= "true"/"false"
     + Disables/Enables (respectively) the usage of a subshell for the node process running the server
+7. DISABLE_RATE_LIMIT= "true"/"false"
+    + Whether or not to disable the rate limiting (for testing purposes)
+8. PROXY_HOP_AMOUNT = POSITIVE INTEGER
+    + Express configuration for how many proxy hops to allow, must be set to exactly how many proxys are being used
 
 ---
 # Architecture
@@ -265,7 +269,7 @@ Original Overview - [ICEBreaker-Architecture](https://github.com/crown-matrix/IC
 | `GET` | `/banned` | Ban notice page |
 | `GET` | `/admin-panel` | admin-panel html page
 | `GET` | `/admin-panel/api` | admin-panel api endpoint , takes subendpoints for specific desired data
-| `GET` | `/admin-panel/api/[singlePlayer,multiplayer,all(default)]/[os,analytics,all(default)]` | subendpoint key
+| `GET` | `/admin-panel/api/[singlePlayer,multiPlayer,all(default)]/[os,analytics,all(default)]` | subendpoint key
 
 ### Alias System:
 In ```private/Server-Imports/General/path_alias.json```, multiple paths have been aliased, allowing a user to request a synonym of an endpoint and be redirected(with permanent status 308) to the correct endpoint
@@ -325,6 +329,7 @@ In ```private/Server-Imports/General/path_alias.json```, multiple paths have bee
 | Admin REPL | `readline`-based eval console in `main.cjs` with live access to `db`, `sql`, `auth` |
 | Environment | `.env` file with `ICEBREAKER_PORT`, `AUTO_KILL_PREVIOUS_PROCESS`, `MAC_TAB`, `ADMIN_OPEN` |
 | TEST_MODE | `disables auth ; unlocks applicable parts of the application for testing purposes` |
+
 
 
 # Planned Features (not yet active)
