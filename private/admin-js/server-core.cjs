@@ -504,7 +504,13 @@ app.get('/admin-panel', (req, res) => {
 });
 
 
+app.get('/singlePlayer/reference', (req, res) => {
+  res.status(200).sendFile('singlePlayer/singlePlayerReference.html', { root: "./public" });
+});
 
+app.get('/singlePlayer/result', (req, res) => {
+  res.status(200).sendFile('singlePlayer/singlePlayerResult.html', { root: "./public" });
+});
 
 
 
