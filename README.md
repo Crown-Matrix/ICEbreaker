@@ -115,8 +115,11 @@ Behind the interface is a full-stack architecture built for reliability and scal
 <tr>
 <td align="center">How the Matrix works<br><br>Gameplay Example</td>
 <td>
-<video src="./README-CONTENT/gameplay-vid/matrix-gameplay-example.mp4" controls="controls" width="650" poster="./README-CONTENT/gameplay-vid/matrix-game-thumbnail.png">
-Your browser does not support the video tag.
+<video poster="./README-CONTENT/gameplay-vid/matrix-game-thumbnail.png" controls width="100%">
+  <source src="https://github.com/user-attachments/assets/f276e773-7599-471f-bc2f-bf8c08e04b9c" type="video/mp4">
+  <source src="./README-CONTENT/gameplay-vid/matrix-gameplay-example.mp4" type="video/mp4">
+  <source src="./README-CONTENT/gameplay-vid/matrix-gameplay-example.mov" type="video/mov">
+  Your browser does not support the video tag.
 </video>
 </td>
 </tr>
