@@ -1,10 +1,11 @@
-//singlePlayerFrontend.js
+//multiplayerFrontend.js
 import * as audioHandler from "/js/audio.js";
 audioHandler.initAudio();
 placeFullScreenButton();
 
 
-class SinglePlayerFrontend {
+
+class multiPlayerFrontend {
     constructor() {
         this.rowMode = true; // true for row mode, false for column mode
         this.currentRow = null;
@@ -35,6 +36,15 @@ class SinglePlayerFrontend {
             eddies = Math.floor((3 * score) / 100) + 25;
             return eddies;
         }
+        this.opponent = null; // used to store either username or 'guest'
+        this.matchEndTime = null;   // NEW — authoritative deadline from server
+        this.matchWon = null;       // NEW
+        this.matchDraw = null;      // NEW
+        this.finalScore = null;     // NEW
+        this.opponentFinalScore = null; // NEW
+        this.matchResultReceived = false; // client only — true once server pushes the authoritative match_result
+        this.awaitingMatchResult = false; // client only — true once our own round-end animation has finished and we're just waiting on match_result
+        this.navigatingToResult = false;  // client only — guards against double-navigating
     }
 
     updateBackendHandler() {
@@ -160,8 +170,8 @@ class SinglePlayerFrontend {
     }
 
     goToPage(url) {
-        fetch(url)
-            .then(res => {
+    fetch(url)
+        .then(res => {
                 if (res.ok) return res.text();
                 throw new Error('Network response was not ok');
             })
@@ -269,12 +279,12 @@ class SinglePlayerFrontend {
                 this.newRound();
             } else {
                 if (this.timerWaiting) {
-                    socket.emit('database_write')
+                    socket.emit('database_write');
                 }
-                this.goToPage('/singlePlayer/result');
                 console.log('Session has ended. Not starting new round.');
+                this.finishMatch();
             }
-        }, 1000); // match the animation duration
+        }, 1000);
     }
 
     async loseRound(resultType) {
@@ -288,14 +298,30 @@ class SinglePlayerFrontend {
             if (Date.now() < sessionEndTime) {
                 this.newRound();
             } else {
-
                 if (this.timerWaiting) {
                     socket.emit('database_write');
                 }
-                this.goToPage('/singlePlayer/result');
                 console.log('Session has ended. Not starting new round.');
+                this.finishMatch();
             }
-        }, 1000); // match the animation duration
+        }, 1000);
+    }
+
+    // Our own round-end animation has fully played out and match time is up. Navigate
+    // immediately if the server's authoritative result already arrived; otherwise wait
+    // for it — match_result's handler picks this up rather than racing ahead of us.
+    finishMatch() {
+        if (this.matchResultReceived) {
+            this.navigateToResult();
+        } else {
+            this.awaitingMatchResult = true;
+        }
+    }
+
+    navigateToResult() {
+        if (this.navigatingToResult) return;
+        this.navigatingToResult = true;
+        this.goToPage('/multiPlayer/result');
     }
 
     async newRound() {
@@ -304,8 +330,7 @@ class SinglePlayerFrontend {
         if (firstRound) {
             document.getElementById('pre-game-menu').style.display = 'none'
         }
-
-        this.updateBackendHandler();
+        this.updateBackendHandler(); // serve frontend handler
 
         socket.emit('start_game', { message: 'Requesting new round start.' });
 
@@ -315,7 +340,9 @@ class SinglePlayerFrontend {
         // wait for backend response
         await new Promise((resolve) => {
             socket.once('start_game_response', (data) => {
+                console.log('start game response received:', data);
                 Object.assign(this, data.frontEndHandler);
+                if (data.matchEndTime) this.matchEndTime = data.matchEndTime; // NEW
                 accepted = data.accepted;
                 error_msg = data.message;
                 resolve();
@@ -340,11 +367,11 @@ class SinglePlayerFrontend {
             setTimeout(() => {
                 startTimer();
             }, 505) //wait for the newRound animation
-            //if updating this number, update the delay in singlePlayerServer.cjs too
+            //if updating this number, update the delay in multiPlayerServer.cjs too
         }
     }
 }
-const frontEndHandler = new SinglePlayerFrontend();
+const frontEndHandler = new multiPlayerFrontend();
 
 function resetClient() {
     frontEndHandler.gameState = "init";
@@ -361,23 +388,26 @@ let sessionEndTime = null; // exposed so winRound/loseRound can check if time re
 
 function startTimer() {
     const timerElement = document.getElementById('breach-time-value');
-    const startTime = Date.now();
-    sessionEndTime = startTime + frontEndHandler.selectedTimeFrame * 1000; // assign to outer variable
+    // matchEndTime is the authoritative, server-shared deadline (fixed for the whole
+    // match at matchmaking time) so both players' clocks run out at the same real-world
+    // moment. Fallback only covers the case where it's somehow missing.
+    sessionEndTime = frontEndHandler.matchEndTime || (Date.now() + frontEndHandler.selectedTimeFrame * 1000);
 
     const updateTimer = () => {
-        const elapsed = (Date.now() - startTime) / 1000;
-        const remaining = Math.max(frontEndHandler.selectedTimeFrame - elapsed, 0);
-        timerElement.textContent = parseFloat(remaining).toFixed(2);
+        // Derive the displayed value from sessionEndTime directly so the countdown
+        // reaches exactly 0.00 at the same instant the loop below actually stops —
+        // setup latency before this loop starts no longer eats into displayed time.
+        const remaining = Math.max((sessionEndTime - Date.now()) / 1000, 0);
+        timerElement.textContent = remaining.toFixed(2);
 
         if (Date.now() < sessionEndTime) {
             requestAnimationFrame(updateTimer);
         } else {
             if (frontEndHandler.gameState === 'active') {
-                frontEndHandler.endRound(); // Automatically end the round when time runs out
+                frontEndHandler.endRound();
             } else {
-                //animation currently going
                 console.log('Timer ended while animation was in progress.');
-                frontEndHandler.timerWaiting = true; // Set a flag to indicate that the timer has ended while animation is in progress
+                frontEndHandler.timerWaiting = true;
             }
         }
     };
@@ -758,28 +788,12 @@ document.addEventListener('click', (event) => {
     if (!event.target.classList.contains('icb-pre__tf-btn')) { return }
 
     const selectedTimeFrame = parseInt(event.target.getAttribute('data-seconds'), 10);
-
-    if (frontEndHandler.selectedTimeFrame == selectedTimeFrame) {
-        console.log('Selected time frame is the same as the current one. No update needed.');
-        return;
-    }
-
-    socket.emit('timeframe_update', { timeframe: selectedTimeFrame });
-    socket.once('timeframe_update_response', (data) => {
-        console.log('Time frame update response received for socket ID:', data);
-        if (data.accepted) {
-            frontEndHandler.selectedTimeFrame = selectedTimeFrame; //update the front end handler's selected time frame to reflect the successful update, this will ensure the UI and timer use the new time frame value
-
-            initTimer(); // re-initialize timer with new time frame
-
-        } else {
-            console.warn('Time frame update rejected for socket ID:', socket.id, 'Reason:', data.message);
-        }
-    });
+    frontEndHandler.selectedTimeFrame = selectedTimeFrame; //update the front end handler's selected time frame to reflect the successful update, this will ensure the UI and timer use the new time frame value
+    initTimer(); // re-initialize timer with new time frame
 
 });
 window.addEventListener('resize', () => {
-    if (frontEndHandler.animating || (frontEndHandler.url == '/singlePlayer/result')) return;
+    if (frontEndHandler.animating || (frontEndHandler.url == '/multiPlayer/result')) return;
     if (window.innerWidth <= 992) {
         resizeMatrixCol(100);
         document.getElementById('sizeUp-btn').style.display = 'none';
@@ -1434,7 +1448,7 @@ document.addEventListener('keydown', (event) => {
 
 //web socket
 const socket = io(window.location.origin, {
-    path: "/singlePlayer/socket"
+    path: "/multiPlayer/socket"
 }); // Connecting to the Socket.IO server at the path
 
 socket.on('connect', () => {
@@ -1541,10 +1555,9 @@ function undoInitialGameGUI() {
 }
 
 document.getElementById('icb-pre-start-btn').addEventListener('click', () => {
-    undoInitialGameGUI(); // remove the initial GUI styles set for the pre game menu to transition into the normal gameplay GUI
-    audioHandler.stopCover();
-    //start round
-    frontEndHandler.newRound();
+    //start round — the actual GUI transition happens once a match is found (see 'matchmake_found' below),
+    //since there's a "searching for a match..." waiting period before gameplay actually begins.
+    socket.emit('matchmake', { selectedTimeFrame: frontEndHandler.selectedTimeFrame });
 });
 
 const testing_exports = {
@@ -1574,3 +1587,71 @@ const testing_exports = {
     initTimer,
 };
 Object.assign(window, testing_exports);
+
+
+
+
+
+socket.on('matchmake_queued', (data) => {
+    document.querySelector('.icb-pre__rule-text').innerText = "Searching for a match..."
+    document.getElementById('icb-pre-start-btn').style.display = 'none';
+    document.getElementById('timeframe-buttons-div').style.cssText = 'display: none !important;'; //hide the time frame buttons to prevent changing the time frame while waiting for a match
+});
+
+socket.on('matchmake_found', (data) => {
+    if (data.success) {
+        frontEndHandler.matchEndTime = data.matchEndTime;
+        frontEndHandler.opponent = data.opponent;
+        document.querySelector('.icb-pre__rule-text').innerText = "Match found! Starting game..."
+        console.log('opponent name:', data.opponent);
+
+        //this is the actual pre-game -> gameplay transition, so this is where the initial
+        //black/collapsed GUI (set up by initialGameGUI() on page load) needs to be undone.
+        //singlePlayerFrontend.js does this immediately on start-button click since it has no
+        //waiting period; multiplayer has to wait until a match actually exists.
+        undoInitialGameGUI();
+        audioHandler.stopCover();
+
+        frontEndHandler.newRound();
+    } else {
+        document.querySelector('.icb-pre__rule-text').innerText = "Matchmaking failed..."
+        //let the player retry instead of getting stuck on a dead screen
+        document.getElementById('icb-pre-start-btn').style.display = '';
+        document.getElementById('timeframe-buttons-div').style.cssText = '';
+    }
+});
+
+// server-authoritative match end
+// server-authoritative match end. Only stores the result and navigates if our own
+// round-end animation has already finished — never navigate on arrival alone, since
+// that can land mid-animation and tear out the DOM it's still using.
+// server-authoritative match end. Only stores the result — navigation is driven
+// solely by finishMatch(), called once our own round-end animation has actually
+// finished. Never navigate from here directly, or we risk swapping out the DOM
+// mid-animation (which also breaks the sessionStorage.setItem in goToPage's
+// fetch success path, silently falling into the hard-reload .catch instead).
+socket.on('match_result', (data) => {
+    if (frontEndHandler.matchResultReceived) return; // server should only emit once
+    frontEndHandler.matchWon = data.won;
+    frontEndHandler.matchDraw = data.draw;
+    frontEndHandler.finalScore = data.yourScore;
+    frontEndHandler.opponentFinalScore = data.opponentScore;
+    frontEndHandler.opponent = data.opponentName;
+    frontEndHandler.matchResultReceived = true;
+
+    if (frontEndHandler.awaitingMatchResult) {
+        frontEndHandler.awaitingMatchResult = false;
+        frontEndHandler.navigateToResult();
+    }
+    //waits for animation automatically
+});
+
+// winning-player-disconnected void path
+socket.on('match_cancelled', (data) => {
+    alert(data.message || 'Match was voided.');
+    window.location.reload();
+});
+
+socket.on('disconnect', () => {
+    window.location.reload();
+})

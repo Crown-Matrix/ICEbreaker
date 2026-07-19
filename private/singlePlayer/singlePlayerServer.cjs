@@ -1,6 +1,7 @@
+//singlePlayerServer.cjs
+
 //code to handle single player interactions and logic
 // data will be stored in classes and objects, and will be manipulated based on user input and game state
-//singlePlayerServer.cjs
 
 const { join } = require('path');
 
@@ -476,6 +477,14 @@ app.get('/singlePlayer', (req, res) => {
       res.status(500).send('Internal Server Error');
     }
   });
+});
+
+app.get('/singlePlayer/reference', (req, res) => {
+  res.status(200).sendFile('singlePlayer/singlePlayerReference.html', { root: "./public" });
+});
+
+app.get('/singlePlayer/result', (req, res) => {
+  res.status(200).sendFile('singlePlayer/singlePlayerResult.html', { root: "./public" });
 });
 
 

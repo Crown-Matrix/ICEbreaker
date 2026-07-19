@@ -197,12 +197,13 @@ app.use([
 
 
 
-app.get('/banned', (req, res) => {
-  res.status(403).sendFile('/auth/banned.html');
+
+
+app.get(['/banned','/auth/banned'], (req, res) => {
+  res.status(403).sendFile(join(__dirname, '../../public/auth/banned.html'));
 });
 app.use(cookieParser()); //parse cookies from incoming requests
-app.use(express.json()); //parse JSON bodies]
-
+app.use(express.json()); //parse JSON bodies
 /*
     BAN CHECK MIDDLEWARE
     checks banned table for ip or UUID, if found, redirects to /banned page
@@ -305,6 +306,11 @@ app.use((req, res, next) => {
 app.get('/', (req, res) => {
   //temp redirect to single player page for testing until multiplayer is created
   res.redirect('/singlePlayer');
+});
+
+
+app.get('/index.html', (req, res) => {
+  res.redirect('/'); // -> redirect to root, which will redirect to singlePlayer until multiplayer is created
 });
 
 
@@ -505,13 +511,7 @@ app.get('/admin-panel', (req, res) => {
 });
 
 
-app.get('/singlePlayer/reference', (req, res) => {
-  res.status(200).sendFile('singlePlayer/singlePlayerReference.html', { root: "./public" });
-});
 
-app.get('/singlePlayer/result', (req, res) => {
-  res.status(200).sendFile('singlePlayer/singlePlayerResult.html', { root: "./public" });
-});
 
 
 

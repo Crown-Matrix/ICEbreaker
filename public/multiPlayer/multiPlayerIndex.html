@@ -1,0 +1,332 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ICEbreaker - Multi Player</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+        onerror="this.href='/css/bootstrap.min.css'">
+    <link rel="stylesheet" href="/css/multiPlayerStyles.css" type="text/css">
+    <link rel="icon" type="image/png" href="/favicon.ico">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+        onerror="this.href = '/css/bootstrap-icons.css'">
+</head>
+
+<body>
+    <style>
+        /* Prevent FOUC by hiding the body until styles are applied */
+        body {
+            visibility: hidden;
+        }
+    </style>
+    <nav>
+        <div class="container-fluid cy-nav" id="profile-nav-div">
+            <div id="profile" class="col-1 cy-flex">
+                <img src="/imgs/profile-placeholder.png" id="profile-picture">
+            </div>
+            <div id="os-label" class="col-3 cy-flex profile-label">
+                <span class="cy-text-cyan">NET</span><span class="cy-text-magenta">RUNNER</span>
+                <span class="cy-p-sm" id="header-spacer"></span>
+                <span class="cy-text-cyan">OS</span>
+            </div>
+            <div class="col-9 col-sm-5 mt-5 mt-sm-0 cy-flex--center" id="title-nav-div">
+                <span class="cy-text-cyan">ICE</span><span class="cy-text-magenta">BREAKER</span>
+            </div>
+            <div class="col-3" id="right-header-spacer">
+            </div>
+        </div>
+    </nav>
+    <main>
+        <div class="container-fluid" id="cy-main-content-div">
+            <div class="row">
+                <div class="col-11 cy-hud-frame" id="cy-terminal">
+                    <div class="cy-hud-frame__br"></div>
+                    <div class="cy-hud-frame__bl"></div>
+                    <header id="document-header">
+                        <div class="container-fluid">
+                            <div class="row">
+                                <div class="col-2">
+                                    <img src="/imgs/nettech.png" id="nettech-logo">
+                                </div>
+                                <div class="col-10">
+                                    <img src="/imgs/cyberpunk-header.png" id="cyberpunk-header">
+                                </div>
+                            </div>
+                        </div>
+                    </header>
+                    <div class="container-fluid" id="terminal-header-content">
+                        <div class="row" id="terminal-header-row">
+                            <div class="col-6">
+                                <!--empty spacer-->
+                            </div>
+                            <div class="col-12 col-lg-6">
+                                <h2 class="cy-text-yellow cy-h2" id="buffer-text">Buffer</h2>
+                            </div>
+                        </div>
+                        <div class="row" id="terminal-content-row">
+                            <div class="col-12 col-lg-6" id="breach-time">
+                                <div id="breach-time-container" class="cy-flex cy-flex--between">
+                                    <div>
+                                        <h3 class="cy-text-cyan cy-h3" id="breach-time-label">Breach Time <span
+                                                class="cy-text-magenta">Remaining</span></h3>
+                                    </div>
+                                    <div id="breach-time-value" class="cy-text-yellow">60.00</div>
+                                </div>
+                                <div id="breach-time-underline">
+                                    <div id="breach-time-bar"></div>
+                                </div>
+                            </div>
+                            <div class="col-12 col-lg-6" id="buffer-container">
+                                <div class="container-fluid ps-0 pe-0">
+                                    <div class="row">
+                                        <div class="col-12">
+                                            <div id="buffer-grid">
+                                                <div class="buffer-row cy-horizontal-grid">
+                                                    <!--populated via javascript-->
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="row mt-0 mt-lg-3" id="terminal-game-row">
+
+                            <div id="pre-game-menu">
+                                <div class="d-flex align-items-center justify-content-center"
+                                    style="padding:2rem 1.25rem; position:relative; z-index:10;">
+                                    <div id="icb-pre-card">
+                                        <!-- ══ HEADER: position:relative container, logo absolute top-right ══ -->
+                                        <div class="border-bottom icb-pre__divider px-3 py-2"
+                                            style="position:relative; min-height:56px;">
+
+                                            <!-- gear — top left, sits in normal flow -->
+                                            <button class="icb-pre__ico-btn" aria-label="Settings"
+                                                style="width:40px;height:40px;vertical-align:top;">
+                                                <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                                  <path d="M6.5 1.5h3l.4 1.6a4.5 4.5 0 0 1 1.1.65l1.55-.5 1.5 2.6-1.2 1.1a4.6 4.6 0 0 1 0 1.1l1.2 1.1-1.5 2.6-1.55-.5a4.5 4.5 0 0 1-1.1.65l-.4 1.6h-3l-.4-1.6a4.5 4.5 0 0 1-1.1-.65l-1.55.5-1.5-2.6 1.2-1.1a4.6 4.6 0 0 1 0-1.1l-1.2-1.1 1.5-2.6 1.55.5a4.5 4.5 0 0 1 1.1-.65z" stroke="#00CCDD" stroke-width="1.2" stroke-linejoin="round"/>
+                                                  <circle cx="8" cy="7.6" r="2" stroke="#00CCDD" stroke-width="1.2"/>
+                                                </svg>
+                                            </button>
+
+                                            <!-- timeframe — centered via absolute so it doesn't push the logo -->
+                                            <div id='timeframe-buttons-div' class="d-flex flex-column align-items-center gap-2"
+                                                style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);">
+                                                <span class="icb-pre__tf-label">Select Timeframe</span>
+                                                <div class="icb-pre__tf-group">
+                                                    <button class="icb-pre__tf-btn" data-seconds="30">30s</button>
+                                                    <button class="icb-pre__tf-btn" data-seconds="45">45s</button>
+                                                    <button class="icb-pre__tf-btn icb-pre__tf-active"
+                                                        data-seconds="60">60s</button>
+                                                </div>
+                                            </div>
+
+                                            <!-- logo — absolute TOP-RIGHT corner -->
+                                            <div class="d-none d-md-flex flex-column align-items-end"
+                                                style="position:absolute; top:8px; right:12px; text-align:right;">
+                                                <div><span class="icb-pre__header-ice">ICE</span><span
+                                                        class="icb-pre__header-breaker">Breaker</span></div>
+                                                <span class="icb-pre__header-sub    ">Breach the Grid</span>
+                                            </div>
+
+                                        </div>
+
+                                        <!-- ══ BODY: decorative rule + prompt ══ -->
+                                        <div
+                                            class="d-flex flex-column align-items-center justify-content-center py-5 px-3 border-bottom icb-pre__divider text-center">
+
+                                            <!-- decorative rule -->
+                                            <div
+                                                class="d-flex align-items-center gap-3 mb-4 w-100 justify-content-center">
+                                                <div class="icb-pre__rule-line icb-pre__rule-line--l"></div>
+                                                <span class="icb-pre__rule-text">Ready Operative</span>
+                                                <div class="icb-pre__rule-line icb-pre__rule-line--r"></div>
+                                            </div>
+
+                                            <!-- blinking prompt -->
+                                            <span class="icb-pre__prompt">[ BOOTING ]</span>
+
+                                        </div>
+
+                                        <!-- ══ BOTTOM BAR ══ -->
+                                        <div class="d-flex align-items-center icb-pre__bottom-bar">
+
+                                            <button class="icb-pre__start-btn" id="icb-pre-start-btn">
+                                                <div class="icb-pre__start-icon">
+                                                    <svg viewBox="0 0 9 9">
+                                                        <path d="M2 1l6 3.5-6 3.5z" />
+                                                    </svg>
+                                                </div>
+                                                <span class="icb-pre__start-label">Start Run</span>
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class=" col-lg-6 col-8 mt-3 mt-lg-0 mb-3 mb-lg-0 p-0" id="window-outside"
+                                data-state="active">
+
+                                <div id="matrix-window" class="cy-flex">
+                                    <div id='window-header'>
+                                        <div style="display:flex; align-items:center;">
+                                            <img src="/imgs/matrix.png" id="window-header-logo">
+                                            <h2 class="cy-h2" id="window-header-h2">CODE MATRIX</h2>
+                                        </div>
+                                        <div id="button-container">
+
+                                            <div id="sizeUp-btn" title="Increase Size">
+                                                <i class="bi bi-arrow-up-square-fill"></i>
+                                            </div>
+                                            <div id="sizeDown-btn" title="Decrease Size">
+                                                <i class="bi bi-arrow-down-square-fill"></i>
+                                            </div>
+                                            <div id="sizeReset-btn" title="Reset Size">
+                                                <i class="bi bi-arrow-right-square-fill"></i>
+                                            </div>
+
+                                        </div>
+                                    </div>
+                                    <div class="container-fluid">
+                                        <div class="row">
+                                            <div class="col-lg-2 pt-3 pb-3 gx-0 side-matrix-col">
+
+                                            </div>
+                                            <div class="col-lg-7 pt-3 pb-3 gx-0 main-matrix-col">
+                                                <!--code matrix-->
+                                                <div id="code-matrix-header" class="container-fluid">
+                                                    <div class="row matrix-row">
+                                                        <div class="col-2 matrix-cell" data-row="0" data-col="0"></div>
+                                                        <div class="col-2 matrix-cell" data-row="0" data-col="1"></div>
+                                                        <div class="col-2 matrix-cell" data-row="0" data-col="2"></div>
+                                                        <div class="col-2 matrix-cell" data-row="0" data-col="3"></div>
+                                                        <div class="col-2 matrix-cell" data-row="0" data-col="4"></div>
+                                                        <div class="col-2 matrix-cell" data-row="0" data-col="5"></div>
+                                                    </div>
+                                                    <div class="row matrix-row">
+                                                        <div class="col-2 matrix-cell" data-row="1" data-col="0"></div>
+                                                        <div class="col-2 matrix-cell" data-row="1" data-col="1"></div>
+                                                        <div class="col-2 matrix-cell" data-row="1" data-col="2"></div>
+                                                        <div class="col-2 matrix-cell" data-row="1" data-col="3"></div>
+                                                        <div class="col-2 matrix-cell" data-row="1" data-col="4"></div>
+                                                        <div class="col-2 matrix-cell" data-row="1" data-col="5"></div>
+                                                    </div>
+                                                    <div class="row matrix-row">
+                                                        <div class="col-2 matrix-cell" data-row="2" data-col="0"></div>
+                                                        <div class="col-2 matrix-cell" data-row="2" data-col="1"></div>
+                                                        <div class="col-2 matrix-cell" data-row="2" data-col="2"></div>
+                                                        <div class="col-2 matrix-cell" data-row="2" data-col="3"></div>
+                                                        <div class="col-2 matrix-cell" data-row="2" data-col="4"></div>
+                                                        <div class="col-2 matrix-cell" data-row="2" data-col="5"></div>
+                                                    </div>
+                                                    <div class="row matrix-row">
+                                                        <div class="col-2 matrix-cell" data-row="3" data-col="0"></div>
+                                                        <div class="col-2 matrix-cell" data-row="3" data-col="1"></div>
+                                                        <div class="col-2 matrix-cell" data-row="3" data-col="2"></div>
+                                                        <div class="col-2 matrix-cell" data-row="3" data-col="3"></div>
+                                                        <div class="col-2 matrix-cell" data-row="3" data-col="4"></div>
+                                                        <div class="col-2 matrix-cell" data-row="3" data-col="5"></div>
+                                                    </div>
+                                                    <div class="row matrix-row">
+                                                        <div class="col-2 matrix-cell" data-row="4" data-col="0"></div>
+                                                        <div class="col-2 matrix-cell" data-row="4" data-col="1"></div>
+                                                        <div class="col-2 matrix-cell" data-row="4" data-col="2"></div>
+                                                        <div class="col-2 matrix-cell" data-row="4" data-col="3"></div>
+                                                        <div class="col-2 matrix-cell" data-row="4" data-col="4"></div>
+                                                        <div class="col-2 matrix-cell" data-row="4" data-col="5"></div>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                            <div class="col-lg-3 pt-3 pb-3 gx-0 side-matrix-col">
+
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-lg-6 col-12">
+                                <!--sequence required to upload-->
+                                <div id="sequences-wrapper">
+                                    <div class="container-fluid">
+                                        <div class="row" style="margin-bottom: 0.5rem" id="sequence-header-div">
+                                            <div class="col-sm-7 col-12 cy-flex" id="sequence-header">
+                                                <img src="/imgs/sequence_decoration.png" id="sequence-decoration">
+                                                <h2 class="cy-h4 cy-text-yellow" id="upload-sequence-header">
+                                                    Sequence Required to Upload
+                                                </h2>
+                                            </div>
+                                            <div class="col-sm-5 d-none d-sm-block" id="top-sequence-img-container">
+                                                <img src="/imgs/sequence-top-decoration.png"
+                                                    id="sequence-top-decoration">
+                                            </div>
+                                        </div>
+                                    </div>
+                                    <div id="sequence-rows-container">
+                                        <div class="container-fluid" id="sequence-rows-inner"></div>
+                                    </div>
+                                </div>
+                                <img src="/imgs/sequence-bottom-decoration.png" id="sequence-bottom-decoration">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="col-6 ps-0">
+                                <img src="/imgs/matrixEffectWithoutBackground.png" id="matrixEffectImage">
+                            </div>
+                            <div class="col-6">
+
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+
+
+
+    <svg width="0" height="0" style="position:absolute">
+        <defs>
+            <filter id="failed-filter">
+                <feColorMatrix type="saturate" values="0" />
+                <feComponentTransfer>
+                    <feFuncR type="linear" slope="1" intercept="0" />
+                    <feFuncG type="linear" slope="0.10" intercept="0" />
+                    <feFuncB type="linear" slope="0.08" intercept="0" />
+                </feComponentTransfer>
+            </filter>
+        </defs>
+    </svg>
+    <svg width="0" height="0" style="position:absolute">
+        <defs>
+            <filter id="installed-filter">
+                <feColorMatrix type="saturate" values="0" />
+                <feComponentTransfer>
+                    <feFuncR type="linear" slope="0.187" intercept="0" />
+                    <feFuncG type="linear" slope="0.902" intercept="0" />
+                    <feFuncB type="linear" slope="0.363" intercept="0" />
+                </feComponentTransfer>
+            </filter>
+        </defs>
+    </svg>
+    <!--im not gonna pretend i know how these work, but they work-->
+    <!--they are in charge of color changing the cell-decoration images to the gameState-->
+
+
+    <!--socket connection-->
+    <script src="https://cdn.socket.io/4.8.3/socket.io.min.js"></script>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"
+        onerror="loadLocalBootstrap()"></script>
+    <script src="/js/multiPlayerFrontend.js" type="module"></script>
+    <script>function loadLocalBootstrap() { var script = document.createElement('script'); script.src = '/js/bootstrap.bundle.min.js'; document.body.appendChild(script); }</script>
+
+    <script>
+        // for page reloads
+        window.addEventListener('load', () => {
+            document.body.style.visibility = 'visible';
+        }, { once: true });
+    </script>
+</body>
+
+</html>

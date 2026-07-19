@@ -655,7 +655,6 @@ module.exports = {
     deleteSessionToken,
     clearExpiredSessionTokens,
     clearAllSessionTokens,
-    sessionTokenToUUID,
     getUUIDFromUsername,
     isIPBanned,
     isUUIDBanned,
