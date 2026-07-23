@@ -167,10 +167,32 @@ class Match {
       opponentScore: disconnector.matchScore || 0,
       opponentName: disconnector.socket.playerName,
       reason: 'opponent_disconnected',
+      message: 'Opponent disconnected. You win.',
     });
 
     await this.writeStatsFor(remaining, true);
     await this.writeStatsFor(disconnector, false);
+  }
+
+  // "cheater detected" path — opponent wins, cheater is banned, no stats for cheater
+  async forfeitFromCheat(cheater, opponent) {
+    if (this.ended || this.cancelled) return;
+    this.ended = true;
+    clearTimeout(this.finalizeTimeout);
+
+    if (opponent) {
+      opponent.socket.emit('match_result', {
+        success: true,
+        won: true,
+        draw: false,
+        yourScore: opponent.matchScore || 0,
+        opponentScore: cheater.matchScore || 0,
+        opponentName: cheater.socket.playerName,
+        reason: 'opponent_cheating',
+      });
+      await this.writeStatsFor(opponent, true);
+    }
+    // Cheater gets no stats — databaseWritten is set to true by the caller before this runs
   }
 
   // "winning player disconnected" path — void the match, no stats for either side
@@ -181,7 +203,13 @@ class Match {
 
     remaining.socket.emit('match_cancelled', {
       success: false,
-      message: 'Your opponent disconnected while ahead on score. Match voided — no stats recorded.',
+      reason: 'opponent_disconnected',
+      opponentName: disconnector.socket.playerName,
+      yourScore: remaining.matchScore || 0,
+      opponentScore: disconnector.matchScore || 0,
+      // Preserve the departing player's score so the remaining player can
+      // see the actual final score instead of the default "vs 0".
+      message: 'Opponent disconnected while ahead on score. Match voided — no stats recorded.',
     });
   }
 
@@ -352,19 +380,28 @@ function registerMatchHandlers(player, match) {
     });
   });
 
-  const ANTI_CHEAT_ENABLED = false; // TODO: flip back on once the matrix false-positive is root-caused
-
   socket.on('frontEndHandler_update', (data) => {
     if (player.isBanned || !player.frontEndHandler || !data.frontEndHandler) return;
 
-    const banLengthDays = 10 / 1440;
+    // Keys the server always overwrites with its own trusted values so the client
+    // can never smuggle a bad value through, even if the tamper check is not triggered.
     const immutableKeys = ['matrix', 'solutions', 'gameState', 'maxBufferSize', 'difficultyValues', 'totalSequencesUploaded', 'isGuest'];
-    const tamperCheckKeys = ['matrix', 'solutions', 'gameState', 'maxBufferSize', 'isGuest'];
-    const objectKeys = new Set(['matrix', 'solutions']);
+
+    // Keys we actively check for tampering. 'matrix' and 'solutions' are intentionally
+    // excluded: the client emits frontEndHandler_update before start_game_response
+    // arrives (see newRound()), creating a race where the server may have already
+    // advanced to the next round's matrix — producing a false positive. Scoring is
+    // fully server-side, so tampering with matrix/solutions in this message has no
+    // effect anyway; the force-sync below neutralises any attempt regardless.
+    const tamperCheckKeys = ['gameState', 'maxBufferSize', 'isGuest', 'difficultyValues'];
+    const objectKeys = new Set(['difficultyValues']); // needs deep compare
+
+    const banLengthDays = 10 / 1440; // 10 minutes, same as single-player
+    const banMinutes = Math.round(banLengthDays * 1440);
 
     for (const key of immutableKeys) {
       const incomingVal = data.frontEndHandler[key];
-      const trustedVal = player.frontEndHandler[key];
+      const trustedVal  = player.frontEndHandler[key];
 
       if (tamperCheckKeys.includes(key)) {
         const isDifferent = objectKeys.has(key)
@@ -372,83 +409,100 @@ function registerMatchHandlers(player, match) {
           : incomingVal !== trustedVal;
 
         if (isDifferent) {
-          if (ANTI_CHEAT_ENABLED) {
-            console.warn(`Tampering attempt detected for key "${key}" from socket ID: ${socket.id}.`);
-            try {
-              SQL_Manager_Instance.banUser(socket.handshake.address, player.identity.UUID ?? null, `Tampering: "${key}"`, banLengthDays);
-            } catch (error) {
-              if (!error.message.includes('already banned')) {
-                console.error(`Error banning user: ${error.message}`);
-              }
+          console.warn(`[anti-cheat] MP tampering detected: key "${key}" from socket ${socket.id} (${socket.playerName}). Incoming:`, incomingVal, '| Trusted:', trustedVal);
+
+          try {
+            SQL_Manager_Instance.banUser(socket.handshake.address, player.identity.UUID ?? null, `MP Tampering: "${key}"`, banLengthDays);
+          } catch (error) {
+            if (error.message.includes('already banned')) {
+              console.warn(`Socket ${socket.id} is already banned.`);
+            } else {
+              console.error(`Error banning user: ${error.message}`);
             }
-            player.isBanned = true;
-            player.databaseWritten = true;
-            socket.emit('banned', {
-              reason: `Client Tampering Detected. You have been banned for ${banLengthDays * 1440} minutes`,
-              message: 'banned',
-              length: banLengthDays,
-            });
-            setTimeout(() => socket.disconnect(true), 200);
-            return;
-          } else {
-            // anti-cheat off — log it so we can diagnose later, but don't punish
-            console.log(`[anti-cheat disabled] "${key}" mismatch from socket ${socket.id}. Incoming:`, incomingVal, 'Trusted:', trustedVal);
           }
+
+          player.isBanned = true;
+          player.databaseWritten = true;
+
+          socket.emit('banned', {
+            reason: `Client Tampering Detected. You have been banned for ${banMinutes} minutes`,
+            message: 'banned',
+            length: banLengthDays,
+          });
+          setTimeout(() => socket.disconnect(true), 200);
+
+          // Award the win to the opponent
+          const opponent = match.getOpponent(player);
+          match.forfeitFromCheat(player, opponent);
+          return;
         }
       }
 
-      data.frontEndHandler[key] = trustedVal; // always force-sync, mismatch or not — client can't smuggle bad values either way
+      // Always force-sync — client can never keep a bad value even if no ban fires
+      data.frontEndHandler[key] = trustedVal;
     }
 
     player.frontEndHandler = data.frontEndHandler;
   });
 
   socket.on('end_game', (data) => {
-    if (player.isBanned || match.cancelled || match.ended) return;
+    if (player.isBanned || match.cancelled) return;
     const feh = player.frontEndHandler;
     if (!feh || (feh.gameState !== 'active' && feh.gameState !== 'ending')) {
       socket.emit('end_game_response', { roundResult: 'init', scoreGained: 0, resultType: 'error', message: 'No active round to end.' });
       return;
     }
 
-    const sequence_data = data.sequence;
-    const timedOut = match.isTimeUp();
-
-    if (!timedOut) {
-      if (!validateSequenceData(sequence_data, feh.matrix)) {
-        socket.emit('end_game_response', { roundResult: 'lost', scoreGained: 0, resultType: 'error', message: 'Invalid sequence data' });
-        return;
-      }
-
-      const buffer = convertSequenceToBuffer(sequence_data, feh.matrix);
-      const solution_result_json = codeMatrix.checkforSolutions(buffer.join(''), feh.solutions);
-
-      let scoreGained = 0, sequencesUploadedCount = 0, all_solved = true;
-      for (const [k, v] of Object.entries(solution_result_json)) {
-        if (v) {
-          sequencesUploadedCount++;
-          scoreGained += difficultyValues[k] || 0;
-        } else {
-          all_solved = false;
-        }
-      }
-
-      player.matchScore += scoreGained;
-      player.totalSequencesUploaded += sequencesUploadedCount;
-      player.roundIndex += 1;
-      feh.gameState = all_solved ? 'won' : 'lost';
-
-      socket.emit('end_game_response', {
-        roundResult: all_solved ? 'won' : 'lost',
-        resultType: all_solved ? 'all_uploaded' : 'buffer_full',
-        scoreGained,
-        sequencesUploaded: sequencesUploadedCount,
-        message: 'Round ended successfully.',
-      });
-    } else {
+    // The safety-net finalizer can win the race with the client's last
+    // end_game packet. Always answer that packet so the client can leave its
+    // ending state and let the authoritative match_result finish navigation.
+    if (match.ended || match.isTimeUp()) {
       feh.gameState = 'lost';
-      socket.emit('end_game_response', { roundResult: 'lost', scoreGained: 0, resultType: 'timeout', message: 'Time is up!' });
+      socket.emit('end_game_response', {
+        roundResult: 'lost',
+        scoreGained: 0,
+        sequencesUploaded: 0,
+        resultType: 'timeout',
+        message: 'Match time has ended.',
+      });
+      return;
     }
+
+    const sequence_data = Array.isArray(data?.sequence) ? data.sequence : [];
+    if (!validateSequenceData(sequence_data, feh.matrix)) {
+      socket.emit('end_game_response', { roundResult: 'lost', scoreGained: 0, resultType: 'error', message: 'Invalid sequence data' });
+      return;
+    }
+
+    const buffer = convertSequenceToBuffer(sequence_data, feh.matrix);
+    const solution_result_json = codeMatrix.checkforSolutions(buffer.join(''), feh.solutions);
+
+    let scoreGained = 0, sequencesUploadedCount = 0, all_solved = true;
+    for (const [k, v] of Object.entries(solution_result_json)) {
+      if (v) {
+        sequencesUploadedCount++;
+        scoreGained += difficultyValues[k] || 0;
+      } else {
+        all_solved = false;
+      }
+    }
+
+    player.matchScore += scoreGained;
+    player.totalSequencesUploaded += sequencesUploadedCount;
+    player.roundIndex += 1;
+    feh.gameState = all_solved ? 'won' : 'lost';
+
+    socket.emit('end_game_response', {
+      roundResult: all_solved ? 'won' : 'lost',
+      resultType: all_solved ? 'all_uploaded' : 'buffer_full',
+      scoreGained,
+      sequencesUploaded: sequencesUploadedCount,
+      message: 'Round ended successfully.',
+    });
+
+    // Push updated score to opponent for live HUD display.
+    const opp = match.getOpponent(player);
+    if (opp) opp.socket.emit('opponent_score_update', { score: player.matchScore || 0 });
 
     maybeFinalizeMatch(match);
   });
@@ -469,6 +523,36 @@ function maybeFinalizeMatch(match) {
   }
 }
 
+// ---- connection middleware: reject banned IPs and UUIDs before they enter ----
+
+io.use((socket, next) => {
+  const ip = socket.handshake.address
+    || socket.request.headers['x-forwarded-for']?.split(',')[0].trim()
+    || socket.request.socket.remoteAddress;
+
+  if (!ip) {
+    console.warn('No IP address found in MP socket handshake:', socket.id);
+    return next(new Error('No IP address found'));
+  }
+
+  if (SQL_Manager_Instance.isIPBanned(ip)) {
+    console.warn('Banned IP attempted MP connection:', ip);
+    return next(new Error('banned'));
+  }
+
+  // UUID ban check — guests (no session token) skip this
+  const sessionToken = SQL_Manager_Instance.auth.getSessionTokenFromRequest(socket.request);
+  if (sessionToken) {
+    const uuid = SQL_Manager_Instance.sessionTokenToUUID(sessionToken);
+    if (uuid && SQL_Manager_Instance.isUUIDBanned(uuid)) {
+      console.warn('Banned UUID attempted MP connection:', uuid);
+      return next(new Error('banned'));
+    }
+  }
+
+  next();
+});
+
 // ---- connection / auth / matchmaking entry point ----
 
 io.on('connection', (socket) => {
@@ -480,8 +564,10 @@ io.on('connection', (socket) => {
   console.log('Socket UUID:', socket.UUID);
 
   const fetched_user_data = socket.UUID ? SQL_Manager_Instance.getUserByUUID(socket.UUID) : null;
-  const winRate = fetched_user_data ? fetched_user_data.winRate : NaN;
-  const avgScore = fetched_user_data ? fetched_user_data.avgScore : NaN;
+  const mp_games_Played = fetched_user_data ? (fetched_user_data.mp_games_Played || 0) : 0;
+  const mp_games_Won   = fetched_user_data ? (fetched_user_data.mp_games_Won   || 0) : 0;
+  const winRate  = mp_games_Played > 0 ? mp_games_Won / mp_games_Played : NaN;
+  const avgScore = fetched_user_data ? (fetched_user_data.mp_average_Score ?? NaN) : NaN;
   socket.playerName = socket.guestMode ? 'Guest' : (fetched_user_data ? fetched_user_data.username : 'Unknown');
 
   const player_obj = new Player(socket, socket.handshake.address);
@@ -506,18 +592,47 @@ io.on('connection', (socket) => {
     if (disconnectorScore > opponentScore) {
       match.voidFromDisconnect(player_obj, opponent);
     } else {
+      // tie also goes to remaining player per design spec
       match.forceFinalizeFromDisconnect(player_obj, opponent);
     }
   });
 
-  socket.once('matchmake', (data) => {
+  // Handshake: frontend emits initialize_data on connect; respond so the pre-game menu appears.
+  socket.once('initialize_data', () => {
+    socket.emit('initialization_success', { message: 'Connected to multiplayer server.' });
+    socket.emit('isGuestStatus', { isGuest: socket.guestMode });
+  });
+
+  // Timeframe UI may emit this on init to sync a previously-saved value — just acknowledge it.
+  socket.on('timeframe_update', () => {
+    socket.emit('timeframe_update_response', { accepted: true });
+  });
+
+  // Cancel matchmaking: remove from queue and allow the player to re-queue.
+  socket.on('cancel_matchmaking', () => {
+    const mm = matchmakers.get(player_obj.selectedTimeFrame);
+    if (mm) mm.removePlayer(player_obj);
+    player_obj.selectedTimeFrame = null;
+    socket.emit('matchmake_cancelled', { success: true });
+  });
+
+  // Use .on (not .once) so the player can re-queue after cancelling.
+  socket.on('matchmake', (data) => {
     console.log('Matchmaking request received:', data);
+
+    if (player_obj.currentMatch) return; // already in an active match
 
     const selectedTimeFrame = parseFloat(data.selectedTimeFrame);
     if (isNaN(selectedTimeFrame)) {
       console.error('Invalid selectedTimeFrame:', data.selectedTimeFrame);
-      socket.emit('matchmake_found', { success: false, message: 'Invalid time frame selected.' });
+      socket.emit('matchmake_queued', { success: false, message: 'Invalid time frame selected.' });
       return;
+    }
+
+    // Remove from old queue when re-queuing with a different time frame.
+    if (player_obj.selectedTimeFrame !== null && player_obj.selectedTimeFrame !== selectedTimeFrame) {
+      const oldMm = matchmakers.get(player_obj.selectedTimeFrame);
+      if (oldMm) oldMm.removePlayer(player_obj);
     }
     player_obj.selectedTimeFrame = selectedTimeFrame;
 
@@ -531,7 +646,9 @@ io.on('connection', (socket) => {
     }
 
     const mm = getMatchmaker(selectedTimeFrame);
-    mm.addPlayer(player_obj);
+    if (!mm.players.includes(player_obj)) {
+      mm.addPlayer(player_obj);
+    }
 
     socket.emit('matchmake_queued', { success: true, message: 'Searching for a match...' });
   });

@@ -241,7 +241,7 @@ class multiPlayerFrontend {
 
     endRound() {
         if (this.gameState !== 'active') {
-            console.log('guard rail hit');
+            console.debug('endRound ignored: round is already ending or complete');
             return;
         }
         this.gameState = 'ending'; // prevent re-entry before server responds
@@ -254,17 +254,22 @@ class multiPlayerFrontend {
         socket.emit('end_game', { sequence: this.sequence }); //send sequence for verification and scoring, also triggers backend to prepare for next round
         socket.once('end_game_response', (data) => {
             this.score += data.scoreGained;
-            this.gameState = data.roundResult;
+            this.gameState = data.roundResult === 'won' ? 'won' : 'lost';
             this.totalSequencesUploaded += data.sequencesUploaded || 0; //if last round, this ensures front end sync, this is still validated by the server for anti-cheat purposes. //if not last round, this number will be overwrittne by newRound anyway.
             removeAllCellHighlights(); //need to be removed before either round end animation
             if (data.roundResult === 'won') {
                 this.winRound(data.resultType);
                 return true;
-            } else if (data.roundResult === 'lost') {
+            } else {
                 this.loseRound(data.resultType);
-                return false;
             }
         });
+        setTimeout(() => {
+            if (this.gameState === 'ending') {
+                this.gameState = 'lost';
+                this.loseRound('timeout');
+            }
+        }, 4000);
     }
 
     async winRound(resultType) {
@@ -1596,9 +1601,46 @@ socket.on('matchmake_queued', (data) => {
     document.querySelector('.icb-pre__rule-text').innerText = "Searching for a match..."
     document.getElementById('icb-pre-start-btn').style.display = 'none';
     document.getElementById('timeframe-buttons-div').style.cssText = 'display: none !important;'; //hide the time frame buttons to prevent changing the time frame while waiting for a match
+
+    // show cancel button (create once, reuse on re-queue)
+    let cancelBtn = document.getElementById('icb-cancel-matchmaking-btn');
+    if (!cancelBtn) {
+        cancelBtn = document.createElement('button');
+        cancelBtn.id = 'icb-cancel-matchmaking-btn';
+        cancelBtn.style.cssText = [
+            'margin-top:12px',
+            'padding:6px 20px',
+            'background:transparent',
+            'border:1px solid var(--cy-red,#FF2D78)',
+            'color:var(--cy-red,#FF2D78)',
+            'font-family:var(--font-mono,"Share Tech Mono",monospace)',
+            'font-size:11px',
+            'letter-spacing:2px',
+            'text-transform:uppercase',
+            'cursor:pointer',
+        ].join(';');
+        cancelBtn.textContent = 'Cancel Search';
+        cancelBtn.addEventListener('click', () => {
+            socket.emit('cancel_matchmaking');
+        });
+        document.getElementById('icb-pre-start-btn').parentElement.appendChild(cancelBtn);
+    }
+    cancelBtn.style.display = '';
+});
+
+socket.on('matchmake_cancelled', () => {
+    document.querySelector('.icb-pre__rule-text').innerText = "Find your match.";
+    document.getElementById('icb-pre-start-btn').style.display = '';
+    document.getElementById('timeframe-buttons-div').style.cssText = '';
+    const cancelBtn = document.getElementById('icb-cancel-matchmaking-btn');
+    if (cancelBtn) cancelBtn.style.display = 'none';
 });
 
 socket.on('matchmake_found', (data) => {
+    // always hide cancel button — match either found or failed, queue is gone either way
+    const cancelBtn = document.getElementById('icb-cancel-matchmaking-btn');
+    if (cancelBtn) cancelBtn.style.display = 'none';
+
     if (data.success) {
         frontEndHandler.matchEndTime = data.matchEndTime;
         frontEndHandler.opponent = data.opponent;
@@ -1621,10 +1663,6 @@ socket.on('matchmake_found', (data) => {
     }
 });
 
-// server-authoritative match end
-// server-authoritative match end. Only stores the result and navigates if our own
-// round-end animation has already finished — never navigate on arrival alone, since
-// that can land mid-animation and tear out the DOM it's still using.
 // server-authoritative match end. Only stores the result — navigation is driven
 // solely by finishMatch(), called once our own round-end animation has actually
 // finished. Never navigate from here directly, or we risk swapping out the DOM
@@ -1635,23 +1673,64 @@ socket.on('match_result', (data) => {
     frontEndHandler.matchWon = data.won;
     frontEndHandler.matchDraw = data.draw;
     frontEndHandler.finalScore = data.yourScore;
+    frontEndHandler.score = data.yourScore; // authoritative final score for result page
     frontEndHandler.opponentFinalScore = data.opponentScore;
     frontEndHandler.opponent = data.opponentName;
+    frontEndHandler.matchEndReason = data.reason || null;
+    frontEndHandler.matchEndMessage = data.message || null;
     frontEndHandler.matchResultReceived = true;
 
-    if (frontEndHandler.awaitingMatchResult) {
+    if (data.reason === 'opponent_disconnected' || data.reason === 'opponent_cheating') {
+        frontEndHandler.awaitingMatchResult = false;
+        frontEndHandler.navigateToResult();
+    } else if (frontEndHandler.awaitingMatchResult) {
         frontEndHandler.awaitingMatchResult = false;
         frontEndHandler.navigateToResult();
     }
     //waits for animation automatically
 });
 
+// Live opponent score: update HUD element whenever opponent finishes a round.
+socket.on('opponent_score_update', (data) => {
+    let oppEl = document.getElementById('mp-opponent-score-hud');
+    if (!oppEl) {
+        oppEl = document.createElement('div');
+        oppEl.id = 'mp-opponent-score-hud';
+        oppEl.style.cssText = [
+            'position:fixed',
+            'top:8px',
+            'right:52px',
+            'font-family:var(--font-mono,"Share Tech Mono",monospace)',
+            'font-size:11px',
+            'color:var(--cy-red,#FF2D78)',
+            'letter-spacing:2px',
+            'text-transform:uppercase',
+            'z-index:9999',
+            'text-shadow:0 0 8px rgba(255,45,120,0.5)',
+            'pointer-events:none',
+        ].join(';');
+        document.body.appendChild(oppEl);
+    }
+    const label = frontEndHandler.opponent ? frontEndHandler.opponent.substring(0, 10) : 'OPP';
+    oppEl.textContent = `${label}: ${data.score || 0}`;
+});
+
 // winning-player-disconnected void path
 socket.on('match_cancelled', (data) => {
-    alert(data.message || 'Match was voided.');
-    window.location.reload();
+    frontEndHandler.matchCancelled = true;
+    frontEndHandler.matchEndReason = data.reason || 'opponent_disconnected';
+    frontEndHandler.matchEndMessage = data.message || 'Opponent disconnected. Match voided.';
+    frontEndHandler.finalScore = data.yourScore || 0;
+    frontEndHandler.score = data.yourScore || 0;
+    frontEndHandler.opponentFinalScore = data.opponentScore || 0;
+    frontEndHandler.matchCancelReason = frontEndHandler.matchEndMessage;
+    frontEndHandler.opponent = data.opponentName || frontEndHandler.opponent;
+    frontEndHandler.matchResultReceived = true;
+    frontEndHandler.navigateToResult();
 });
 
 socket.on('disconnect', () => {
-    window.location.reload();
+    if (!frontEndHandler.navigatingToResult) {
+        window.location.reload();
+    }
 })

@@ -612,20 +612,20 @@
         <div class="title-sub">Breach the Grid</div>
       </div>
 
-      <!-- ══ SCORE + TIME STATS ══ -->
+      <!-- ══ SCORE + TIME/OPP STATS ══ -->
       <div class="d-flex align-items-center justify-content-center py-4 px-3 gap-0 border-bottom cy-divider">
         <div class="stat-block flex-fill">
-          <span class="stat-label">Score Earned</span>
-          <span class="stat-value">2,840</span>
+          <span class="stat-label" id="stat-label-left">Score Earned</span>
+          <span class="stat-value" id="stat-val-left">2,840</span>
           <span class="stat-unit">pts</span>
         </div>
 
         <div class="stat-sep mx-4"></div>
 
         <div class="stat-block flex-fill">
-          <span class="stat-label">Timeframe</span>
-          <span class="stat-value red">60</span>
-          <span class="stat-unit">/ seconds</span>
+          <span class="stat-label" id="stat-label-right">Timeframe</span>
+          <span class="stat-value red" id="stat-val-right">60</span>
+          <span class="stat-unit" id="stat-unit-right">/ seconds</span>
         </div>
       </div>
 
@@ -636,21 +636,21 @@
       <!-- ══ STATUS ROWS ══ -->
       <div class="d-flex flex-column gap-2 px-3 py-3 border-bottom cy-divider">
         <div class="d-flex align-items-center gap-2">
-          <div class="status-icon-wrap">
+          <div class="status-icon-wrap" id="status-icon-outcome">
             <svg class="red" viewBox="0 0 12 12">
               <path d="M2 2l8 8M10 2l-8 8" stroke-linecap="round" />
             </svg>
           </div>
-          <span class="status-text">Condition Critical</span>
+          <span class="status-text" id="status-text-outcome">Match Complete</span>
         </div>
         <div class="d-flex align-items-center gap-2">
-          <div class="status-icon-wrap cyan">
+          <div class="status-icon-wrap cyan" id="status-icon-opponent">
             <svg class="cyan" viewBox="0 0 12 12">
-              <rect x="1" y="3" width="10" height="7" rx="1" />
-              <path d="M4 3V2a2 2 0 014 0v1" stroke-linecap="round" />
+              <circle cx="6" cy="4" r="2.5" />
+              <path d="M1.5 10.5c0-2.5 2-4 4.5-4s4.5 1.5 4.5 4" stroke-linecap="round" />
             </svg>
           </div>
-          <span class="status-text">Node 13 Reached</span>
+          <span class="status-text" id="status-text-opponent">Opponent</span>
         </div>
       </div>
 
@@ -756,27 +756,93 @@
 
 
     // logic to fill text with sessionStorage data:
-    
+
     var frontEndHandler = sessionStorage.getItem('frontEndHandler');
     if (frontEndHandler) {
       frontEndHandler = JSON.parse(frontEndHandler);
-      let score = frontEndHandler.score || '0';
-      document.querySelector('.stat-value').textContent = score;
-      document.querySelector('.stat-value.red').textContent = frontEndHandler.selectedTimeFrame ? String(frontEndHandler.selectedTimeFrame) : '60';
-      document.querySelector('#sequence-counter').textContent = frontEndHandler.totalSequencesUploaded || '0';
+      const score = frontEndHandler.score || 0;
+
+      // ── Base stats (always shown) ──
+      document.getElementById('stat-val-left').textContent = score;
+      document.getElementById('sequence-counter').textContent = frontEndHandler.totalSequencesUploaded || '0';
+
       if (!frontEndHandler.isGuest) {
-        // user account
         document.querySelector('#eddies-counter').textContent = scoreToEddies(score);
-        document.querySelector('#eddies-msg').textContent = "Eddies Mined"; //should be the default anyway, just in case
+        document.querySelector('#eddies-msg').textContent = 'Eddies Mined';
         document.querySelector('.account-name').textContent = localStorage.getItem('x-userdata-username') || 'Unknown Operative';
-        document.querySelector('.account-tag').textContent = `// User Identified`
+        document.querySelector('.account-tag').textContent = '// User Identified';
       } else {
-        // guest account
-        document.querySelector('#eddies-counter').innerHTML = `Sign-in to have` + '<br>' + `earned ${scoreToEddies(score)} eddies!`;
-        document.querySelector('#eddies-msg').textContent = "Guest Account";
+        document.querySelector('#eddies-counter').innerHTML = 'Sign-in to have<br>earned ' + scoreToEddies(score) + ' eddies!';
+        document.querySelector('#eddies-msg').textContent = 'Guest Account';
         document.querySelector('.account-name').textContent = 'Ghost Operative';
         document.querySelector('.account-tag').textContent = '// Guest Session';
-        
+      }
+
+      // ── Multiplayer head-to-head mode ──
+      const isMP = frontEndHandler.matchCancelled
+                || (frontEndHandler.matchWon !== null && frontEndHandler.matchWon !== undefined)
+                || (frontEndHandler.matchDraw !== null && frontEndHandler.matchDraw !== undefined);
+
+      if (isMP) {
+        // Score section: your score vs opponent score
+        document.getElementById('stat-label-left').textContent  = 'Your Score';
+        document.getElementById('stat-label-right').textContent = 'Opp Score';
+        document.getElementById('stat-val-right').textContent   = String(frontEndHandler.opponentFinalScore || 0);
+        document.getElementById('stat-unit-right').textContent  = 'pts';
+
+        // Match outcome row
+        const won  = frontEndHandler.matchWon;
+        const draw = frontEndHandler.matchDraw;
+        const endReason = frontEndHandler.matchEndReason;
+        const outcomeLabel = frontEndHandler.matchCancelled
+          ? 'MATCH VOIDED'
+          : endReason === 'opponent_cheating'
+            ? 'OPPONENT DISQUALIFIED'
+            : (draw ? 'DRAW' : (won ? 'VICTORY' : 'DEFEAT'));
+        document.getElementById('status-text-outcome').textContent = outcomeLabel;
+
+        const iconOutcome = document.getElementById('status-icon-outcome');
+        if (won || endReason === 'opponent_cheating') {
+          iconOutcome.classList.add('cyan');
+          iconOutcome.innerHTML = '<svg viewBox="0 0 12 12" fill="none" stroke-width="1.8"><path d="M2 6l3 3 5-5" stroke="#00CCDD" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+        } else if (draw) {
+          iconOutcome.style.borderColor = 'rgba(255,215,0,0.4)';
+          iconOutcome.style.background  = 'rgba(255,215,0,0.06)';
+          iconOutcome.innerHTML = '<svg viewBox="0 0 12 12" fill="none" stroke-width="1.8"><path d="M2 6h8" stroke="#FFD700" stroke-linecap="round"/></svg>';
+        }
+        // defeat keeps the default red X
+
+        // Opponent name row
+        const oppName = frontEndHandler.opponent || 'Unknown';
+        const opponentSubtitle = endReason === 'opponent_disconnected'
+          ? 'Opponent disconnected'
+          : endReason === 'opponent_cheating'
+            ? 'Opponent disqualified'
+            : 'vs  ' + oppName;
+        document.getElementById('status-text-opponent').textContent = opponentSubtitle;
+
+        // Score lead metric (replace Co-Op Bonus)
+        const scoreDiff = (frontEndHandler.finalScore || 0) - (frontEndHandler.opponentFinalScore || 0);
+        const metricCells = document.querySelectorAll('.metric-cell');
+        if (metricCells[2]) {
+          const valEl = metricCells[2].querySelector('.metric-val');
+          const lblEl = metricCells[2].querySelector('.metric-lbl');
+          valEl.textContent = (scoreDiff >= 0 ? '+' : '') + scoreDiff;
+          lblEl.textContent = 'Score Lead';
+          valEl.classList.remove('muted');
+          if (scoreDiff > 0)      valEl.classList.add('green');
+          else if (scoreDiff < 0) valEl.classList.add('muted');
+        }
+
+        // Subtitle
+        const titleSub = document.querySelector('.title-sub');
+        if (titleSub) titleSub.textContent = 'Match Complete';
+
+      } else {
+        // ── Single-player / legacy mode ──
+        document.getElementById('stat-label-right').textContent = 'Timeframe';
+        document.getElementById('stat-val-right').textContent   = frontEndHandler.selectedTimeFrame ? String(frontEndHandler.selectedTimeFrame) : '60';
+        document.getElementById('stat-unit-right').textContent  = '/ seconds';
       }
 
     } else {
