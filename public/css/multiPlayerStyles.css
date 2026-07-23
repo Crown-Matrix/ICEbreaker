@@ -1006,6 +1006,7 @@
 .icb-pre__bottom-bar {
     background: rgba(0, 0, 0, 0.45);
     border-top: 1px solid rgba(0, 255, 255, 0.18);
+    justify-content: center;
 }
 
 /* ── Decorative rule ── */
@@ -1029,7 +1030,7 @@
     letter-spacing: 4px;
     color: #00CCDD;
     text-transform: uppercase;
-    white-space: nowrap;
+    text-align: center;
 }
 
 /* ── Pre-game card shell end ── */

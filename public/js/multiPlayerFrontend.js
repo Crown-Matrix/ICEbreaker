@@ -1600,7 +1600,7 @@ Object.assign(window, testing_exports);
 socket.on('matchmake_queued', (data) => {
     document.querySelector('.icb-pre__rule-text').innerText = "Searching for a match..."
     document.getElementById('icb-pre-start-btn').style.display = 'none';
-    document.getElementById('timeframe-buttons-div').style.cssText = 'display: none !important;'; //hide the time frame buttons to prevent changing the time frame while waiting for a match
+    document.getElementById('timeframe-buttons-div').style.cssText += 'display: none !important;';
 
     // show cancel button (create once, reuse on re-queue)
     let cancelBtn = document.getElementById('icb-cancel-matchmaking-btn');
@@ -1609,10 +1609,11 @@ socket.on('matchmake_queued', (data) => {
         cancelBtn.id = 'icb-cancel-matchmaking-btn';
         cancelBtn.style.cssText = [
             'margin-top:12px',
+            'margin-bottom:12px',
             'padding:6px 20px',
             'background:transparent',
-            'border:1px solid var(--cy-red,#FF2D78)',
-            'color:var(--cy-red,#FF2D78)',
+            'border:1px solid var(--cy-magenta)',
+            'color:var(--cy-magenta)',
             'font-family:var(--font-mono,"Share Tech Mono",monospace)',
             'font-size:11px',
             'letter-spacing:2px',
@@ -1631,7 +1632,7 @@ socket.on('matchmake_queued', (data) => {
 socket.on('matchmake_cancelled', () => {
     document.querySelector('.icb-pre__rule-text').innerText = "Find your match.";
     document.getElementById('icb-pre-start-btn').style.display = '';
-    document.getElementById('timeframe-buttons-div').style.cssText = '';
+    document.getElementById('timeframe-buttons-div').style.removeProperty('display');
     const cancelBtn = document.getElementById('icb-cancel-matchmaking-btn');
     if (cancelBtn) cancelBtn.style.display = 'none';
 });
@@ -1659,7 +1660,7 @@ socket.on('matchmake_found', (data) => {
         document.querySelector('.icb-pre__rule-text').innerText = "Matchmaking failed..."
         //let the player retry instead of getting stuck on a dead screen
         document.getElementById('icb-pre-start-btn').style.display = '';
-        document.getElementById('timeframe-buttons-div').style.cssText = '';
+        document.getElementById('timeframe-buttons-div').style.removeProperty('display');
     }
 });
 
