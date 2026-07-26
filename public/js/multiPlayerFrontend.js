@@ -435,7 +435,7 @@ function animateNewRound() {
             el.style.transform = 'scaleX(1)';
         }
         // Phase 1+2: all width animations simultaneously
-        for (const element_id of ['breach-time-container', 'window-outside', 'buffer-container', 'breach-time-bar']) {
+        for (const element_id of ['breach-time-container', 'window-outside', 'buffer-container', 'breach-time-bar','opponent-info']) {
             const el = document.getElementById(element_id);
             el.style.cssText = `transform: scaleX(0); transform-origin: left center;`;
             setTimeout(() => {
@@ -689,7 +689,7 @@ function unAnimateRoundEnd(instant = false) {
         let secondsWait = String(instant ? 0 : 0.3) + 's'; // if instant is true, skip the animation and resolve immediately, otherwise wait for the animation to finish
 
         // collapse everything simultaneously
-        for (const element_id of ['breach-time-container', 'window-outside', 'breach-time-bar', 'buffer-text']) {
+        for (const element_id of ['breach-time-container', 'window-outside', 'breach-time-bar', 'buffer-text','opponent-info']) {
             const el = document.getElementById(element_id);
             el.getBoundingClientRect() //force reflow
             el.style.transformOrigin = 'left center';
@@ -758,7 +758,7 @@ function unAnimateRoundEnd(instant = false) {
                 // reset all animated elements back to full width
             }
 
-            for (const element_id of ['breach-time-container', 'window-outside', 'sequences-wrapper', 'buffer-container', 'breach-time-bar']) {
+            for (const element_id of ['breach-time-container', 'window-outside', 'sequences-wrapper', 'buffer-container', 'breach-time-bar','opponent-info']) {
                 const el = document.getElementById(element_id);
                 if (!el) continue;
                 el.style.transition = 'none';
