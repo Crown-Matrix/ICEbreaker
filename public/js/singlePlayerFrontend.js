@@ -793,6 +793,21 @@ window.addEventListener('resize', () => {
     }
 });
 
+window.addEventListener('load', () => {
+    if (frontEndHandler.animating || (frontEndHandler.url == '/singlePlayer/result')) return;
+    if (window.innerWidth <= 992) {
+        resizeMatrixCol(100);
+        document.getElementById('sizeUp-btn').style.display = 'none';
+        document.getElementById('sizeDown-btn').style.display = 'none';
+        document.getElementById('sizeReset-btn').style.display = 'none';
+    } else {
+        resizeMatrixCol(58);
+        document.getElementById('sizeUp-btn').style.display = 'block';
+        document.getElementById('sizeDown-btn').style.display = 'block';
+        document.getElementById('sizeReset-btn').style.display = 'block';
+    }
+});
+
 function getSelectedOption() {
     return document.querySelector('.timeframe-option[selected]');
 }

@@ -37,7 +37,7 @@ const MAX_BUFFER_SIZE = 9;
 const ROUND_START_DELAY_MS = 505; // mirrors single player's animation buffer
 const TOLERANCE_MS = 50;
 
-// ---- shared helpers (matrix-agnostic versions of singlePlayerServer.cjs's backEndHandler methods) ----
+// shared helpers (matrix-agnostic versions of singlePlayerServer.cjs's backEndHandler methods)
 
 function validateSequenceData(sequence_data, matrix) {
   let rowMode = true;
@@ -227,7 +227,7 @@ class Match {
   }
 }
 
-// ---- Player / Matchmaker: matchmaking-time logic, extended with match-runtime fields ----
+// Player / Matchmaker: matchmaking-time logic, extended with match-runtime fields
 
 class Player {
   constructor(socket, ipAddress) {
@@ -327,7 +327,7 @@ setInterval(() => {
   }
 }, 2000);
 
-// ---- per-match game loop — registered once a Match exists for a player ----
+// per-match game loop — registered once a Match exists for a player
 
 function registerMatchHandlers(player, match) {
   const socket = player.socket;
@@ -523,7 +523,7 @@ function maybeFinalizeMatch(match) {
   }
 }
 
-// ---- connection middleware: reject banned IPs and UUIDs before they enter ----
+// connection middleware: reject banned IPs and UUIDs before they enter
 
 io.use((socket, next) => {
   const ip = socket.handshake.address
@@ -553,7 +553,7 @@ io.use((socket, next) => {
   next();
 });
 
-// ---- connection / auth / matchmaking entry point ----
+// connection / auth / matchmaking entry point
 
 io.on('connection', (socket) => {
   console.log('A user connected to the multiplayer server.');

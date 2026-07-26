@@ -51,6 +51,7 @@
 - [Introduction](#introduction)
 - [Game Tutorial](#game-tutorial)
     + └─ [Single Player](#single-player)
+    + └─ [Multi Player](#multi-player)
 - [Usage/Installation](#usage)
     + └─ [Usage](#usage)
     + └─ [Installation](#first-time-installation)
@@ -95,7 +96,7 @@ Behind the interface is a full-stack architecture built for reliability and scal
 
 <div align="center">
 
-<table>
+<table style="border-collapse: separate;border-spacing: 0 50px;">
 <tr>
 <td align="center">TimeFrame Selection</td>
 <td><img src="./README-CONTENT/timeframe-selection.png" alt="Timeframe Selection" width="650"></td>
@@ -115,13 +116,73 @@ Behind the interface is a full-stack architecture built for reliability and scal
 <tr>
 <td align="center">How the Matrix works<br><br>Gameplay Example</td>
 <td>
-<video poster="./README-CONTENT/gameplay-vid/matrix-game-thumbnail.png" controls width="100%">
+<video poster="./README-CONTENT/gameplay-vid/matrix-game-thumbnail.png" controls width="650">
   <source src="https://github.com/user-attachments/assets/f276e773-7599-471f-bc2f-bf8c08e04b9c" type="video/mp4">
   <source src="./README-CONTENT/gameplay-vid/matrix-gameplay-example.mp4" type="video/mp4">
   <source src="./README-CONTENT/gameplay-vid/matrix-gameplay-example.mov" type="video/mov">
   Your browser does not support the video tag.
 </video>
 </td>
+</tr>
+</table>
+
+</div>
+
+
+## Multi Player
+1. Select a timeframe:
+    + This is how long you have to play, you will only play with opponents who chose the same timeframe
+    + Options are 30 / 45 / 60 seconds, with 60 being the default
+2. After starting the game:
+    + There are 4 main parts of the game for you to keep in mind:
+        - Matrix
+        - Sequences List
+        - Buffer
+        - Opponent Score
+    + The matrix - an array of nodes that you can move around either one row or one column at a time, your goal with this matrix is to plan a route that makes the patterns in the sequences list
+    + The sequences list -  a list of node patterns that you try to make from the matrix, the nodes you select can be in any order and can overlap, so long as they are in your selected node list in the correct adjacent order
+    + Buffer - this is the catch, you can only select a certain amount of nodes per round, the buffer shows you the current nodes you've used and also how many left you can use.
+    + The Opponent will be playing the game at the exact same time as you, their score is continously updated on your end to know if you are behind or ahead.
+3. How scoring works: (Same as singlePlayer for the most part, except there is a bonus at the end depending on who won)
+    + Each pattern in the sequence list has a specific difficulty easy/medium/hard, which means shorter to longer lengths.
+    + Higher difficulties are worth more length, but are also harder to achieve because of their longer length.
+    + At the end of a round, assuming the timer hasn't ended yet, a new one starts with new sequences. These new sequences will add to your achieved score from the last round, until the timer rounds out.
+    + You are not given points for a sequence just by installment, they are scored at the end of round, not including the round ending because of the timer running out.
+    + Your score directly contributes to the earning of "eddies", the in-game currency, allowing you to upgrade your future runs with customization and perks. (Assuming you are not playing as a guest account)
+    + Multiplayer Bonus Eddies
+        | Win  | Tie  | Lose |
+        |------|------|------|
+        | +50% | +25% | +0%  |
+4. In game screenshots:
+<div align="center">
+
+<table>
+<tr>
+    <td align="center">TimeFrame Selection</td>
+    <td><img src="./README-CONTENT/toBeAdded.jpg" alt="Timeframe Selection" width="650"></td>
+</tr>
+<tr>
+    <td align="center">Labeled Game GUI</td>
+    <td><img src="./README-CONTENT/toBeAdded.jpg" alt="Game Elements Labeled" width="650"></td>
+</tr>
+<tr>
+    <td align="center">Game Round Won</td>
+    <td><img src="./README-CONTENT/toBeAdded.jpg" alt="Game Won" width="650"></td>
+</tr>
+<tr>
+    <td align="center">Game Round Lost</td>
+    <td><img src="./README-CONTENT/toBeAdded.jpg" alt="Game Lost" width="650"></td>
+</tr>
+<tr>
+    <td align="center">How the Matrix works<br><br>Gameplay Example</td>
+    <td>
+        <video poster="./README-CONTENT/gameplay-vid/matrix-game-thumbnail.png" controls width=650>
+            <source src="https://github.com/user-attachments/assets/f276e773-7599-471f-bc2f-bf8c08e04b9c" type="video/mp4">
+            <source src="./README-CONTENT/gameplay-vid/matrix-gameplay-example.mp4" type="video/mp4">
+            <source src="./README-CONTENT/gameplay-vid/matrix-gameplay-example.mov" type="video/mov">
+            Your browser does not support the video tag.
+        </video>
+    </td>
 </tr>
 </table>
 
@@ -261,6 +322,8 @@ Original Overview - [ICEBreaker-Architecture](https://github.com/crown-matrix/IC
 | `GET` | `/` | Redirect to `/singlePlayer` |
 | `GET` | `/singlePlayer` | Reference/lobby page |
 | `GET` | `/singlePlayer/result` | Post-game results |
+| `GET` | `/multiPlayer/` | Reference/lobby page |
+| `GET` | `/multiPlayer/result` | Post-game comparison results |
 | `GET` | `/log-in` | Login page |
 | `GET` | `/sign-up` | Sign-up page |
 | `GET` | `/log-out` | Logout page |
@@ -309,6 +372,7 @@ In ```private/Server-Imports/General/path_alias.json```, multiple paths have bee
 | Markup | Vanilla HTML5 | No SSR; Express serves static files |
 | Styling | Bootstrap 5.3 + custom CSS | `vibe-cyberpunk.css` — full cyberpunk design system |
 | JS | Vanilla ESM | `SinglePlayerFrontend` class (~1575 lines); no framework |
+| JS | Vanilla ESM | `multiPlayerFrontend` class (~1737 lines); no framework |
 | Navigation | Custom SPA | `goToPage()` fetches HTML, replaces `<head>`/`<body>`, re-runs scripts; state via `sessionStorage` |
 | Game logic | `codeMatrix.js` | Matrix generation, solution injection, buffer checking |
 | Audio | `audio.js` | Sound effects and background music management |
@@ -337,6 +401,5 @@ In ```private/Server-Imports/General/path_alias.json```, multiple paths have bee
 
 # Planned Features (not yet active)
 - **Admin Panel** - route & api structure initialized - awaiting full frontend implementation
-- **Multiplayer** — `backend game logic remaining` for a future MP server
 - **Friends** — Tables and SQL functions complete, no routes or UI yet
 - **Account tiers** — VIP (emotes, costs eddies or IRL money), PREMIUM (emotes + animation skips + opponent distractions, IRL money only), ADMIN (full access to everything including admin endpoints, not regular-user obtainable)

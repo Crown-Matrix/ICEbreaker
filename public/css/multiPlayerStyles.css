@@ -132,6 +132,10 @@
         display: none !important;
     }
 
+    #opponent-info {
+        width: 100% !important;
+    }
+
     #breach-time-label {
         text-align: center;
     }

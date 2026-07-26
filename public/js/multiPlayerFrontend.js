@@ -812,6 +812,21 @@ window.addEventListener('resize', () => {
     }
 });
 
+window.addEventListener('load', () => {
+    if (frontEndHandler.animating || (frontEndHandler.url == '/multiPlayer/result')) return;
+    if (window.innerWidth <= 992) {
+        resizeMatrixCol(100);
+        document.getElementById('sizeUp-btn').style.display = 'none';
+        document.getElementById('sizeDown-btn').style.display = 'none';
+        document.getElementById('sizeReset-btn').style.display = 'none';
+    } else {
+        resizeMatrixCol(58);
+        document.getElementById('sizeUp-btn').style.display = 'block';
+        document.getElementById('sizeDown-btn').style.display = 'block';
+        document.getElementById('sizeReset-btn').style.display = 'block';
+    }
+});
+
 function getSelectedOption() {
     return document.querySelector('.timeframe-option[selected]');
 }
@@ -1656,6 +1671,7 @@ socket.on('matchmake_found', (data) => {
         audioHandler.stopCover();
 
         frontEndHandler.newRound();
+        initializeOpponentInfo();
     } else {
         document.querySelector('.icb-pre__rule-text').innerText = "Matchmaking failed..."
         //let the player retry instead of getting stuck on a dead screen
@@ -1693,28 +1709,31 @@ socket.on('match_result', (data) => {
 
 // Live opponent score: update HUD element whenever opponent finishes a round.
 socket.on('opponent_score_update', (data) => {
-    let oppEl = document.getElementById('mp-opponent-score-hud');
-    if (!oppEl) {
-        oppEl = document.createElement('div');
-        oppEl.id = 'mp-opponent-score-hud';
-        oppEl.style.cssText = [
-            'position:fixed',
-            'top:8px',
-            'right:52px',
-            'font-family:var(--font-mono,"Share Tech Mono",monospace)',
-            'font-size:11px',
-            'color:var(--cy-red,#FF2D78)',
-            'letter-spacing:2px',
-            'text-transform:uppercase',
-            'z-index:9999',
-            'text-shadow:0 0 8px rgba(255,45,120,0.5)',
-            'pointer-events:none',
-        ].join(';');
-        document.body.appendChild(oppEl);
-    }
-    const label = frontEndHandler.opponent ? frontEndHandler.opponent.substring(0, 10) : 'OPP';
-    oppEl.textContent = `${label}: ${data.score || 0}`;
+    updateOpponentScore(data);
 });
+
+function updateOpponentScore(data) {
+    let oppNameEl = document.getElementById('opponent-name');
+    let oppScoreEl = document.getElementById('opponent-score');
+    let oppEl = document.getElementById('opponent-info');
+    oppEl.style.removeProperty('display'); //show the opponent info div if it was hidden
+
+    const label = frontEndHandler.opponent ? frontEndHandler.opponent.substring(0, 10) : 'OPP';
+    oppNameEl.textContent = label;
+    oppScoreEl.textContent = `Score: ${data.score || 0}`;
+}
+
+function initializeOpponentInfo() {
+    let oppNameEl = document.getElementById('opponent-name');
+    let oppScoreEl = document.getElementById('opponent-score');
+    let oppEl = document.getElementById('opponent-info');
+    oppEl.style.removeProperty('display'); //show the opponent info div if it was hidden
+
+    const label = frontEndHandler.opponent ? frontEndHandler.opponent.substring(0, 10) : 'OPP';
+    oppNameEl.textContent = label;
+    oppScoreEl.textContent = `Score: 0`;
+}
+
 
 // winning-player-disconnected void path
 socket.on('match_cancelled', (data) => {
