@@ -149,7 +149,7 @@ class Match {
         opponentName: opp.socket.playerName,
         reason,
       });
-      await this.writeStatsFor(p, won);
+      await this.writeStatsFor(p, won, draw);
     }
   }
 
@@ -213,14 +213,21 @@ class Match {
     });
   }
 
-  async writeStatsFor(player, won) {
+  async writeStatsFor(player, won, tie = false) {
     if (player.isGuest || player.databaseWritten || player.isBanned) return;
     player.databaseWritten = true;
     try {
       const username = SQL_Manager_Instance.getUsernameFromUUID(player.identity.UUID);
       const score = player.matchScore || 0;
+      let eddieModifier = 1;
+      if (won) {
+        eddieModifier = 1.5
+      } else if (tie) {
+        eddieModifier = 1.25
+      }
+      const eddies = Math.round(scoreToEddies(score) * eddieModifier);
       SQL_Manager_Instance.updateGameStats(username, score, 'mp', won);
-      SQL_Manager_Instance.addEddies(username, scoreToEddies(score));
+      SQL_Manager_Instance.addEddies(username, eddies);
     } catch (err) {
       console.error('Error writing multiplayer stats for player:', player.identity.UUID, err);
     }
