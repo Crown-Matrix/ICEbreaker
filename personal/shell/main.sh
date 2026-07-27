@@ -28,8 +28,10 @@ source ./personal/shell/init_env.sh || exit 1
 env_file_path=".env" #relative to the icebreaker directory
 
 #get env contents:
-if [ -s ${env_file_path} ]; then #ensure its not empty, cuz if it is then it freaks out and imports a ton of random crap
-    export $(grep -v '^#' ${env_file_path} | xargs)
+if [ -s ${env_file_path} ]; then
+    set -a
+    source .env
+    set +a
 fi
 
 #up to user:

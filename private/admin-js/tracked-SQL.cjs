@@ -1,4 +1,4 @@
-const sql = require('better-sqlite3')
+const sql = require('libsql')
 const path = require('path');
 const bcrypt = require('bcrypt');
 const { randomUUID, hash, randomBytes } = require('crypto');
@@ -6,15 +6,22 @@ const auth = require('./auth.cjs')
 const TESTING_MODE = process.env.TEST_MODE === 'true' ? true : false;
 
 
-
-
-const db = new sql(path.join(__dirname, '../database/ICEbreaker.db'))
+const db = new sql(path.join(__dirname, '../database/ICEbreaker.db'), {
+    syncUrl: process.env.TURSO_DATABASE_URL,
+    authToken: process.env.TURSO_AUTH_TOKEN,
+})
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
 
+// Call this whenever you want to push local changes up / pull remote changes down.
+// Synchronous — blocks until the round trip to Turso completes.
+function sync() {
+    db.sync();
+}
+
 
 function hashPassword(password, override_safety = false) {
-    if (!(checkPassword(password) || ovverride_safety)) {
+    if (!(checkPassword(password) || override_safety)) {
         throw new Error('Invalid password')
     }
     const SALT_ROUNDS = 12;
@@ -153,26 +160,26 @@ const getUserByUsername = (username) => db.prepare('SELECT * FROM users WHERE LO
 
 // needs transaction — read then write
 const createUser = protected_sql((username, password) => {
-    
-    
-    if ( username.length > 20) {
-        return {ErrorCode : 1, ErrorMessage : 'Max username length exceeded'}
+
+
+    if (username.length > 20) {
+        return { ErrorCode: 1, ErrorMessage: 'Max username length exceeded' }
     } else if (password.length < 8) {
-        return {ErrorCode : 2, ErrorMessage : 'Minimum password length not met'}
+        return { ErrorCode: 2, ErrorMessage: 'Minimum password length not met' }
     } else if (username.length < 1) {
-        return {ErrorCode : 3, ErrorMessage : 'Username is required'}
+        return { ErrorCode: 3, ErrorMessage: 'Username is required' }
     } else if (password.length > 64) {
-        return {ErrorCode : 4, ErrorMessage : 'Max password length exceeded'}
-    } 
+        return { ErrorCode: 4, ErrorMessage: 'Max password length exceeded' }
+    }
     if (!checkUsername(username)) {
-        return {ErrorCode : 5, ErrorMessage : 'Invalid username characters'}
+        return { ErrorCode: 5, ErrorMessage: 'Invalid username characters' }
     }
     if (!checkPassword(password)) {
-        return {ErrorCode : 6, ErrorMessage : 'Invalid password characters'}
+        return { ErrorCode: 6, ErrorMessage: 'Invalid password characters' }
     }
     const existing = getUserByUsername(username);
     const UUID = randomUUID()
-    if (existing) return {ErrorCode : 7, ErrorMessage : 'Username already taken'};
+    if (existing) return { ErrorCode: 7, ErrorMessage: 'Username already taken' };
     const info = db.prepare('INSERT INTO users (username, password, account_UUID) VALUES (?, ?, ?)')
         .run(username, hashPassword(password), UUID);
     return UUID;
@@ -357,7 +364,7 @@ const wipeDatabase = () => {
     db.pragma('foreign_keys = ON');
     initializeUserTable();
     initializeFriendsTable();
-    initializeSessionsDatabase();
+    initializeSessionsTable();
     initializeBannedTable();
     console.log('Database wiped and re-initialized');
 }
@@ -500,17 +507,17 @@ const banUser = protected_sql((ip, UUID, reason, ban_length_days) => {
         throw new Error('Invalid ban length');
     };
 
-    
+
 
     const indefinite =
-        ban_length_days == null /*also takes undefined as true*/ || 
+        ban_length_days == null /*also takes undefined as true*/ ||
         ban_length_days === Infinity;
     if (!indefinite) {
         if (ban_length_days < 0) {
             throw new Error('Invalid ban length');
         };
     };
-    
+
     try {
         const ban_expires = indefinite
             ? null
@@ -521,7 +528,7 @@ const banUser = protected_sql((ip, UUID, reason, ban_length_days) => {
       VALUES (?, ?, ?, ?)
     `).run(ip, UUID, reason, ban_expires);
 
-    return true;
+        return true;
     } catch (error) {
         if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
             throw new Error('info is already banned');
@@ -602,7 +609,7 @@ const isAdmin = (UUID) => {
         return true; // In testing mode, all users are considered admins
     }
     //they are usually more than 30, this is just a lower bound
-        if (!UUID || UUID.length < 30) {
+    if (!UUID || UUID.length < 30) {
         return false; // No UUID provided, cannot be an admin
     }
 
@@ -628,6 +635,7 @@ const isAdmin = (UUID) => {
 module.exports = {
     sql,
     db,
+    sync,
     auth,
     initializeUserTable,
     initializeFriendsTable,
@@ -660,7 +668,7 @@ module.exports = {
     isIPBanned,
     isUUIDBanned,
     banUser,
-    unbanIP, 
+    unbanIP,
     unbanUUID,
     isAdmin,
     getUserByUUID,
@@ -669,3 +677,4 @@ module.exports = {
     checkUsername,
     checkPassword,
 }
+    

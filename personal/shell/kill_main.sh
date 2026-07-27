@@ -22,8 +22,10 @@ fi
 
 #get env contents:
 
-if [ -s .env ]; then #ensure its not empty, cuz if it is then it freaks out and imports a ton of random crap
-    export $(grep -v '^#' .env | xargs)
+if [ -s .env ]; then
+    set -a
+    source .env
+    set +a
 fi
 server=$(printenv "ICEBREAKER_PORT");
 

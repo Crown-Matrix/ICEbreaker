@@ -159,9 +159,17 @@ const server = createServer(app);
 const DEFAULT_PORT = 3000;
 const PORT = process.env.ICEBREAKER_PORT || DEFAULT_PORT;
 
+const SQL_TYPE = process.env.USE_TURSO_DATABASE === 'true' ? 'turso' : 'no_turso'; //false by default
+const SQL_URLS = {
+  turso: '../admin-js/tracked-SQL.cjs',
+  no_turso: '../admin-js/SQL.cjs'
+}
+
+
+
 class SQLManager {
   constructor() {
-    let mySQL = require('../admin-js/SQL.cjs');
+    let mySQL = require(SQL_URLS[SQL_TYPE]);
     for (const [key, value] of Object.entries(mySQL)) {
       this[key] = value;
     }
@@ -170,6 +178,38 @@ class SQLManager {
 
 const SQL_Manager_Instance = new SQLManager();
 
+module.exports = { SQL_Manager_Instance }; //needs earlier export, other things are added at the bottom of file
+
+const envWrite = require(join(__dirname, './envWrite.cjs'));
+
+
+const hardDB = require(join(__dirname, './hard-db.cjs'));
+
+
+
+
+if (SQL_TYPE === 'turso') {
+  console.log('Using Turso database for SQL operations.');
+  if (process.env.LAST_SQL_MODE === 'false') { //undefined is intentionally grouped with true, and will not trigger this sync up, as that means there are no local changes to sync up yet
+    console.log('Last SQL mode was not Turso, performing initial sync...');
+    hardDB.runResetWal(); //reset WAL before force push, to avoid "database is locked" errors
+    hardDB.forcePush(SQL_Manager_Instance.db);
+  }
+  try {
+    SQL_Manager_Instance.sync();
+    console.log('Initial sync complete.');
+  } catch (err) {
+    console.error('Initial sync failed:', err.message);
+    throw err; // decide: crash startup, or continue with stale/local-only data
+  }
+} else if (SQL_TYPE === 'no_turso') {
+  console.log('Using local SQLite database for SQL operations.');
+} else {
+  console.error('Invalid SQL_TYPE specified'); //should be dead code, if this is running you f'd up
+}
+
+const { registerShutdownHandlers } = require(join(__dirname, './shutdown.cjs'));
+registerShutdownHandlers(SQL_Manager_Instance, SQL_TYPE);
 
 /*
     APP MIDDLEWARE
@@ -199,7 +239,7 @@ app.use([
 
 
 
-app.get(['/banned','/auth/banned'], (req, res) => {
+app.get(['/banned', '/auth/banned'], (req, res) => {
   res.status(403).sendFile(join(__dirname, '../../public/auth/banned.html'));
 });
 app.use(cookieParser()); //parse cookies from incoming requests
