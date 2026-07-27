@@ -10,15 +10,19 @@ if [[ ! ( "$pwd_dir_lower" == "icebreaker" || "$pwd_dir_lower" == "src" ) ]]; th
     exit 1
 fi
 
+# personal/shell/init_db.sh
 #create database directory in private/
 mkdir -p ./private/database
 
-
-#initialize database using thee sql.cjs code.
-
-# use node to run the sql function
-
-result=$(node -e "
+# Only bootstrap with better-sqlite3 in no_turso mode. In turso mode,
+# tracked-SQL.cjs's `new sql(dbPath, { syncUrl, authToken })` needs to be
+# the FIRST thing to touch this file, or libSQL has no metadata to work
+# with and throws InvalidLocalState.
+if [ "$USE_TURSO_DATABASE" == "true" ]; then
+    result="Skipping local SQLite bootstrap (USE_TURSO_DATABASE=true) — tracked-SQL.cjs will create the replica via sync."
+    node_exit=0
+else
+    result=$(node -e "
 const { initializeAllTables } = require('./private/admin-js/SQL.cjs');
 
 Promise.resolve()
@@ -29,24 +33,5 @@ Promise.resolve()
     process.exit(1);
   });
 " 2>&1)
-node_exit=$?
-
-if [[ "${BASH_SOURCE[0]}" == "$0" ]]; then
-    if [ -n "$result" ]; then
-    echo -e "\nSQL.cjs function output: $result"
-else
-    echo -e "\nSQL.cjs function output: undefined"
-fi
-
-if [ "$node_exit" -eq 0 ]; then
-    echo -e "\nShell output: 0 (Success)\n"
-else
-    echo -e "\nError:\n $result\n"
-fi
-else
-    #being sourced
-    #only show output if there is an error, otherwise be silent
-    if [ "$node_exit" -ne 0 ]; then
-    echo -e "\nError:\n $result\n"
-    fi
+    node_exit=$?
 fi

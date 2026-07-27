@@ -5,6 +5,16 @@ const { randomUUID, hash, randomBytes } = require('crypto');
 const auth = require('./auth.cjs')
 const TESTING_MODE = process.env.TEST_MODE === 'true' ? true : false;
 
+const fs = require('fs');
+
+const dbPath = path.join(__dirname, '../database/ICEbreaker.db');
+const dbDir = path.dirname(dbPath);
+
+console.log('Database path:', dbPath);
+console.log('Database directory:', dbDir);
+console.log('Database files:', fs.readdirSync(dbDir));
+
+
 
 const db = new sql(path.join(__dirname, '../database/ICEbreaker.db'), {
     syncUrl: process.env.TURSO_DATABASE_URL,

@@ -15,6 +15,15 @@ if [[ ! ( "$pwd_dir_lower" == "icebreaker" || "$pwd_dir_lower" == "src" ) ]]; th
     exit 1
 fi
 
+env_file_path=".env" #relative to the icebreaker directory
+
+#get env contents:
+if [ -s ${env_file_path} ]; then
+    set -a
+    source .env
+    set +a
+fi
+
 #icebreaker_path=$(./personal/shell/find_icebreaker.sh)
 
 #init imports
@@ -25,14 +34,7 @@ source ./personal/shell/init_env.sh || exit 1
 
 #get env file path to pass to node script
 
-env_file_path=".env" #relative to the icebreaker directory
 
-#get env contents:
-if [ -s ${env_file_path} ]; then
-    set -a
-    source .env
-    set +a
-fi
 
 #up to user:
 AUTO_KILL_PREVIOUS_PROCESS=$(printenv AUTO_KILL_PREVIOUS_PROCESS)
