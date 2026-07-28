@@ -585,7 +585,6 @@
 
 
     if (localStorage.getItem('x-userdata-username') != null) {
-        console.log('this is being ran')
         window.location.href = '/profile'
     }
 
@@ -679,7 +678,6 @@
             signal: controller.signal,
           });
         }
-        console.log(data);
 
         if (!req.ok) {
           usernameHint.textContent = 'Server error';
@@ -736,7 +734,7 @@
       submitBtn.disabled = !(uOk && pOk && cOk);
     }
     usernameInput.addEventListener('input', debounce(checkSubmit, 1000));
-    passwordInput.addEventListener('input', () => {const password = passwordInput.value;const score = scorePassword(password);updateStrengthBar(score);if (confirmInput.value) {validateConfirm();}submitBtn.disabled = !isPasswordValid(password, score);});
+    passwordInput.addEventListener('input', () => {const password = passwordInput.value;const score = scorePassword(password);updateStrengthBar(score);if (confirmInput.value) {validateConfirm();}submitBtn.disabled = !validatePassword(password, score);});
     confirmInput.addEventListener('input', () => { submitBtn.disabled = !(validateConfirm()) });
 
     function showToast(msg, isErr = false) {

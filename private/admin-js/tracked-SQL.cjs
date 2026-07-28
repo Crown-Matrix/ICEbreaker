@@ -154,12 +154,22 @@ function initializeAllTables() { //do not change this function name, unless u fe
 function protected_sql(func) {
     const transaction = db.transaction(func);
     return (...args) => {
-        try {
-            return transaction(...args);
-        } catch (err) {
-            console.error('SQL transaction failed:', err.message);
-            throw err; // re-throw so the caller can handle it too
+        let first_attempt = true;
+        function executeTransaction() {
+            try {
+                return transaction(...args);
+            } catch (err) {
+                if (first_attempt) {
+                    first_attempt = false;
+                    console.warn('SQL transaction failed, retrying:', err.message);
+                    return executeTransaction();
+                } else {
+                    console.error('SQL transaction failed:', err.message);
+                    throw err;
+                }
+            }
         }
+        return executeTransaction();
     };
 }
 
@@ -171,7 +181,7 @@ const getUserByUsername = (username) => db.prepare('SELECT * FROM users WHERE LO
 // needs transaction — read then write
 const createUser = protected_sql((username, password) => {
 
-
+    console.log('im being run!')
     if (username.length > 20) {
         return { ErrorCode: 1, ErrorMessage: 'Max username length exceeded' }
     } else if (password.length < 8) {
@@ -190,8 +200,10 @@ const createUser = protected_sql((username, password) => {
     const existing = getUserByUsername(username);
     const UUID = randomUUID()
     if (existing) return { ErrorCode: 7, ErrorMessage: 'Username already taken' };
+    console.log('creds validated')
     const info = db.prepare('INSERT INTO users (username, password, account_UUID) VALUES (?, ?, ?)')
         .run(username, hashPassword(password), UUID);
+    console.log('creating a user with UUID:', UUID);
     return UUID;
 });
 
@@ -687,4 +699,3 @@ module.exports = {
     checkUsername,
     checkPassword,
 }
-    

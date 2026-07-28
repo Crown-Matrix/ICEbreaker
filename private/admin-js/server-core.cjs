@@ -198,6 +198,18 @@ if (SQL_TYPE === 'turso') {
   try {
     SQL_Manager_Instance.sync();
     console.log('Initial sync complete.');
+    setInterval(() => {
+      //sync with turso every minute, if using turso
+      // this is a backup in case the shutdown handler fails to run, which can happen if the process is killed abruptly
+      //it also helps the stupid connection timeout
+      try {
+        console.log('Performing periodic sync with Turso...');
+        SQL_Manager_Instance.sync();
+      } catch (err) {
+        console.error('Sync failed:', err.message);
+      }
+    }, 1000 * 60 // 1 minute interval
+    );
   } catch (err) {
     console.error('Initial sync failed:', err.message);
     throw err; // decide: crash startup, or continue with stale/local-only data
@@ -505,10 +517,14 @@ app.post('/sign-up', (req, res) => {
   const username_existence = SQL_Manager_Instance.getUserByUsername(username)
 
   if (!username_existence) {
-    let newUUID = SQL_Manager_Instance.createUser(username, password);
+
+    console.log('received sign-up request:', username, password);
+    const newUUID = SQL_Manager_Instance.createUser(username, password);
+    console.log('newUUID:', newUUID);
     if (typeof newUUID === 'object' && newUUID.ErrorCode) { //server side validation failed, return error to client
       return res.status(400).json({ message: newUUID.ErrorMessage });
     }
+
     SQL_Manager_Instance.auth.sendStaticUserDataAsHeader(res, SQL_Manager_Instance.getStaticUserDataByUUID(newUUID));
     return res.status(201).cookie('sessionToken', SQL_Manager_Instance.createSessionTokenForUUID(newUUID)).json({
       message: 'User created successfully.',
