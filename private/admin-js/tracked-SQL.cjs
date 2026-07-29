@@ -18,7 +18,7 @@ const TESTING_MODE = process.env.TEST_MODE === 'true';
 const dbPath = path.join(__dirname, '../database/ICEbreaker.db');
 const dbDir  = path.dirname(dbPath);
 
-console.log('Database path:', dbPath);
+console.log('Database path:'    , dbPath);
 console.log('Database directory:', dbDir);
 console.log('Database files:', fs.readdirSync(dbDir));
 
@@ -146,8 +146,8 @@ function initializeFriendsTable() {
             status     TEXT NOT NULL DEFAULT 'pending',
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (user_id, friend_id),
-            FOREIGN KEY (user_id)   REFERENCES users(id),
-            FOREIGN KEY (friend_id) REFERENCES users(id)
+            FOREIGN KEY (user_id)   REFERENCES users(id) ON DELETE CASCADE,
+            FOREIGN KEY (friend_id) REFERENCES users(id) ON DELETE CASCADE
         )
     `);
 }
@@ -159,7 +159,7 @@ function initializeSessionsTable() {
             account_UUID  TEXT NOT NULL,
             created_at    TEXT DEFAULT CURRENT_TIMESTAMP,
             expires_at    TEXT NOT NULL DEFAULT (DATETIME('now', '+7 days')),
-            FOREIGN KEY (account_UUID) REFERENCES users(account_UUID)
+            FOREIGN KEY (account_UUID) REFERENCES users(account_UUID) ON DELETE CASCADE
         )
     `);
 }
@@ -171,7 +171,7 @@ function initializeBannedTable() {
             UUID        TEXT UNIQUE DEFAULT NULL,
             reason      TEXT,
             ban_expires DATE DEFAULT NULL,
-            FOREIGN KEY (UUID) REFERENCES users(account_UUID)
+            FOREIGN KEY (UUID) REFERENCES users(account_UUID) ON DELETE CASCADE
         )
     `);
 }
@@ -516,3 +516,9 @@ module.exports = {
     checkUsername,
     checkPassword,
 };
+
+
+
+
+
+
