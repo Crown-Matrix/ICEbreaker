@@ -1547,7 +1547,7 @@ function undoInitialGameGUI() {
     document.getElementById('document-header').style.removeProperty('height');
     document.getElementById('cy-terminal').style.removeProperty('border');
     document.getElementById('cy-terminal').style.removeProperty('width');
-    document.getElementById('hide-terminal-pseudo').remove();
+    document.getElementById('hide-terminal-pseudo')?.remove();
     document.querySelector('.cy-hud-frame__br').style.removeProperty('display');
     document.querySelector('.cy-hud-frame__bl').style.removeProperty('display');
     document.querySelector('#terminal-content-row').style.removeProperty('background-color');

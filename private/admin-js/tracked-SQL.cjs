@@ -1,760 +1,479 @@
-const { createClient } = require('@libsql/client');
+// tracked-SQL.cjs
+
+// Reads and writes hit the local .db file.
+
+// db.sync() is the only network touch — called by server-core.cjs like an auto save
+
+'use strict';
+
+const Database = require('libsql');
 const path = require('path');
 const bcrypt = require('bcrypt');
 const { randomUUID, hash, randomBytes } = require('crypto');
 const auth = require('./auth.cjs');
-const TESTING_MODE = process.env.TEST_MODE === 'true' ? true : false;
-
 const fs = require('fs');
 
+const TESTING_MODE = process.env.TEST_MODE === 'true';
+
 const dbPath = path.join(__dirname, '../database/ICEbreaker.db');
-const dbDir = path.dirname(dbPath);
+const dbDir  = path.dirname(dbPath);
 
 console.log('Database path:', dbPath);
 console.log('Database directory:', dbDir);
 console.log('Database files:', fs.readdirSync(dbDir));
 
-// The Hrana sync stream can expire out from under a long-lived client.
-// We keep `client` reassignable (via createNewClient) so a stream error
-// can force a fresh connection without anyone holding a stale reference —
-// every function below goes through the module-level `client` variable
-// or a `tx` passed in, never a captured copy.
-function createNewClient() {
-    return createClient({
-        url: `file:${dbPath}`,
-        syncUrl: process.env.TURSO_DATABASE_URL,
+
+// One instance for the lifetime of the process.
+// NOTE: libsql 0.5.x embedded-replica routes BEGIN/COMMIT through a Hrana
+// stream to Turso. That stream can expire during inactivity ("stream not found").
+// We make `db` reassignable so reconnectDb() can swap it in-place on expiry.
+// Reads (prepare().get/all) are always local (< 1 ms). Only writes go over Hrana,
+// and reconnects only happen when the stream actually expires — not every call.
+let db = openDb();
+
+function openDb() {
+    const instance = new Database(dbPath, {
+        syncUrl:   process.env.TURSO_DATABASE_URL,
         authToken: process.env.TURSO_AUTH_TOKEN,
     });
+    instance.pragma('journal_mode = WAL');
+    instance.pragma('foreign_keys = ON');
+    return instance;
 }
 
-let client = createNewClient();
+const STREAM_ERROR = /stream not found|STREAM_EXPIRED|stream has expired|HRANA_CLOSED/i;
 
-const STREAM_ERROR_PATTERN = /stream not found|STREAM_EXPIRED|stream has expired|HRANA_CLOSED/i;
+function reconnectDb() {
+    console.warn('[tracked-SQL] Hrana stream expired — reconnecting...');
+    try { db.close(); } catch (_) {}
+    db = openDb();
+}
 
-// --- sync -------------------------------------------------------------
-// Call this whenever you want to push local changes up / pull remote
-// changes down. Async — awaits the round trip to Turso. Overlapping
-// callers share one in-flight sync instead of racing.
+// ─── Strip libsql _metadata ───────────────────────────────────────────────────
+const strip    = (row)  => { if (!row) return row; const { _metadata, ...r } = row; return r; };
+const stripAll = (rows) => rows.map(strip);
+
+
+// db.sync() is synchronous. Wrap in a Promise for server-core.cjs compatibility,
+// deduplicate concurrent callers, and reconnect once on Hrana stream expiry.
 let syncPromise = null;
 function sync() {
     if (!syncPromise) {
-        syncPromise = doSyncWithRecovery().finally(() => {
-            syncPromise = null;
-        });
+        syncPromise = new Promise((resolve, reject) => {
+            try { db.sync(); resolve(); }
+            catch (err) {
+                if (STREAM_ERROR.test(String(err.message || err))) {
+                    reconnectDb();
+                    try { db.sync(); resolve(); }
+                    catch (err2) { reject(err2); }
+                } else {
+                    reject(err);
+                }
+            }
+        }).finally(() => { syncPromise = null; });
     }
     return syncPromise;
 }
 
-async function doSyncWithRecovery(isRetry = false) {
-    try {
-        await client.sync();
-    } catch (err) {
-        const msg = String((err && err.message) || err);
-        if (STREAM_ERROR_PATTERN.test(msg) && !isRetry) {
-            console.warn('Hrana sync stream expired, reconnecting:', msg);
-            try { client.close(); } catch (_) { /* already dead, ignore */ }
-            client = createNewClient();
-            return doSyncWithRecovery(true);
+
+// Wraps a synchronous function in db.transaction() (BEGIN / COMMIT / ROLLBACK).
+// Retries once with a fresh connection if a Hrana stream-expiry error is thrown.
+// All callers keep their existing `await` via the async shell.
+function protected_sql(func) {
+    return async (...args) => {
+        try {
+            return db.transaction(func)(...args);
+        } catch (err) {
+            if (STREAM_ERROR.test(String(err.message || err))) {
+                reconnectDb();
+                return db.transaction(func)(...args); // retry once on fresh connection
+            }
+            throw err;
         }
-        throw err;
-    }
+    };
 }
+
+
+const checkUsername = (username) =>
+    username.length >= 1 && username.length <= 20 && /^[a-zA-Z0-9_-]{1,19}$/.test(username);
+
+const checkPassword = (password) =>
+    password.length >= 8 && password.length <= 64 &&
+    /^[a-zA-Z0-9!`@#\$%\^&\*\(\)-_=\+\[\]\{\}\\|;:'",<\.>\/\? ]{8,63}$/.test(password);
 
 function hashPassword(password, override_safety = false) {
-    if (!(checkPassword(password) || override_safety)) {
-        throw new Error('Invalid password')
-    }
-    const SALT_ROUNDS = 12;
-    let hash = bcrypt.hashSync(password, SALT_ROUNDS);
-    return hash
+    if (!(checkPassword(password) || override_safety)) throw new Error('Invalid password');
+    return bcrypt.hashSync(password, 12);
 }
 
-const checkUsername = (username) => {
-    if (username.length > 20 || username.length < 1 || !/^[a-zA-Z0-9_-]{1,19}$/.test(username)) {
-        return false;
-    }
-    return true;
-};
 
-const checkPassword = (password) => {
-    if (password.length < 8 || password.length > 64 || !/^[a-zA-Z0-9!`@#\$%\^&\*\(\)-_=\+\[\]\{\}\\|;:'",<\.>\/\? ]{8,63}$/.test(password)) {
-        return false;
-    }
-    return true;
-};
-
-//name convention:
-//foo_Bar
-//standard js convention but with an underscore
-
-async function initializeUserTable() {
-    const createTableStmt = `
+function initializeUserTable() {
+    db.exec(`
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE COLLATE NOCASE NOT NULL CHECK(LENGTH(username) BETWEEN 1 AND 19),
-            password TEXT NOT NULL CHECK(LENGTH(password) BETWEEN 8 AND 63),
-            account_UUID TEXT UNIQUE NOT NULL,
-            sp_games_Played INTEGER DEFAULT 0,
-            mp_games_Played INTEGER DEFAULT 0,
-            mp_games_Won INTEGER DEFAULT 0,
-            sp_games_Finished INTEGER DEFAULT 0,
-            mp_games_Finished INTEGER DEFAULT 0,
+            id                   INTEGER PRIMARY KEY AUTOINCREMENT,
+            username             TEXT UNIQUE COLLATE NOCASE NOT NULL CHECK(LENGTH(username) BETWEEN 1 AND 19),
+            password             TEXT NOT NULL CHECK(LENGTH(password) BETWEEN 8 AND 63),
+            account_UUID         TEXT UNIQUE NOT NULL,
+            sp_games_Played      INTEGER DEFAULT 0,
+            mp_games_Played      INTEGER DEFAULT 0,
+            mp_games_Won         INTEGER DEFAULT 0,
+            sp_games_Finished    INTEGER DEFAULT 0,
+            mp_games_Finished    INTEGER DEFAULT 0,
             account_Creation_Date TEXT DEFAULT CURRENT_TIMESTAMP,
-            sp_average_Score REAL DEFAULT NULL,
-            mp_average_Score REAL DEFAULT NULL,
-            last_Login_Date TEXT DEFAULT CURRENT_TIMESTAMP,
-            account_Tier INTEGER DEFAULT 0,
-            eddies INTEGER DEFAULT 0,
-            settings TEXT DEFAULT '{}'
+            sp_average_Score     REAL DEFAULT NULL,
+            mp_average_Score     REAL DEFAULT NULL,
+            last_Login_Date      TEXT DEFAULT CURRENT_TIMESTAMP,
+            account_Tier         INTEGER DEFAULT 0,
+            eddies               INTEGER DEFAULT 0,
+            settings             TEXT DEFAULT '{}'
         )
-    `
-    await client.execute(createTableStmt);
+    `);
 }
 
-`
+/*
     Account Tiers:
-0 - default, no extra perks
-1 - VIP, ability to use emotes / costs eddies or irl money
-2 - PREMIUM, ability to use emotes + animation skips + opponent distractions in multiplayer / costs only irl money
-3 - Admin, everything, plus full authentication for admin console access, not available to regular users
-`
+    0 - default, no extra perks
+    1 - VIP (emotes; costs eddies or IRL money)
+    2 - PREMIUM (emotes + animation skips + opponent distractions; IRL money only)
+    3 - Admin (full access; not obtainable by regular users)
+*/
 
-async function initializeFriendsTable() {
-    const createTableStmt = `
+function initializeFriendsTable() {
+    db.exec(`
         CREATE TABLE IF NOT EXISTS friends (
-            user_id INTEGER NOT NULL,
-            friend_id INTEGER NOT NULL,
-            status TEXT NOT NULL DEFAULT 'pending',
+            user_id    INTEGER NOT NULL,
+            friend_id  INTEGER NOT NULL,
+            status     TEXT NOT NULL DEFAULT 'pending',
             created_at TEXT DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (user_id, friend_id),
-            FOREIGN KEY (user_id) REFERENCES users(id),
+            FOREIGN KEY (user_id)   REFERENCES users(id),
             FOREIGN KEY (friend_id) REFERENCES users(id)
         )
-    `
-    await client.execute(createTableStmt);
+    `);
 }
 
-async function initializeSessionsTable() {
-    const createTableStmt = `
+function initializeSessionsTable() {
+    db.exec(`
         CREATE TABLE IF NOT EXISTS sessions (
-        session_token TEXT PRIMARY KEY,
-        account_UUID TEXT NOT NULL,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        expires_at TEXT NOT NULL DEFAULT (DATETIME('now', '+7 days')),
-        FOREIGN KEY (account_UUID) REFERENCES users(account_UUID)
+            session_token TEXT PRIMARY KEY,
+            account_UUID  TEXT NOT NULL,
+            created_at    TEXT DEFAULT CURRENT_TIMESTAMP,
+            expires_at    TEXT NOT NULL DEFAULT (DATETIME('now', '+7 days')),
+            FOREIGN KEY (account_UUID) REFERENCES users(account_UUID)
         )
-    `
-    await client.execute(createTableStmt);
+    `);
 }
 
-async function initializeBannedTable() {
-    const createTableStmt = `
+function initializeBannedTable() {
+    db.exec(`
         CREATE TABLE IF NOT EXISTS banned (
-        ip_address TEXT UNIQUE NOT NULL,
-        UUID TEXT UNIQUE DEFAULT NULL,
-        reason TEXT,
-        ban_expires DATE DEFAULT NULL,
-        FOREIGN KEY (UUID) REFERENCES users(account_UUID)
+            ip_address  TEXT UNIQUE NOT NULL,
+            UUID        TEXT UNIQUE DEFAULT NULL,
+            reason      TEXT,
+            ban_expires DATE DEFAULT NULL,
+            FOREIGN KEY (UUID) REFERENCES users(account_UUID)
         )
-    `
-    await client.execute(createTableStmt);
+    `);
 }
 
-async function initializeAllTables() { //do not change this function name, unless u feel like updating it in the shell scripts as well
-    await initializeUserTable();
-    await initializeSessionsTable();
-    await initializeFriendsTable();
-    await initializeBannedTable();
+function initializeAllTables() {
+    initializeUserTable();
+    initializeSessionsTable();
+    initializeFriendsTable();
+    initializeBannedTable();
 }
 
-//max username length: 64
-//max password length: 64
-//session lifespan: 7 days
+//reads sectionn
+const getAllUsers = async () =>
+    stripAll(db.prepare('SELECT * FROM users').all());
 
-// Wraps an async (tx, ...args) => {} body in an interactive transaction.
-// Mirrors the original retry-once behavior, but additionally recycles
-// the client on a stream error before the retry so the retry isn't
-// doomed to hit the same dead stream.
-function protected_sql(func) {
-    return (...args) => runTransaction(func, args, true);
-}
+const getUserByUsername = (username) =>
+    strip(db.prepare('SELECT * FROM users WHERE LOWER(username) = ?').get(username.toLowerCase())) || null;
 
-async function runTransaction(func, args, allowRetry) {
-    const tx = await client.transaction('write');
-    try {
-        const result = await func(tx, ...args);
-        await tx.commit();
-        return result;
-    } catch (err) {
-        try { await tx.rollback(); } catch (_) { /* connection may already be dead */ }
+const getUserByUUID = (UUID) =>
+    strip(db.prepare('SELECT * FROM users WHERE account_UUID = ?').get(UUID)) || null;
 
-        if (allowRetry) {
-            const msg = String((err && err.message) || err);
-            console.warn('SQL transaction failed, retrying:', msg);
-            if (STREAM_ERROR_PATTERN.test(msg)) {
-                try { client.close(); } catch (_) { /* ignore */ }
-                client = createNewClient();
-            }
-            return runTransaction(func, args, false);
-        }
+const getUserProfileByUUID = (UUID) =>
+    strip(db.prepare(`
+        SELECT username, sp_games_Played, mp_games_Played, mp_games_Won,
+               sp_games_Finished, mp_games_Finished, account_Creation_Date,
+               sp_average_Score, mp_average_Score, last_Login_Date,
+               account_Tier, eddies
+        FROM users WHERE account_UUID = ?
+    `).get(UUID)) || null;
 
-        console.error('SQL transaction failed:', err.message);
-        throw err; // re-throw so the caller can handle it too
-    }
-}
+const getStaticUserDataByUUID = (UUID) =>
+    strip(db.prepare('SELECT username, account_Creation_Date FROM users WHERE account_UUID = ?').get(UUID)) || null;
 
-// simple reads — no transaction needed.
-// Each takes an optional `tx` so it can also be called from inside a
-// protected_sql body against that transaction's view of the data.
-const getAllUsers = async (tx = client) => {
-    const rs = await tx.execute('SELECT * FROM users');
-    return rs.rows;
+const getUsernameFromUUID = (UUID) => {
+    const row = strip(db.prepare('SELECT username FROM users WHERE account_UUID = ?').get(UUID));
+    if (!row) throw new Error('user not found!');
+    return row.username;
 };
 
-const getUserByUsername = async (username, tx = client) => {
-    const rs = await tx.execute({
-        sql: 'SELECT * FROM users WHERE LOWER(username) = ?',
-        args: [username.toLowerCase()],
-    });
-    return rs.rows[0] || null;
+const getUUIDFromUsername = (username) => {
+    if (!checkUsername(username)) throw new Error('Invalid username');
+    const row = strip(db.prepare('SELECT account_UUID FROM users WHERE LOWER(username) = ?').get(username.toLowerCase()));
+    if (!row) throw new Error('user not found!');
+    return row.account_UUID;
 };
 
-// needs transaction — read then write
-const createUser = protected_sql(async (tx, username, password) => {
-    if (username.length > 20) {
-        return { ErrorCode: 1, ErrorMessage: 'Max username length exceeded' }
-    } else if (password.length < 8) {
-        return { ErrorCode: 2, ErrorMessage: 'Minimum password length not met' }
-    } else if (username.length < 1) {
-        return { ErrorCode: 3, ErrorMessage: 'Username is required' }
-    } else if (password.length > 64) {
-        return { ErrorCode: 4, ErrorMessage: 'Max password length exceeded' }
-    }
-    if (!checkUsername(username)) {
-        return { ErrorCode: 5, ErrorMessage: 'Invalid username characters' }
-    }
-    if (!checkPassword(password)) {
-        return { ErrorCode: 6, ErrorMessage: 'Invalid password characters' }
-    }
-    const existing = await getUserByUsername(username, tx);
-    const UUID = randomUUID()
-    if (existing) return { ErrorCode: 7, ErrorMessage: 'Username already taken' };
-    await tx.execute({
-        sql: 'INSERT INTO users (username, password, account_UUID) VALUES (?, ?, ?)',
-        args: [username, hashPassword(password), UUID],
-    });
-    return UUID;
-});
 
-const getUserByUUID = async (UUID, tx = client) => {
-    const rs = await tx.execute({
-        sql: 'SELECT * FROM users WHERE account_UUID = ?',
-        args: [UUID],
-    });
-    return rs.rows[0] || null;
-};
-
-const getUserProfileByUUID = async (UUID, tx = client) => {
-    //this is the same as getUserByUUID but without things that they wouldnt possibly need, like their password hash, account index, or UUID
-    const rs = await tx.execute({
-        sql: 'SELECT username,sp_games_played,mp_games_Played,mp_games_Won,sp_games_Finished,mp_games_Finished,account_Creation_Date,sp_average_score,mp_average_score,last_login_date,account_tier,eddies FROM users WHERE account_UUID = ?',
-        args: [UUID],
-    });
-    return rs.rows[0] || null;
-};
-
-const getStaticUserDataByUUID = async (UUID, tx = client) => {
-    const rs = await tx.execute({
-        sql: 'SELECT username,account_Creation_Date FROM users WHERE account_UUID = ?',
-        args: [UUID],
-    });
-    return rs.rows[0] || null;
-};
-
-// no transaction needed — single read + bcrypt compare, no write
 const passwordMatch = async (username, password_attempt) => {
-    if (checkUsername(username) === false || checkPassword(password_attempt) === false) {
-        return false;
-    }
-    const user = await getUserByUsername(username);
+    if (!checkUsername(username) || !checkPassword(password_attempt)) return false;
+    const user = getUserByUsername(username);
     if (!user) return false;
     return bcrypt.compareSync(password_attempt, user.password);
 };
 
-const deleteUser = protected_sql(async (tx, username) => {
-    if (checkUsername(username) === false) {
-        throw new Error('Invalid username');
-    }
-    const existing = await getUserByUsername(username, tx);
-    if (!existing) throw new Error('User not found');
-    await tx.execute({
-        sql: 'DELETE FROM users WHERE LOWER(username) = ?',
-        args: [username.toLowerCase()],
-    });
+
+const createUser = protected_sql((username, password) => {
+    if (username.length > 20)     return { ErrorCode: 1, ErrorMessage: 'Max username length exceeded' };
+    if (password.length < 8)      return { ErrorCode: 2, ErrorMessage: 'Minimum password length not met' };
+    if (username.length < 1)      return { ErrorCode: 3, ErrorMessage: 'Username is required' };
+    if (password.length > 64)     return { ErrorCode: 4, ErrorMessage: 'Max password length exceeded' };
+    if (!checkUsername(username)) return { ErrorCode: 5, ErrorMessage: 'Invalid username characters' };
+    if (!checkPassword(password)) return { ErrorCode: 6, ErrorMessage: 'Invalid password characters' };
+
+    if (getUserByUsername(username)) return { ErrorCode: 7, ErrorMessage: 'Username already taken' };
+
+    const UUID = randomUUID();
+    db.prepare('INSERT INTO users (username, password, account_UUID) VALUES (?, ?, ?)')
+      .run(username, hashPassword(password), UUID);
+    return UUID;
 });
 
-const updateGameStats = protected_sql(async (tx, username, appended_score, gameType, gameWon) => {
-    if (!checkUsername(username)) {
-        throw new Error('Invalid username');
-    }
+const deleteUser = protected_sql((username) => {
+    if (!checkUsername(username)) throw new Error('Invalid username');
+    if (!getUserByUsername(username)) throw new Error('User not found');
+    db.prepare('DELETE FROM users WHERE LOWER(username) = ?').run(username.toLowerCase());
+});
 
-    if (!['sp', 'mp'].includes(gameType)) {
-        throw new Error('Invalid gameType');
-    }
+const updateGameStats = protected_sql((username, appended_score, gameType, gameWon) => {
+    if (!checkUsername(username))           throw new Error('Invalid username');
+    if (!['sp', 'mp'].includes(gameType))   throw new Error('Invalid gameType');
+    if (gameType === 'sp') gameWon = false;
 
-    const rs = await tx.execute({
-        sql: `
-            SELECT ${gameType}_average_Score, ${gameType}_games_Finished
-            FROM users
-            WHERE LOWER(username) = ?
-        `,
-        args: [username.toLowerCase()],
-    });
-    const query = rs.rows[0];
+    const row = strip(db.prepare(`
+        SELECT ${gameType}_average_Score, ${gameType}_games_Finished
+        FROM users WHERE LOWER(username) = ?
+    `).get(username.toLowerCase()));
+    if (!row) throw new Error('User not found');
 
-    if (!query) {
-        throw new Error('User not found');
-    }
+    const avg_score     = row[`${gameType}_average_Score`];
+    const gamesFinished = row[`${gameType}_games_Finished`];
+    const new_avg_score = avg_score !== null
+        ? (avg_score * gamesFinished + appended_score) / (gamesFinished + 1)
+        : appended_score;
 
-    if (gameType === 'sp') {
-        gameWon = false;
-    }
-
-    const avg_score = query[`${gameType}_average_Score`];
-    const gamesFinished = query[`${gameType}_games_Finished`]; // always >= 0 per schema
-
-    const new_avg_score =
-        avg_score !== null
-            ? (avg_score * gamesFinished + appended_score) / (gamesFinished + 1)
-            : appended_score;
-
-    await tx.execute({
-        sql: `
-            UPDATE users
-            SET ${gameType}_average_Score = ?,
-                mp_games_Won = mp_games_Won + ?,
-                ${gameType}_games_Finished = ${gameType}_games_Finished + 1
-            WHERE LOWER(username) = ?
-        `,
-        args: [
-            new_avg_score,
-            (gameWon && gameType === 'mp') ? 1 : 0,
-            username.toLowerCase(),
-        ],
-    });
+    db.prepare(`
+        UPDATE users
+        SET ${gameType}_average_Score     = ?,
+            mp_games_Won                  = mp_games_Won + ?,
+            ${gameType}_games_Finished    = ${gameType}_games_Finished + 1
+        WHERE LOWER(username) = ?
+    `).run(new_avg_score, (gameWon && gameType === 'mp') ? 1 : 0, username.toLowerCase());
 
     return true;
 });
 
-const incrementGame = protected_sql(async (tx, username, gameType) => {
-    if (!checkUsername(username)) {
-        throw new Error('Invalid username');
-    }
-    if (gameType !== 'sp' && gameType !== 'mp') {
-        throw new Error('Invalid game type');
-    }
-    const rs = await tx.execute({
-        sql: `UPDATE users SET ${gameType}_games_Played = ${gameType}_games_Played + 1 WHERE LOWER(username) = ?`,
-        args: [username.toLowerCase()],
-    });
-    if (rs.rowsAffected === 0) {
-        throw new Error('User not found');
-    }
-    return true
-})
-
-const scoreToEddies = (score /*should be a multiple of 100*/) => {
-    const eddies = (Math.floor(score / 100) * 3) + 25
-    //
-    return eddies
-}
-
-const sendFriendRequest = protected_sql(async (tx, userId, friendId) => {
-    if (userId === friendId) throw new Error('Cannot send friend request to yourself');
-    // Check if the friend request already exists
-    let existingRequest;
-    try {
-        const rs = await tx.execute({
-            sql: `
-                SELECT * FROM friends
-                WHERE ((user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?))
-            `,
-            args: [userId, friendId, friendId, userId],
-        });
-        existingRequest = rs.rows[0];
-    } catch (error) {
-        console.error('Error checking existing friend request:', error);
-        throw error;
-    }
-
-    if (existingRequest) {
-        if (existingRequest.user_id == userId) {
-            //request has already been sent by the user
-            return false
-        } else if (existingRequest.user_id == friendId) {
-            //request has already been sent from the receiver
-            //automatically accept the request
-            await tx.execute({
-                sql: "UPDATE friends SET status = 'accepted' WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)",
-                args: [userId, friendId, friendId, userId],
-            });
-            return true;
-        }
-    }
-
-    // Insert the new friend request
-    try {
-        await tx.execute({
-            sql: 'INSERT INTO friends (user_id, friend_id) VALUES (?, ?)',
-            args: [userId, friendId],
-        });
-    } catch (error) {
-        console.error('Error inserting friend request:', error);
-        throw error;
-    }
+const incrementGame = protected_sql((username, gameType) => {
+    if (!checkUsername(username))                       throw new Error('Invalid username');
+    if (gameType !== 'sp' && gameType !== 'mp')         throw new Error('Invalid game type');
+    const info = db.prepare(
+        `UPDATE users SET ${gameType}_games_Played = ${gameType}_games_Played + 1 WHERE LOWER(username) = ?`
+    ).run(username.toLowerCase());
+    if (info.changes === 0) throw new Error('User not found');
     return true;
 });
 
-const acceptFriendRequest = protected_sql(async (tx, userId, friendId) => {
-    if (userId === friendId) throw new Error('Cannot send friend request to yourself');
-    try {
-        const rs = await tx.execute({
-            sql: `
-                SELECT * FROM friends
-                WHERE user_id = ? AND friend_id = ? AND status = 'pending'
-            `,
-            args: [friendId, userId],
-        });
-        const existingRequest = rs.rows[0];
+const scoreToEddies = (score) => (Math.floor(score / 100) * 3) + 25;
 
-        if (!existingRequest) {
-            // No pending request found
-            return false;
-        }
-
-        // Update the friend request to accepted
-        await tx.execute({
-            sql: "UPDATE friends SET status = 'accepted' WHERE user_id = ? AND friend_id = ?",
-            args: [friendId, userId],
-        });
-        return true;
-    } catch (error) {
-        console.error('Error accepting friend request:', error);
-        throw error;
-    }
+const addEddies = protected_sql((username, eddiesToAdd) => {
+    if (!checkUsername(username)) throw new Error('Invalid username');
+    const info = db.prepare('UPDATE users SET eddies = eddies + ? WHERE username = ?')
+        .run(eddiesToAdd, username);
+    if (info.changes === 0) throw new Error('User not found');
+    return true;
 });
 
-const friendsCount = async (userId, tx = client) => {
-    const rs = await tx.execute({
-        sql: `
-            SELECT COUNT(*) AS count FROM friends
-            WHERE (user_id = ? OR friend_id = ?) AND status = 'accepted'
-        `,
-        args: [userId, userId],
-    });
-    return rs.rows[0].count;
+const updateLastLoginDateFromUsername = protected_sql((username) => {
+    if (!checkUsername(username)) throw new Error('Invalid username');
+    const info = db.prepare('UPDATE users SET last_Login_Date = CURRENT_TIMESTAMP WHERE LOWER(username) = ?')
+        .run(username.toLowerCase());
+    if (info.changes === 0) throw new Error('User not found');
+    return true;
+});
+
+const updateLastLoginDateFromUUID = protected_sql((UUID) => {
+    if (!UUID || UUID.length < 30) throw new Error('Invalid UUID');
+    const info = db.prepare('UPDATE users SET last_Login_Date = CURRENT_TIMESTAMP WHERE account_UUID = ?')
+        .run(UUID);
+    if (info.changes === 0) throw new Error('User not found');
+    return true;
+});
+
+
+const friendsCount = async (userId) => {
+    const row = strip(db.prepare(`
+        SELECT COUNT(*) AS count FROM friends
+        WHERE (user_id = ? OR friend_id = ?) AND status = 'accepted'
+    `).get(userId, userId));
+    return row.count;
 };
 
-const wipeDatabase = async () => {
-    await client.execute('PRAGMA foreign_keys = OFF');
-    await client.execute('DROP TABLE IF EXISTS friends');
-    await client.execute('DROP TABLE IF EXISTS users');
-    await client.execute('PRAGMA foreign_keys = ON');
-    await initializeUserTable();
-    await initializeFriendsTable();
-    await initializeSessionsTable();
-    await initializeBannedTable();
-    console.log('Database wiped and re-initialized');
-}
+const sendFriendRequest = protected_sql((userId, friendId) => {
+    if (userId === friendId) throw new Error('Cannot send friend request to yourself');
+    const existing = strip(db.prepare(`
+        SELECT * FROM friends
+        WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)
+    `).get(userId, friendId, friendId, userId));
 
-const addEddies = protected_sql(async (tx, username, eddiesToAdd) => {
-    if (!checkUsername(username)) {
-        throw new Error('Invalid username');
+    if (existing) {
+        if (existing.user_id == userId) return false; // already sent by this user
+        // reverse request exists — auto-accept
+        db.prepare(`UPDATE friends SET status = 'accepted' WHERE (user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)`)
+          .run(userId, friendId, friendId, userId);
+        return true;
     }
-    const rs = await tx.execute({
-        sql: 'UPDATE users SET eddies = eddies + ? WHERE username = ?',
-        args: [eddiesToAdd, username],
-    });
-    if (rs.rowsAffected === 0) {
-        throw new Error('User not found');
-    }
-    return true
-})
-
-const getUsernameFromUUID = async (UUID, tx = client) => {
-    const rs = await tx.execute({
-        sql: 'SELECT username FROM users WHERE account_UUID = ?',
-        args: [UUID],
-    });
-    const query = rs.rows[0];
-    if (!query) {
-        throw new Error('user not found!')
-    }
-    return query.username
-}
-
-const getUUIDFromUsername = async (username, tx = client) => {
-    if (!checkUsername(username)) {
-        throw new Error('Invalid username');
-    }
-    const rs = await tx.execute({
-        sql: 'SELECT account_UUID FROM users WHERE LOWER(username) = ?',
-        args: [username.toLowerCase()],
-    });
-    const query = rs.rows[0];
-    if (!query) {
-        throw new Error('user not found!')
-    }
-    return query.account_UUID
-}
-
-const updateLastLoginDateFromUsername = protected_sql(async (tx, username) => {
-    if (!checkUsername(username)) {
-        throw new Error('Invalid username')
-    }
-    const rs = await tx.execute({
-        sql: 'UPDATE users SET last_Login_Date = CURRENT_TIMESTAMP WHERE LOWER(username) = ?',
-        args: [username.toLowerCase()],
-    });
-    if (rs.rowsAffected === 0) {
-        throw new Error('User not found');
-    }
-    return true
+    db.prepare('INSERT INTO friends (user_id, friend_id) VALUES (?, ?)').run(userId, friendId);
+    return true;
 });
 
-const updateLastLoginDateFromUUID = protected_sql(async (tx, UUID) => {
-    if (!UUID || UUID.length < 30) {
-        throw new Error('Invalid UUID');
-    }
-    const rs = await tx.execute({
-        sql: 'UPDATE users SET last_Login_Date = CURRENT_TIMESTAMP WHERE account_UUID = ?',
-        args: [UUID],
-    });
-    if (rs.rowsAffected === 0) {
-        throw new Error('User not found');
-    }
-    return true
+const acceptFriendRequest = protected_sql((userId, friendId) => {
+    if (userId === friendId) throw new Error('Cannot send friend request to yourself');
+    const existing = strip(db.prepare(`
+        SELECT * FROM friends WHERE user_id = ? AND friend_id = ? AND status = 'pending'
+    `).get(friendId, userId));
+    if (!existing) return false;
+    db.prepare(`UPDATE friends SET status = 'accepted' WHERE user_id = ? AND friend_id = ?`)
+      .run(friendId, userId);
+    return true;
 });
 
-//auth
 
-const createSessionTokenForUUID = async (UUID, tx = client) => {
-    //create session token to write
-    let opaque = hash('sha512', randomBytes(32)).toString('hex');
+const createSessionTokenForUUID = protected_sql((UUID) => {
+    const opaque = hash('sha512', randomBytes(32)).toString('hex');
+    db.prepare('INSERT INTO sessions (session_token, account_UUID) VALUES (?, ?)').run(opaque, UUID);
+    return opaque;
+});
 
-    // write opaque with UUID
-    await tx.execute({
-        sql: `
-            INSERT INTO sessions (session_token,account_UUID)
-            VALUES (?,?)
-        `,
-        args: [opaque, UUID],
-    });
-
-    return opaque //to give back to user for http-only cookie storage
-}
-
-const sessionTokenToUUID = async (token, tx = client) => {
-    //check if token exists, grab UUID if exists and is not expired
-    //if expired, delete the token and return null, user will have to log in again to get a new token
-    const rs = await tx.execute({
-        sql: `
-            SELECT account_UUID, (DATETIME('now') >= expires_at) as is_expired
-            FROM sessions
-            WHERE session_token = ?
-        `,
-        args: [token],
-    });
-    const query = rs.rows[0];
-
-    if (!query) return null; //token not found, user is not authenticated
-
-    if (query.is_expired) {
-        //token is expired, delete it
-        await tx.execute({
-            sql: `
-                DELETE FROM sessions
-                WHERE session_token = ?
-            `,
-            args: [token],
-        });
-
+const sessionTokenToUUID = async (token) => {
+    const row = strip(db.prepare(`
+        SELECT account_UUID, (DATETIME('now') >= expires_at) AS is_expired
+        FROM sessions WHERE session_token = ?
+    `).get(token));
+    if (!row) return null;
+    if (row.is_expired) {
+        try { db.prepare('DELETE FROM sessions WHERE session_token = ?').run(token); }
+        catch (err) { console.warn('Failed to clean up expired session token:', err.message); }
         return null;
     }
+    return row.account_UUID;
+};
 
-    return query.account_UUID
-}
+const deleteSessionTokenFromUUID = async (UUID) => {
+    const info = db.prepare('DELETE FROM sessions WHERE account_UUID = ?').run(UUID);
+    if (info.changes === 0) throw new Error('Session token not found');
+    return info.changes;
+};
 
-const deleteSessionTokenFromUUID = async (UUID, tx = client) => {
-    const rs = await tx.execute({
-        sql: 'DELETE FROM sessions WHERE account_UUID = ?',
-        args: [UUID],
-    });
-    if (rs.rowsAffected == 0) { throw new Error('Session token not found') }
-    return rs.rowsAffected
-}
+const deleteSessionToken = async (token) => {
+    const info = db.prepare('DELETE FROM sessions WHERE session_token = ?').run(token);
+    if (info.changes === 0) throw new Error('Session token not found');
+    return info.changes;
+};
 
-const deleteSessionToken = async (token, tx = client) => {
-    const rs = await tx.execute({
-        sql: 'DELETE FROM sessions WHERE session_token = ?',
-        args: [token],
-    });
-    if (rs.rowsAffected == 0) { throw new Error('Session token not found') }
-    return rs.rowsAffected
-}
+const clearExpiredSessionTokens = async () => {
+    const info = db.prepare('DELETE FROM sessions WHERE expires_at <= DATETIME("now")').run();
+    return info.changes;
+};
 
-const clearExpiredSessionTokens = async (tx = client) => {
-    const rs = await tx.execute('DELETE FROM sessions WHERE expires_at <= DATETIME("now")');
-    return rs.rowsAffected
-}
+const clearAllSessionTokens = async () => {
+    const info = db.prepare('DELETE FROM sessions').run();
+    return info.changes;
+};
 
-const clearAllSessionTokens = async (tx = client) => {
-    const rs = await tx.execute('DELETE FROM sessions');
-    return rs.rowsAffected
-}
 
-const banUser = protected_sql(async (tx, ip, UUID, reason, ban_length_days) => {
-    if (Number.isNaN(ban_length_days)) {
-        throw new Error('Invalid ban length');
-    };
+const banUser = protected_sql((ip, UUID, reason, ban_length_days) => {
+    if (Number.isNaN(ban_length_days)) throw new Error('Invalid ban length');
+    const indefinite = ban_length_days == null || ban_length_days === Infinity;
+    if (!indefinite && ban_length_days < 0) throw new Error('Invalid ban length');
 
-    const indefinite =
-        ban_length_days == null /*also takes undefined as true*/ ||
-        ban_length_days === Infinity;
-    if (!indefinite) {
-        if (ban_length_days < 0) {
-            throw new Error('Invalid ban length');
-        };
-    };
+    const ban_expires = indefinite
+        ? null
+        : new Date(Date.now() + ban_length_days * 86400000).toISOString();
 
     try {
-        const ban_expires = indefinite
-            ? null
-            : new Date(Date.now() + ban_length_days * 86400000).toISOString();
-
-        await tx.execute({
-            sql: `
-                INSERT INTO banned (ip_address, UUID, reason, ban_expires)
-                VALUES (?, ?, ?, ?)
-            `,
-            args: [ip, UUID, reason, ban_expires],
-        });
-
+        db.prepare('INSERT INTO banned (ip_address, UUID, reason, ban_expires) VALUES (?, ?, ?, ?)')
+          .run(ip, UUID, reason, ban_expires);
         return true;
-    } catch (error) {
-        if (error.code === 'SQLITE_CONSTRAINT_UNIQUE') {
-            throw new Error('info is already banned');
-        };
-        throw error;
-    };
+    } catch (err) {
+        if (err.code === 'SQLITE_CONSTRAINT_UNIQUE') throw new Error('info is already banned');
+        throw err;
+    }
 });
 
-const isIPBanned = async (ip, tx = client) => {
-    const rs = await tx.execute({
-        sql: `
-            SELECT *
-            FROM banned
-            WHERE ip_address = ?
-        `,
-        args: [ip],
-    });
-    const row = rs.rows[0];
-
-    // not banned
+const isIPBanned = async (ip) => {
+    const row = strip(db.prepare('SELECT * FROM banned WHERE ip_address = ?').get(ip));
     if (!row) return false;
-
-    // no expiry = permanent ban
     if (!row.ban_expires) return true;
-
-    // check expiration
-    const now = new Date();
-    const expires = new Date(row.ban_expires);
-
-    if (now >= expires) {
-        await tx.execute({ sql: 'DELETE FROM banned WHERE ip_address = ?', args: [ip] });
+    if (new Date() >= new Date(row.ban_expires)) {
+        try { db.prepare('DELETE FROM banned WHERE ip_address = ?').run(ip); } catch (_) {}
         return false;
     }
-
     return true;
 };
 
-const isUUIDBanned = async (UUID, tx = client) => {
-    const rs = await tx.execute({
-        sql: `
-            SELECT *
-            FROM banned
-            WHERE UUID = ?
-        `,
-        args: [UUID],
-    });
-    const row = rs.rows[0];
-
+const isUUIDBanned = async (UUID) => {
+    const row = strip(db.prepare('SELECT * FROM banned WHERE UUID = ?').get(UUID));
     if (!row) return false;
     if (!row.ban_expires) return true;
-
-    const now = new Date();
-    const expires = new Date(row.ban_expires);
-
-    if (now >= expires) {
-        await tx.execute({ sql: 'DELETE FROM banned WHERE UUID = ?', args: [UUID] });
+    if (new Date() >= new Date(row.ban_expires)) {
+        try { db.prepare('DELETE FROM banned WHERE UUID = ?').run(UUID); } catch (_) {}
         return false;
     }
-
     return true;
 };
 
-const unbanIP = protected_sql(async (tx, ip) => {
-    const rs = await tx.execute({ sql: 'DELETE FROM banned WHERE ip_address = ?', args: [ip] });
-    if (rs.rowsAffected === 0) {
-        throw new Error('IP address not found in banned table');
-    }
+const unbanIP = protected_sql((ip) => {
+    const info = db.prepare('DELETE FROM banned WHERE ip_address = ?').run(ip);
+    if (info.changes === 0) throw new Error('IP address not found in banned table');
     return true;
-})
+});
 
-const unbanUUID = protected_sql(async (tx, UUID) => {
-    const rs = await tx.execute({ sql: 'DELETE FROM banned WHERE UUID = ?', args: [UUID] });
-    if (rs.rowsAffected === 0) {
-        throw new Error('UUID not found in banned table');
-    }
+const unbanUUID = protected_sql((UUID) => {
+    const info = db.prepare('DELETE FROM banned WHERE UUID = ?').run(UUID);
+    if (info.changes === 0) throw new Error('UUID not found in banned table');
     return true;
-})
+});
 
-const isAdmin = async (UUID, tx = client) => {
-    if (TESTING_MODE) {
-        return true; // In testing mode, all users are considered admins
-    }
-    //they are usually more than 30, this is just a lower bound
-    if (!UUID || UUID.length < 30) {
-        return false; // No UUID provided, cannot be an admin
-    }
 
-    const rs = await tx.execute({
-        sql: `
-            SELECT account_Tier
-            FROM users
-            WHERE account_UUID = ?
-        `,
-        args: [UUID],
-    });
-    const row = rs.rows[0];
+const isAdmin = async (UUID) => {
+    if (TESTING_MODE) return true;
+    if (!UUID || UUID.length < 30) return false;
+    const row = strip(db.prepare('SELECT account_Tier FROM users WHERE account_UUID = ?').get(UUID));
+    return !!(row && row.account_Tier === 3);
+};
 
-    return !!(row && row.account_Tier === 3); // Admin tier is 3
-}
 
-// single player flow:
-//user starts game
-// incrementGame ran to increase games played
-//user finishes game
-//available data: username || UUID, score, game_finished(implied true), can also calculate eddie from score
+const wipeDatabase = () => {
+    db.pragma('foreign_keys = OFF');
+    db.transaction(() => {
+        db.prepare('DROP TABLE IF EXISTS friends').run();
+        db.prepare('DROP TABLE IF EXISTS sessions').run();
+        db.prepare('DROP TABLE IF EXISTS banned').run();
+        db.prepare('DROP TABLE IF EXISTS users').run();
+    })();
+    db.pragma('foreign_keys = ON');
+    initializeAllTables();
+    console.log('Database wiped and re-initialized');
+};
+
 
 module.exports = {
-    // `getClient()` replaces the old `sql`/`db` exports. It's a function,
-    // not a property, on purpose: SQLManager (server-core.cjs) copies these
-    // exports with Object.entries(), which evaluates getters immediately —
-    // a `get client()` property would get frozen as a stale snapshot at
-    // construction time. Callers must call getClient() fresh each time
-    // rather than caching its return value. See migration notes.
-    getClient: () => client,
+    db,              // persistent Database instance  — used by hard-db.cjs (forcePush / hardReset)
+    sql: Database,   // Database constructor class    — used by hard-db.cjs (getRemote)
     sync,
     auth,
     initializeUserTable,
@@ -796,4 +515,4 @@ module.exports = {
     getStaticUserDataByUUID,
     checkUsername,
     checkPassword,
-}
+};
