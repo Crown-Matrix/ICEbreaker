@@ -221,7 +221,6 @@ const getUserByUsername = async (username, tx = client) => {
 
 // needs transaction — read then write
 const createUser = protected_sql(async (tx, username, password) => {
-    console.log('im being run!')
     if (username.length > 20) {
         return { ErrorCode: 1, ErrorMessage: 'Max username length exceeded' }
     } else if (password.length < 8) {
@@ -240,12 +239,10 @@ const createUser = protected_sql(async (tx, username, password) => {
     const existing = await getUserByUsername(username, tx);
     const UUID = randomUUID()
     if (existing) return { ErrorCode: 7, ErrorMessage: 'Username already taken' };
-    console.log('creds validated')
     await tx.execute({
         sql: 'INSERT INTO users (username, password, account_UUID) VALUES (?, ?, ?)',
         args: [username, hashPassword(password), UUID],
     });
-    console.log('creating a user with UUID:', UUID);
     return UUID;
 });
 

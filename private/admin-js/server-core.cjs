@@ -519,7 +519,6 @@ app.post('/sign-up', async (req, res) => {
 
   if (!username_existence) {
 
-    console.log('received sign-up request:', username, password);
     const newUUID = await SQL_Manager_Instance.createUser(username, password);
     console.log('newUUID:', newUUID);
     if (typeof newUUID === 'object' && newUUID.ErrorCode) { //server side validation failed, return error to client
