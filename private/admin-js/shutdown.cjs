@@ -7,7 +7,7 @@ const SHUTDOWN_DEADLINE_MS = 25_000; // leave a few seconds of margin before Ren
 function registerShutdownHandlers(SQL_Manager_Instance, SQL_TYPE) {
   let cleaningUp = false;
 
-  function cleanup(signal) {
+  async function cleanup(signal) {
     if (cleaningUp) return;
     cleaningUp = true;
 
@@ -24,7 +24,7 @@ function registerShutdownHandlers(SQL_Manager_Instance, SQL_TYPE) {
     try {
       if (SQL_TYPE === "turso") {
         console.log('Syncing to remote before exit...');
-        SQL_Manager_Instance.sync();
+        await SQL_Manager_Instance.sync();
         console.log("Final sync to remote complete.");
         succeeded = true;
       } else if (SQL_TYPE === "no_turso") {

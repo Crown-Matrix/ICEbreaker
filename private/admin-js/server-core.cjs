@@ -195,25 +195,26 @@ if (SQL_TYPE === 'turso') {
     hardDB.runResetWal(); //reset WAL before force push, to avoid "database is locked" errors
     hardDB.forcePush(SQL_Manager_Instance.db);
   }
-  try {
-    SQL_Manager_Instance.sync();
-    console.log('Initial sync complete.');
-    setInterval(() => {
-      //sync with turso every minute, if using turso
-      // this is a backup in case the shutdown handler fails to run, which can happen if the process is killed abruptly
-      //it also helps the stupid connection timeout
-      try {
-        console.log('Performing periodic sync with Turso...');
-        SQL_Manager_Instance.sync();
-      } catch (err) {
-        console.error('Sync failed:', err.message);
-      }
-    }, 1000 * 60 // 1 minute interval
-    );
-  } catch (err) {
-    console.error('Initial sync failed:', err.message);
-    throw err; // decide: crash startup, or continue with stale/local-only data
-  }
+  (async () => {
+    try {
+      await SQL_Manager_Instance.sync();
+      console.log('Initial sync complete.');
+      setInterval(async () => {
+        //sync with turso every minute, if using turso
+        // this is a backup in case the shutdown handler fails to run, which can happen if the process is killed abruptly
+        try {
+          console.log('Performing periodic sync with Turso...');
+          await SQL_Manager_Instance.sync();
+        } catch (err) {
+          console.error('Sync failed:', err.message);
+        }
+      }, 1000 * 60 // 1 minute interval
+      );
+    } catch (err) {
+      console.error('Initial sync failed:', err.message);
+      process.exit(1);
+    }
+  })();
 } else if (SQL_TYPE === 'no_turso') {
   console.log('Using local SQLite database for SQL operations.');
 } else {
@@ -261,16 +262,16 @@ app.use(express.json()); //parse JSON bodies
     checks banned table for ip or UUID, if found, redirects to /banned page
 */
 
-app.use((req, res, next) => {
+app.use(async (req, res, next) => {
   let ip = req.headers['x-forwarded-for']?.split(',')[0].trim() || req.socket.remoteAddress;
 
   let sessionToken = req.cookies.sessionToken
 
   let UUID = sessionToken ?
-    SQL_Manager_Instance.sessionTokenToUUID(sessionToken) : null;
+    await SQL_Manager_Instance.sessionTokenToUUID(sessionToken) : null;
 
   let isUserBanned = UUID ?
-    SQL_Manager_Instance.isUUIDBanned(UUID) : false;
+    await SQL_Manager_Instance.isUUIDBanned(UUID) : false;
 
   if (isUserBanned) {
     console.warn('Banned user attempted to access path:', req.path, 'UUID:', UUID);
@@ -290,7 +291,7 @@ app.use((req, res, next) => {
     return res.status(400).send('Bad Request: No IP address found');
   }
 
-  if (SQL_Manager_Instance.isIPBanned(ip)) {
+  if (await SQL_Manager_Instance.isIPBanned(ip)) {
     console.warn('Banned IP attempted to access path:', req.path, 'IP:', ip);
     return res.status(403).sendFile('/auth/banned.html', { root: './public' });
   }
@@ -370,11 +371,11 @@ app.get('/index.html', (req, res) => {
 
 
 
-app.all('/admin-panel{/*splat}', (req, res, next) => {
+app.all('/admin-panel{/*splat}', async (req, res, next) => {
   //auth , check if user UUID has admin status, if not, return 403
   const sessionToken = req.cookies.sessionToken;
-  const UUID = sessionToken ? SQL_Manager_Instance.sessionTokenToUUID(sessionToken) : false;
-  if (!TESTING_MODE && (!UUID || !SQL_Manager_Instance.isAdmin(UUID))) {
+  const UUID = sessionToken ? await SQL_Manager_Instance.sessionTokenToUUID(sessionToken) : false;
+  if (!TESTING_MODE && (!UUID || !await SQL_Manager_Instance.isAdmin(UUID))) {
     return res.status(403).json({ error: 'Access denied. Admin privileges required.' });
   }
   next();
@@ -444,15 +445,15 @@ app.get('/profile', (req, res) => {
 
 
 
-app.get('/profile/api/user/:username', (req, res) => {
+app.get('/profile/api/user/:username', async (req, res) => {
   const sessionToken = req.cookies.sessionToken;
-  const UUID = sessionToken ? SQL_Manager_Instance.sessionTokenToUUID(sessionToken) : null;
+  const UUID = sessionToken ? await SQL_Manager_Instance.sessionTokenToUUID(sessionToken) : null;
   if (!UUID) {
     return res.status(401).json({ error: 'Unauthorized. Please log in.' });
   }
-  SQL_Manager_Instance.updateLastLoginDateFromUUID(UUID);
+  await SQL_Manager_Instance.updateLastLoginDateFromUUID(UUID);
   const requestedUsername = req.params.username;
-  const user_info = SQL_Manager_Instance.getUserProfileByUUID(UUID);
+  const user_info = await SQL_Manager_Instance.getUserProfileByUUID(UUID);
   if (!user_info || user_info.username !== requestedUsername) {
     return res.status(403).json({ error: 'Forbidden. You can only access your own profile.' });
   }
@@ -461,10 +462,10 @@ app.get('/profile/api/user/:username', (req, res) => {
 
 
 
-app.post('/log-out', (req, res) => {
+app.post('/log-out', async (req, res) => {
   const sessionToken = SQL_Manager_Instance.auth.getSessionTokenFromRequest(req);
   if (sessionToken) {
-    SQL_Manager_Instance.deleteSessionToken(sessionToken); // Invalidate the session token on the server side to log the user out
+    await SQL_Manager_Instance.deleteSessionToken(sessionToken); // Invalidate the session token on the server side to log the user out
   }
   res.clearCookie('sessionToken'); // Clear the session token cookie on the client side
   res.status(200).json({ message: 'Logged out successfully' });
@@ -490,11 +491,11 @@ app.post('/log-in', async (req, res) => {
 
   const isValid = await SQL_Manager_Instance.passwordMatch(username, password);
   if (isValid) {
-    const userUUID = SQL_Manager_Instance.getUUIDFromUsername(username);
-    const sessionToken = SQL_Manager_Instance.createSessionTokenForUUID(userUUID);
+    const userUUID = await SQL_Manager_Instance.getUUIDFromUsername(username);
+    const sessionToken = await SQL_Manager_Instance.createSessionTokenForUUID(userUUID);
     SQL_Manager_Instance.auth.sendSessionTokenAsCookie(res, sessionToken);
-    SQL_Manager_Instance.auth.sendStaticUserDataAsHeader(res, SQL_Manager_Instance.getStaticUserDataByUUID(userUUID));
-    SQL_Manager_Instance.updateLastLoginDateFromUsername(username);
+    SQL_Manager_Instance.auth.sendStaticUserDataAsHeader(res, await SQL_Manager_Instance.getStaticUserDataByUUID(userUUID));
+    await SQL_Manager_Instance.updateLastLoginDateFromUsername(username);
     return res.status(200).json({ message: 'Logged in successfully' });
   } else {
     return res.status(401).json({ message: 'Invalid username or password.' });
@@ -507,26 +508,26 @@ app.get('/sign-up', (req, res) => {
   res.status(200).sendFile('auth/sign-up.html', { root: './public' });
 });
 
-app.post('/sign-up', (req, res) => {
+app.post('/sign-up', async (req, res) => {
   //check if username taken
   const { username, password } = req.body
 
   if (!username || !password) {
     return res.status(400).json({ message: 'Username and password are required.' });
   }
-  const username_existence = SQL_Manager_Instance.getUserByUsername(username)
+  const username_existence = await SQL_Manager_Instance.getUserByUsername(username)
 
   if (!username_existence) {
 
     console.log('received sign-up request:', username, password);
-    const newUUID = SQL_Manager_Instance.createUser(username, password);
+    const newUUID = await SQL_Manager_Instance.createUser(username, password);
     console.log('newUUID:', newUUID);
     if (typeof newUUID === 'object' && newUUID.ErrorCode) { //server side validation failed, return error to client
       return res.status(400).json({ message: newUUID.ErrorMessage });
     }
 
-    SQL_Manager_Instance.auth.sendStaticUserDataAsHeader(res, SQL_Manager_Instance.getStaticUserDataByUUID(newUUID));
-    return res.status(201).cookie('sessionToken', SQL_Manager_Instance.createSessionTokenForUUID(newUUID)).json({
+    SQL_Manager_Instance.auth.sendStaticUserDataAsHeader(res, await SQL_Manager_Instance.getStaticUserDataByUUID(newUUID));
+    return res.status(201).cookie('sessionToken', await SQL_Manager_Instance.createSessionTokenForUUID(newUUID)).json({
       message: 'User created successfully.',
       UUID: newUUID,
     })

@@ -2,12 +2,13 @@
   "dependencies": {
     "@libsql/client": "^0.17.4",
     "bcrypt": "^6.0.0",
-    "better-sqlite3": "^12.10.0",
+    "better-sqlite3": "^12.11.1",
     "bootstrap": "^5.3.8",
     "cookie-parser": "^1.4.7",
     "express": "^5.2.1",
-    "express-rate-limit": "^8.5.2",
-    "socket.io": "^4.8.3"
+    "express-rate-limit": "^8.6.1",
+    "socket.io": "^4.8.3",
+    "socket.io-client": "^4.8.3"
   },
   "scripts": {
     "singlePlayer": "node private/singlePlayer/singlePlayerServer.cjs",

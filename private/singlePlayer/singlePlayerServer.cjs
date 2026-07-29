@@ -95,7 +95,7 @@ class backEndHandler {
     }
   }
 
-  endRound(backEndHandlerInstance, sequence_data) {
+  async endRound(backEndHandlerInstance, sequence_data) {
     const toleranceMS = 50; // Allow a small tolerance to account for any minor delays in processing the end round request, this can help prevent unfair losses due to timing issues while still enforcing the time limit
 
     let frontEndHandlerArg = backEndHandlerInstance.frontEndHandler;
@@ -126,9 +126,9 @@ add eddies to user account based on scoreToEddies()
         backEndHandlerInstance.databaseWritten = true
         let score = backEndHandlerInstance.score || 0; //get the user's score for the round, this should have been calculated and stored in the front end handler during gameplay, if not, we can default to 0
         let userUUID = backEndHandlerInstance.userInfo.UUID;
-        let username = SQL_Manager_Instance.getUsernameFromUUID(userUUID);
-        SQL_Manager_Instance.updateGameStats(username, score, 'sp', false);
-        SQL_Manager_Instance.addEddies(username, backEndHandlerInstance.scoreToEddies(score)); //add eddies based on the score they achieved in the round, even if they lost, to reward them for their performance and encourage continued play
+        let username = await SQL_Manager_Instance.getUsernameFromUUID(userUUID);
+        await SQL_Manager_Instance.updateGameStats(username, score, 'sp', false);
+        await SQL_Manager_Instance.addEddies(username, backEndHandlerInstance.scoreToEddies(score)); //add eddies based on the score they achieved in the round, even if they lost, to reward them for their performance and encourage continued play
       } else if (backEndHandlerInstance.isGuest) {
       }
       return {
@@ -207,7 +207,7 @@ add eddies to user account based on scoreToEddies()
 
 
 
-io.use((socket, next) => {
+io.use(async (socket, next) => {
 
   //get ip:
   let ip = socket.handshake.address || socket.request.headers['x-forwarded-for']?.split(',')[0].trim() || socket.request.socket.remoteAddress;
@@ -216,7 +216,7 @@ io.use((socket, next) => {
     return next(new Error('No IP address found in socket handshake')); // Reject the connection with an error message
   }
 
-  if (SQL_Manager_Instance.isIPBanned(ip)) {
+  if (await SQL_Manager_Instance.isIPBanned(ip)) {
     return next(new Error('banned'));
   }
 
@@ -228,19 +228,19 @@ io.use((socket, next) => {
     socket.isGuest = true; //treat user as guest if no session token is found, this will allow them to play the game but with limited features and no ability to save progress or earn rewards, this can help encourage users to create an account and log in for a better experience while still allowing casual play without an account
     return next(); // Allow the connection to proceed as a guest, but log a warning about the missing session token
   }
-  const verifiedUUID = SQL_Manager_Instance.sessionTokenToUUID(sessionToken);
+  const verifiedUUID = await SQL_Manager_Instance.sessionTokenToUUID(sessionToken);
   if (!verifiedUUID) {
     //token exists but isnt valid, not a big deal
     socket.isGuest = true;
     return next();
   }
-  const isUUIDBanned = SQL_Manager_Instance.isUUIDBanned(verifiedUUID);
+  const isUUIDBanned = await SQL_Manager_Instance.isUUIDBanned(verifiedUUID);
   if (isUUIDBanned) {
     console.warn('Banned user attempted to connect via socket. UUID:', verifiedUUID);
     return next(new Error('banned'));
   }
   socket.UUID = verifiedUUID; // Attach the associated user ID to the request object for use in route handlers
-  SQL_Manager_Instance.updateLastLoginDateFromUUID(verifiedUUID);
+  await SQL_Manager_Instance.updateLastLoginDateFromUUID(verifiedUUID);
   socket.isGuest = false
   next();
 });
@@ -308,7 +308,7 @@ io.on('connection', async (socket) => {
       socket.emit('isGuestStatus', { isGuest: backEndHandlerInstance.isGuest }); // Inform the front end of the user's guest status, this can be used to conditionally allow or restrict certain features based on whether the user is a guest or signed in, e.g., saving progress, earning rewards, etc.
       function gameLoopInit() {
         // wait for user start socket event
-        socket.on('start_game', () => {
+        socket.on('start_game', async () => {
 
 
           if (backEndHandlerInstance.frontEndHandler.gameState === 'active') {
@@ -328,8 +328,8 @@ io.on('connection', async (socket) => {
             backEndHandlerInstance.frontEndHandler.score = 0; //initialize score for the first round, following rounds will add to it
 
             if (!backEndHandlerInstance.isGuest) {
-              var username = SQL_Manager_Instance.getUsernameFromUUID(socket.UUID); //TODO implement this to obviously not be hardcoded as a test
-              SQL_Manager_Instance.incrementGame(username, 'sp');
+              var username = await SQL_Manager_Instance.getUsernameFromUUID(socket.UUID); //TODO implement this to obviously not be hardcoded as a test
+              await SQL_Manager_Instance.incrementGame(username, 'sp');
             }
           }
           socket.emit('start_game_response', { frontEndHandler: backEndHandlerInstance.frontEndHandler, accepted: true });
@@ -410,23 +410,23 @@ io.on('connection', async (socket) => {
           }
         });
 
-        socket.on('end_game', (sequence_data) => {
-          let round_results = backEndHandlerInstance.endRound(backEndHandlerInstance, sequence_data);
+        socket.on('end_game', async (sequence_data) => {
+          let round_results = await backEndHandlerInstance.endRound(backEndHandlerInstance, sequence_data);
           backEndHandlerInstance.frontEndHandler.gameState = round_results.roundResult;
           backEndHandlerInstance.totalSequencesUploaded += round_results.sequencesUploaded || 0; //keep a running total of sequences uploaded across rounds, this is used for end game stats in the result page
           socket.emit('end_game_response', round_results);
         });
 
-        socket.once('database_write', (data) => {
+        socket.once('database_write', async (data) => {
 
           let score = backEndHandlerInstance.score || 0; //get the user's score for the round, this should have been calculated and stored in the front end handler during gameplay, if not, we can default to 0
 
           if (!backEndHandlerInstance.isGuest && !backEndHandlerInstance.databaseWritten) {// Only write to the database for signed in users who haven't already triggered a database write for this round, this can help prevent duplicate writes if the user tries to trigger multiple database writes for the same round, while still allowing guests to trigger the event without causing any issues since it will simply not perform any database operations for guests
             backEndHandlerInstance.databaseWritten = true
             let userUUID = backEndHandlerInstance.userInfo.UUID;
-            let username = SQL_Manager_Instance.getUsernameFromUUID(userUUID);
-            SQL_Manager_Instance.updateGameStats(username, score, 'sp', false);
-            SQL_Manager_Instance.addEddies(username, backEndHandlerInstance.scoreToEddies(score)); //add eddies based on the score they achieved in the round, even if they lost, to reward them for their performance and encourage continued play
+            let username = await SQL_Manager_Instance.getUsernameFromUUID(userUUID);
+            await SQL_Manager_Instance.updateGameStats(username, score, 'sp', false);
+            await SQL_Manager_Instance.addEddies(username, backEndHandlerInstance.scoreToEddies(score)); //add eddies based on the score they achieved in the round, even if they lost, to reward them for their performance and encourage continued play
           }
 
         });

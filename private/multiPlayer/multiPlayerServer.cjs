@@ -217,7 +217,7 @@ class Match {
     if (player.isGuest || player.databaseWritten || player.isBanned) return;
     player.databaseWritten = true;
     try {
-      const username = SQL_Manager_Instance.getUsernameFromUUID(player.identity.UUID);
+      const username = await SQL_Manager_Instance.getUsernameFromUUID(player.identity.UUID);
       const score = player.matchScore || 0;
       let eddieModifier = 1;
       if (won) {
@@ -226,8 +226,8 @@ class Match {
         eddieModifier = 1.25
       }
       const eddies = Math.round(scoreToEddies(score) * eddieModifier);
-      SQL_Manager_Instance.updateGameStats(username, score, 'mp', won);
-      SQL_Manager_Instance.addEddies(username, eddies);
+      await SQL_Manager_Instance.updateGameStats(username, score, 'mp', won);
+      await SQL_Manager_Instance.addEddies(username, eddies);
     } catch (err) {
       console.error('Error writing multiplayer stats for player:', player.identity.UUID, err);
     }
@@ -339,7 +339,7 @@ setInterval(() => {
 function registerMatchHandlers(player, match) {
   const socket = player.socket;
 
-  socket.on('start_game', () => {
+  socket.on('start_game', async () => {
     if (match.cancelled || match.ended || player.isBanned) return;
 
     if (player.frontEndHandler && player.frontEndHandler.gameState === 'active') {
@@ -376,8 +376,8 @@ function registerMatchHandlers(player, match) {
     player.frontEndHandler = feh;
 
     if (isFirstRound && !player.isGuest) {
-      const username = SQL_Manager_Instance.getUsernameFromUUID(player.identity.UUID);
-      SQL_Manager_Instance.incrementGame(username, 'mp');
+      const username = await SQL_Manager_Instance.getUsernameFromUUID(player.identity.UUID);
+      await SQL_Manager_Instance.incrementGame(username, 'mp');
     }
 
     socket.emit('start_game_response', {
@@ -532,7 +532,7 @@ function maybeFinalizeMatch(match) {
 
 // connection middleware: reject banned IPs and UUIDs before they enter
 
-io.use((socket, next) => {
+io.use(async (socket, next) => {
   const ip = socket.handshake.address
     || socket.request.headers['x-forwarded-for']?.split(',')[0].trim()
     || socket.request.socket.remoteAddress;
@@ -542,7 +542,7 @@ io.use((socket, next) => {
     return next(new Error('No IP address found'));
   }
 
-  if (SQL_Manager_Instance.isIPBanned(ip)) {
+  if (await SQL_Manager_Instance.isIPBanned(ip)) {
     console.warn('Banned IP attempted MP connection:', ip);
     return next(new Error('banned'));
   }
@@ -550,8 +550,8 @@ io.use((socket, next) => {
   // UUID ban check — guests (no session token) skip this
   const sessionToken = SQL_Manager_Instance.auth.getSessionTokenFromRequest(socket.request);
   if (sessionToken) {
-    const uuid = SQL_Manager_Instance.sessionTokenToUUID(sessionToken);
-    if (uuid && SQL_Manager_Instance.isUUIDBanned(uuid)) {
+    const uuid = await SQL_Manager_Instance.sessionTokenToUUID(sessionToken);
+    if (uuid && await SQL_Manager_Instance.isUUIDBanned(uuid)) {
       console.warn('Banned UUID attempted MP connection:', uuid);
       return next(new Error('banned'));
     }
@@ -562,15 +562,15 @@ io.use((socket, next) => {
 
 // connection / auth / matchmaking entry point
 
-io.on('connection', (socket) => {
+io.on('connection', async (socket) => {
   console.log('A user connected to the multiplayer server.');
 
   const sessionCookie = SQL_Manager_Instance.auth.getSessionTokenFromRequest(socket.handshake);
   socket.guestMode = !sessionCookie;
-  socket.UUID = socket.guestMode ? null : SQL_Manager_Instance.sessionTokenToUUID(sessionCookie);
+  socket.UUID = socket.guestMode ? null : await SQL_Manager_Instance.sessionTokenToUUID(sessionCookie);
   console.log('Socket UUID:', socket.UUID);
 
-  const fetched_user_data = socket.UUID ? SQL_Manager_Instance.getUserByUUID(socket.UUID) : null;
+  const fetched_user_data = socket.UUID ? await SQL_Manager_Instance.getUserByUUID(socket.UUID) : null;
   const mp_games_Played = fetched_user_data ? (fetched_user_data.mp_games_Played || 0) : 0;
   const mp_games_Won   = fetched_user_data ? (fetched_user_data.mp_games_Won   || 0) : 0;
   const winRate  = mp_games_Played > 0 ? mp_games_Won / mp_games_Played : NaN;
