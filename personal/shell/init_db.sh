@@ -22,6 +22,7 @@ if [ "$USE_TURSO_DATABASE" == "true" ]; then
     result="Skipping local SQLite bootstrap (USE_TURSO_DATABASE=true) — tracked-SQL.cjs will create the replica via sync."
     node_exit=0
 else
+    touch ./private/database/ICEbreaker.db
     result=$(node -e "
 const { initializeAllTables } = require('./private/admin-js/SQL.cjs');
 

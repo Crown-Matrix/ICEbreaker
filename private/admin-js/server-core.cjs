@@ -169,14 +169,14 @@ const SQL_URLS = {
 
 class SQLManager {
   constructor() {
-    let mySQL = require(SQL_URLS[SQL_TYPE]);
-    for (const [key, value] of Object.entries(mySQL)) {
-      this[key] = value;
-    }
+    const mySQL = require(SQL_URLS[SQL_TYPE]);
+    Object.defineProperties(this, Object.getOwnPropertyDescriptors(mySQL));
   }
 }
 
 const SQL_Manager_Instance = new SQLManager();
+
+
 
 module.exports = { SQL_Manager_Instance }; //needs earlier export, other things are added at the bottom of file
 
@@ -190,6 +190,8 @@ const hardDB = require(join(__dirname, './hard-db.cjs'));
 
 if (SQL_TYPE === 'turso') {
   console.log('Using Turso database for SQL operations.');
+  
+  
   if (process.env.LAST_SQL_MODE === 'false') { //undefined is intentionally grouped with true, and will not trigger this sync up, as that means there are no local changes to sync up yet
     console.log('Last SQL mode was not Turso, performing initial sync...');
     hardDB.runResetWal(); //reset WAL before force push, to avoid "database is locked" errors
@@ -198,6 +200,7 @@ if (SQL_TYPE === 'turso') {
   (async () => {
     try {
       await SQL_Manager_Instance.sync();
+      if (SQL_Manager_Instance.applyPragmas) SQL_Manager_Instance.applyPragmas();
       console.log('Initial sync complete.');
       setInterval(async () => {
         //sync with turso every minute, if using turso

@@ -11,7 +11,7 @@
     "socket.io-client": "^4.8.3"
   },
   "scripts": {
-    "singlePlayer": "node private/singlePlayer/singlePlayerServer.cjs",
+    "archive": "bash personal/shell/archive.sh",
     "map": "bash personal/shell/filemap.sh",
     "main": "bash personal/shell/main.sh",
     "init_db": "bash personal/shell/init_db.sh",

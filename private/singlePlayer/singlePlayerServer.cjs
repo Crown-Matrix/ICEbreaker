@@ -328,7 +328,7 @@ io.on('connection', async (socket) => {
             backEndHandlerInstance.frontEndHandler.score = 0; //initialize score for the first round, following rounds will add to it
 
             if (!backEndHandlerInstance.isGuest) {
-              var username = await SQL_Manager_Instance.getUsernameFromUUID(socket.UUID); //TODO implement this to obviously not be hardcoded as a test
+              var username = await SQL_Manager_Instance.getUsernameFromUUID(socket.UUID);
               await SQL_Manager_Instance.incrementGame(username, 'sp');
             }
           }

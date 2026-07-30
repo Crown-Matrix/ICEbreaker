@@ -2,7 +2,10 @@
 
 set -euo pipefail
 
-DB_PATH="${1:-/Users/danielsandoval/Desktop/ICEbreaker/private/database/ICEbreaker.db}"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DEFAULT_DB_PATH="${SCRIPT_DIR}/../../private/database/ICEbreaker.db"
+
+DB_PATH="${1:-$DEFAULT_DB_PATH}"
 
 echo "Target database: $DB_PATH"
 
@@ -21,4 +24,4 @@ for suffix in "-wal" "-shm"; do
     fi
 done
 
-echo "Done. Restart the app."
+echo "SQL Cleanup Done. Restart the app."

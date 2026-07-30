@@ -29,16 +29,22 @@ console.log('Database files:', fs.readdirSync(dbDir));
 // We make `db` reassignable so reconnectDb() can swap it in-place on expiry.
 // Reads (prepare().get/all) are always local (< 1 ms). Only writes go over Hrana,
 // and reconnects only happen when the stream actually expires — not every call.
-let db = openDb();
-
 function openDb() {
-    const instance = new Database(dbPath, {
+    return new Database(dbPath, {
         syncUrl:   process.env.TURSO_DATABASE_URL,
         authToken: process.env.TURSO_AUTH_TOKEN,
     });
-    instance.pragma('journal_mode = WAL');
-    instance.pragma('foreign_keys = ON');
-    return instance;
+}
+
+let db = openDb();
+let hasBootstrapped = false;
+
+// call this once, right after the first successful sync
+function applyPragmas() {
+    if (hasBootstrapped) return;
+    db.pragma('journal_mode = WAL');
+    db.pragma('foreign_keys = ON');
+    hasBootstrapped = true;
 }
 
 const STREAM_ERROR = /stream not found|STREAM_EXPIRED|stream has expired|HRANA_CLOSED/i;
@@ -47,9 +53,10 @@ function reconnectDb() {
     console.warn('[tracked-SQL] Hrana stream expired — reconnecting...');
     try { db.close(); } catch (_) {}
     db = openDb();
+    if (hasBootstrapped) applyPragmas(); // re-apply foreign_keys on the new connection
 }
 
-// ─── Strip libsql _metadata ───────────────────────────────────────────────────
+
 const strip    = (row)  => { if (!row) return row; const { _metadata, ...r } = row; return r; };
 const stripAll = (rows) => rows.map(strip);
 
@@ -125,7 +132,8 @@ function initializeUserTable() {
             last_Login_Date      TEXT DEFAULT CURRENT_TIMESTAMP,
             account_Tier         INTEGER DEFAULT 0,
             eddies               INTEGER DEFAULT 0,
-            settings             TEXT DEFAULT '{}'
+            settings             TEXT DEFAULT '{}',
+            inventory            TEXT DEFAULT '{}'
         )
     `);
 }
@@ -472,10 +480,11 @@ const wipeDatabase = () => {
 
 
 module.exports = {
-    db,              // persistent Database instance  — used by hard-db.cjs (forcePush / hardReset)
+    get db() { return db; },              // persistent Database instance  — used by hard-db.cjs (forcePush / hardReset)
     sql: Database,   // Database constructor class    — used by hard-db.cjs (getRemote)
     sync,
     auth,
+    applyPragmas,
     initializeUserTable,
     initializeFriendsTable,
     initializeSessionsTable,

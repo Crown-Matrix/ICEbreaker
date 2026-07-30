@@ -13,7 +13,7 @@ const TABLE_ORDER = ["users", "friends", "sessions", "banned"];
 const { execFileSync } = require('child_process');
 
 function runResetWal() {
-    const scriptPath = join(__dirname, '../../personal/shell/WAL_CLEANUP.sh');
+    const scriptPath = join(__dirname, '../../personal/shell/SQL_CLEANUP.sh');
 
     try {
         const output = execFileSync(scriptPath, {

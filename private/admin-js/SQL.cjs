@@ -46,22 +46,23 @@ const checkPassword = (password) => {
 function initializeUserTable() {
     const createTableStmt = `
         CREATE TABLE IF NOT EXISTS users (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            username TEXT UNIQUE COLLATE NOCASE NOT NULL CHECK(LENGTH(username) BETWEEN 1 AND 19),
-            password TEXT NOT NULL CHECK(LENGTH(password) BETWEEN 8 AND 63),
-            account_UUID TEXT UNIQUE NOT NULL,
-            sp_games_Played INTEGER DEFAULT 0,
-            mp_games_Played INTEGER DEFAULT 0,
-            mp_games_Won INTEGER DEFAULT 0,
-            sp_games_Finished INTEGER DEFAULT 0,
-            mp_games_Finished INTEGER DEFAULT 0,
-            account_Creation_Date TEXT DEFAULT CURRENT_TIMESTAMP,
-            sp_average_Score REAL DEFAULT NULL,
-            mp_average_Score REAL DEFAULT NULL,
-            last_Login_Date TEXT DEFAULT CURRENT_TIMESTAMP,
-            account_Tier INTEGER DEFAULT 0,
-            eddies INTEGER DEFAULT 0,
-            settings TEXT DEFAULT '{}'
+            id                         INTEGER PRIMARY KEY AUTOINCREMENT,
+            username                   TEXT UNIQUE COLLATE NOCASE NOT NULL CHECK(LENGTH(username) BETWEEN 1 AND 19),
+            password                   TEXT NOT NULL CHECK(LENGTH(password) BETWEEN 8 AND 63),
+            account_UUID               TEXT UNIQUE NOT NULL,
+            sp_games_Played            INTEGER DEFAULT 0,
+            mp_games_Played            INTEGER DEFAULT 0,
+            mp_games_Won               INTEGER DEFAULT 0,
+            sp_games_Finished          INTEGER DEFAULT 0,
+            mp_games_Finished          INTEGER DEFAULT 0,
+            account_Creation_Date      TEXT DEFAULT CURRENT_TIMESTAMP,
+            sp_average_Score REAL      DEFAULT NULL,
+            mp_average_Score REAL      DEFAULT NULL,
+            last_Login_Date TEXT       DEFAULT CURRENT_TIMESTAMP,
+            account_Tier INTEGER       DEFAULT 0,
+            eddies                     INTEGER DEFAULT 0,
+            settings                   TEXT DEFAULT '{}',
+            inventory                  TEXT DEFAULT '{}'
         )
     `
     db.prepare(createTableStmt).run()
@@ -80,10 +81,10 @@ function initializeUserTable() {
 function initializeFriendsTable() {
     const createTableStmt = `
         CREATE TABLE IF NOT EXISTS friends (
-            user_id INTEGER NOT NULL,
-            friend_id INTEGER NOT NULL,
-            status TEXT NOT NULL DEFAULT 'pending',
-            created_at TEXT DEFAULT CURRENT_TIMESTAMP,
+            user_id          INTEGER NOT NULL,
+            friend_id        INTEGER NOT NULL,
+            status           TEXT NOT NULL DEFAULT 'pending',
+            created_at       TEXT DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (user_id, friend_id),
             FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE,
             FOREIGN KEY (friend_id) REFERENCES users(id) ON DELETE CASCADE
@@ -96,10 +97,10 @@ function initializeFriendsTable() {
 function initializeSessionsTable() {
     const createTableStmt = `
         CREATE TABLE IF NOT EXISTS sessions (
-        session_token TEXT PRIMARY KEY,
-        account_UUID TEXT NOT NULL,
-        created_at TEXT DEFAULT CURRENT_TIMESTAMP,
-        expires_at TEXT NOT NULL DEFAULT (DATETIME('now', '+7 days')),
+        session_token            TEXT PRIMARY KEY,
+        account_UUID             TEXT NOT NULL,
+        created_at               TEXT DEFAULT CURRENT_TIMESTAMP,
+        expires_at               TEXT NOT NULL DEFAULT (DATETIME('now', '+7 days')),
         FOREIGN KEY (account_UUID) REFERENCES users(account_UUID) ON DELETE CASCADE
         )
     `
@@ -111,10 +112,10 @@ function initializeSessionsTable() {
 function initializeBannedTable() {
     const createTableStmt = `
         CREATE TABLE IF NOT EXISTS banned (
-        ip_address TEXT UNIQUE NOT NULL,
-        UUID TEXT UNIQUE DEFAULT NULL,
-        reason TEXT,
-        ban_expires DATE DEFAULT NULL,
+        ip_address           TEXT UNIQUE NOT NULL,
+        UUID TEXT            UNIQUE DEFAULT NULL,
+        reason               TEXT,
+        ban_expires          DATE DEFAULT NULL,
         FOREIGN KEY (UUID) REFERENCES users(account_UUID) ON DELETE CASCADE
         )
     `
