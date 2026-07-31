@@ -403,8 +403,22 @@ p, .cy-body {
 }
 
 .cy-btn--magenta {
-  border-color: var(--cy-magenta);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cy-space-sm);
+  font-family: var(--cy-font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 10px 20px;
+  background: transparent;
+  border: 1px solid var(--cy-magenta);
   color: var(--cy-magenta);
+  border-radius: var(--cy-radius-sm);
+  cursor: pointer;
+  transition: background var(--cy-transition-fast), box-shadow var(--cy-transition-fast), color var(--cy-transition-fast);
+  text-decoration: none;
+  white-space: nowrap;
 }
 .cy-btn--magenta:hover {
   background: var(--cy-magenta-ghost);
@@ -412,9 +426,24 @@ p, .cy-body {
 }
 
 .cy-btn--yellow {
-  border-color: var(--cy-yellow);
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cy-space-sm);
+  font-family: var(--cy-font-mono);
+  font-size: 0.75rem;
+  letter-spacing: 0.15em;
+  text-transform: uppercase;
+  padding: 10px 20px;
+  background: transparent;
+  border: 1px solid var(--cy-yellow);
   color: var(--cy-yellow);
+  border-radius: var(--cy-radius-sm);
+  cursor: pointer;
+  transition: background var(--cy-transition-fast), box-shadow var(--cy-transition-fast), color var(--cy-transition-fast);
+  text-decoration: none;
+  white-space: nowrap;
 }
+
 .cy-btn--yellow:hover {
   background: var(--cy-yellow-ghost);
   box-shadow: var(--cy-glow-yellow);

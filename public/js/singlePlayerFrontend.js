@@ -22,6 +22,8 @@ class SinglePlayerFrontend {
         //the following are client only properties, they are neglected by the server on frontendhandler transmissions
         this.FXVolume = 1;
         this.BGVolume = 0.6;
+        this.muted = false;
+        this.graphics = 'normal'; // can be 'normal' or 'low'
         this.savedMatrixHtml = null; //used to store the original HTML of the matrix header before the lose animation removes it, this allows us to restore it properly when un-animating the lose state. mainMatrixCol looses all children for animation
         this.savedMainColWidth = '58%';
         this.animating = false;
@@ -1589,3 +1591,141 @@ const testing_exports = {
     initTimer,
 };
 Object.assign(window, testing_exports);
+
+
+
+//settings menu
+const default_settings = {
+    FXVolume: 1,
+    BGVolume: 0.6,
+    muted: false,
+    graphics: 'normal'
+};
+
+function getServerSavedSetting(settingName) {
+    // TODO: Implement server-side setting retrieval
+    // return null if not found or not logged in, otherwise return the saved value
+    return null;
+}
+
+function saveSettingToServer(settingName, newValue) {
+    // TODO: Implement server-side setting saving
+}
+
+function editSetting(settingName, newValue = null, initial = false) {
+    if (newValue === null) {
+        if (!initial) {
+            newValue = default_settings[settingName];
+        } else {
+            let saved = {};
+            try {
+                saved = JSON.parse(localStorage.getItem('settings')) ?? {};
+            } catch {
+                saved = {};
+            }
+
+            newValue =
+                saved?.[settingName] ??
+                getServerSavedSetting(settingName) ??
+                default_settings[settingName];
+        }
+    }
+
+    if (typeof newValue === 'number') {
+        newValue = Math.max(0, Math.min(1, newValue)); //clamp between 0 and 1
+        newValue = parseFloat(newValue.toFixed(2)); //round to 2 decimal places
+    }
+    frontEndHandler[settingName] = newValue;
+
+    if (!initial) {
+        try {
+            localStorage.setItem('settings', JSON.stringify({
+                FXVolume: frontEndHandler.FXVolume,
+                BGVolume: frontEndHandler.BGVolume,
+                muted: frontEndHandler.muted,
+                graphics: frontEndHandler.graphics
+            }));
+        } catch (err) {
+            console.warn('Could not save settings to localStorage:', err);
+        }
+        saveSettingToServer(settingName, newValue);
+    }
+
+    if (settingName === 'FXVolume') {
+        document.documentElement.style.setProperty(
+            '--fx-volume',
+            `"${frontEndHandler.FXVolume * 100}%"`
+        );
+        document.getElementById('fx-volume-slider').value = newValue;
+    } else if (settingName === 'BGVolume') {
+        document.documentElement.style.setProperty(
+            '--bg-volume',
+            `"${frontEndHandler.BGVolume * 100}%"`
+        );
+        document.getElementById('bg-volume-slider').value = newValue;
+    } else if (settingName === 'graphics') {
+        document.getElementById('graphics-value').textContent = newValue;
+    }
+}
+
+(function () {
+    const mute_options = {
+        unmuted: '<i class="bi bi-volume-up cy-text-magenta"></i>',
+        muted: '<i class="bi bi-volume-mute cy-text-magenta"></i>'
+    };
+
+    const mute_icon = document.getElementById('mute-icon');
+    const syncMuteIcon = () => {
+        mute_icon.innerHTML = frontEndHandler.muted ? mute_options.muted : mute_options.unmuted;
+    };
+
+    //init displays
+    for (let setting in default_settings) {
+        editSetting(setting, null, true);
+    }
+    syncMuteIcon();
+
+    const mute_btn = document.getElementById('mute-button');
+    mute_btn.addEventListener('click', () => {
+        editSetting('muted', !frontEndHandler.muted);
+        syncMuteIcon();
+        //TODO implement mute functionality
+    });
+
+    const defaults_btn = document.getElementById('defaults-button');
+    defaults_btn.addEventListener('click', () => {
+        for (let setting in default_settings) {
+            editSetting(setting, null, false);
+        }
+        syncMuteIcon();
+    });
+
+    const graphics_btn = document.getElementById('graphics-button');
+    const graphics_options = ['low', 'normal'];
+    graphics_btn.addEventListener('click', () => {
+        const nextValue = frontEndHandler.graphics === graphics_options[0]
+            ? graphics_options[1]
+            : graphics_options[0];
+        editSetting('graphics', nextValue);
+    });
+
+    const fx_volume_slider = document.getElementById('fx-volume-slider');
+    fx_volume_slider.addEventListener('input', (event) => {
+        editSetting('FXVolume', parseFloat(event.target.value));
+    });
+
+    const bg_volume_slider = document.getElementById('bg-volume-slider');
+    bg_volume_slider.addEventListener('input', (event) => {
+        editSetting('BGVolume', parseFloat(event.target.value));
+    });
+
+    const close_btn = document.getElementById('close-button');
+    close_btn.addEventListener('click', () => {
+        document.getElementById('settings-div').style.display = 'none';
+    });
+
+    const settings_btn = document.getElementById('settings-button');
+    settings_btn.addEventListener('click', () => {
+        document.getElementById('settings-div').style.removeProperty('display');
+    });
+})();

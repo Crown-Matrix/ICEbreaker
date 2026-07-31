@@ -2,7 +2,9 @@
 @import url(./custom-bootstrap-config.css);
 
 
-
+body {
+    position: relative;
+}
 
 .timeframe-option {
 
@@ -973,7 +975,7 @@
 }
 
 /* ── Bottom menu/settings icons ── */
-.icb-pre__ico-btn {
+#settings-button {
     width: 52px;
     height: 52px;
     background: transparent;
@@ -986,11 +988,11 @@
     flex-shrink: 0;
 }
 
-.icb-pre__ico-btn:hover {
+#settings-button:hover {
     background: rgba(0, 255, 255, 0.07);
 }
 
-.icb-pre__ico-btn svg {
+#settings-button svg {
     width: 16px;
     height: 16px;
     stroke: #00CCDD;
@@ -1073,4 +1075,142 @@
     60%  { transform: translateX(-1px) translateY(2px); }
     80%  { transform: translateX(3px)  translateY(0); }
     100% { transform: translateX(0)   translateY(0); }
+}
+
+
+#settings-div {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: 1000;
+    background-color: rgba(0, 0, 0, 0.8);
+    align-content: center;
+}
+
+.settings-option:not(:last-child) { 
+    /*last child should be the close button*/
+    display: flex;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: #00FFFF;
+    background-color: rgba(0, 255, 255, 0.04);
+    accent-color: #00CCDD;
+    max-width: 550px;
+    width: 60%;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 10px
+}
+
+.settings-option:nth-last-child(2) {
+    /*horizontal inline buttons array*/
+    display: flex;
+    flex-direction: row;
+    background-color: transparent;
+}
+
+.settings-option input[type="range"] {
+
+    appearance: none;
+    width: 100%;
+    height: 20px;
+    background: rgba(0, 255, 255, 0.04);
+    border-radius: 4px;
+    outline: none;
+    transition: background 0.2s;
+}
+
+.settings-option input[type="range"]::-webkit-slider-runnable-track {
+  background: var(--cy-cyan);
+  border-radius: 10px;
+}
+
+.settings-option input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 17.5px;
+  height: 17.5px;
+  background: rgb(10, 23, 33);
+  border-radius: 50%;
+}
+
+
+
+.settings-option * {
+    text-align: center;
+    justify-content: center;
+}
+
+.settings-option:last-child { 
+    /*last child should be the close button*/
+    display: flex;
+    font-family: 'Rajdhani', sans-serif;
+    font-weight: 700;
+    font-size: 16px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: var(--cy-magenta);
+    accent-color: var(--cy-magenta);
+    min-width: 30%;
+    width: max-content;
+    flex-wrap: nowrap;
+    justify-content: center;
+    gap: 10px;
+}
+
+.settings-option *:not(button):not(#graphics-value) {
+    width: 100%;
+}
+
+
+
+#settings {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    gap: 30px;
+    background-image: url('/imgs/settingsBackground.png');
+    background-size: 100% 100%;
+    background-position: center;
+    height: 60%;
+}
+
+@media (max-width: 576px) {
+    .settings-option:nth-last-child(2) {
+    /*horizontal inline buttons array*/
+    flex-direction: column;
+    }
+    #settings {
+        height: 80%;
+    }
+}
+
+.cy-btn:has(input[type="range"]) {
+    position: relative;
+}
+.cy-btn:has(input[type="range"])::after {
+    content: '50%';
+    position: absolute;
+    color: var(--cy-magenta);
+    left: calc(100% + 15px);
+    pointer-events: none;
+    font-size: 1.1rem;
+    font-family: var(--cy-font-mono);
+}
+.cy-btn:has(#fx-volume-slider)::after {
+    content: var(--fx-volume) '' !important;
+}
+
+.cy-btn:has(#bg-volume-slider)::after {
+    content: var(--bg-volume) '' !important;
+}
+
+#mute-icon {
+    max-width: 10px
 }
