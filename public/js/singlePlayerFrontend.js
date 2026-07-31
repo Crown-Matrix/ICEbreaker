@@ -1602,17 +1602,78 @@ const default_settings = {
     graphics: 'normal'
 };
 
+const SERVER_SETTINGS_TIMEOUT_MS = 3000;
+
+let serverSavedSettings = undefined;
+
+// Resolves once we know whatever the server has to tell us (or we give up waiting).
+// Guests resolve immediately since there's nothing to fetch.
+const serverSettingsReady = new Promise((resolve) => {
+    socket.once('isGuestStatus', (data) => {
+        if (data.isGuest) {
+            resolve();
+            return;
+        }
+
+        const timeout = setTimeout(() => {
+            console.warn('Timed out waiting for saved settings from server; using local/default values.');
+            resolve();
+        }, SERVER_SETTINGS_TIMEOUT_MS);
+
+        socket.once('saved_settings_response', (respData) => {
+            clearTimeout(timeout);
+            if (respData.accepted) {
+                serverSavedSettings = respData.settings;
+            } else {
+                console.warn('Failed to retrieve saved settings from server:', respData.message);
+            }
+            resolve();
+        });
+
+        socket.emit('request_saved_settings');
+    });
+});
+
 function getServerSavedSetting(settingName) {
-    // TODO: Implement server-side setting retrieval
-    // return null if not found or not logged in, otherwise return the saved value
-    return null;
+    return serverSavedSettings?.[settingName] ?? null;
+}
+
+function debounce(fn, delay = 300) {
+    let timer;
+
+    return function (...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            fn.apply(this, args);
+        }, delay);
+    };
 }
 
 function saveSettingToServer(settingName, newValue) {
-    // TODO: Implement server-side setting saving
+
+    const payload = {};
+    //prepare the json payload
+    for (let key in default_settings) {
+        if (key === settingName) {
+            // send the new value for the changed setting
+            payload[key] = newValue;
+        } else {
+            // send the current value for other settings
+            payload[key] = frontEndHandler[key];
+        }
+    }
+    socket.emit('settings_update', payload);
 }
 
-function editSetting(settingName, newValue = null, initial = false) {
+socket.on('settings_update_response', (data) => {
+    if (data.accepted) {
+        console.log('Settings update accepted by server.');
+    } else {
+        console.warn('Settings update rejected by server:', data.message);
+    }
+});
+
+function editSetting(settingName, newValue = null, initial = false, persist = true) {
     if (newValue === null) {
         if (!initial) {
             newValue = default_settings[settingName];
@@ -1632,12 +1693,12 @@ function editSetting(settingName, newValue = null, initial = false) {
     }
 
     if (typeof newValue === 'number') {
-        newValue = Math.max(0, Math.min(1, newValue)); //clamp between 0 and 1
-        newValue = parseFloat(newValue.toFixed(2)); //round to 2 decimal places
+        newValue = Math.max(0, Math.min(1, newValue));
+        newValue = parseFloat(newValue.toFixed(2));
     }
     frontEndHandler[settingName] = newValue;
 
-    if (!initial) {
+    if (!initial && persist) {
         try {
             localStorage.setItem('settings', JSON.stringify({
                 FXVolume: frontEndHandler.FXVolume,
@@ -1651,17 +1712,12 @@ function editSetting(settingName, newValue = null, initial = false) {
         saveSettingToServer(settingName, newValue);
     }
 
+    // DOM updates always run, regardless of persist — this is what makes it feel live
     if (settingName === 'FXVolume') {
-        document.documentElement.style.setProperty(
-            '--fx-volume',
-            `"${frontEndHandler.FXVolume * 100}%"`
-        );
+        document.documentElement.style.setProperty('--fx-volume', `"${Math.round(frontEndHandler.FXVolume * 100)}%"`);
         document.getElementById('fx-volume-slider').value = newValue;
     } else if (settingName === 'BGVolume') {
-        document.documentElement.style.setProperty(
-            '--bg-volume',
-            `"${frontEndHandler.BGVolume * 100}%"`
-        );
+        document.documentElement.style.setProperty('--bg-volume', `"${Math.round(frontEndHandler.BGVolume * 100)}%"`);
         document.getElementById('bg-volume-slider').value = newValue;
     } else if (settingName === 'graphics') {
         document.getElementById('graphics-value').textContent = newValue;
@@ -1679,11 +1735,14 @@ function editSetting(settingName, newValue = null, initial = false) {
         mute_icon.innerHTML = frontEndHandler.muted ? mute_options.muted : mute_options.unmuted;
     };
 
-    //init displays
-    for (let setting in default_settings) {
-        editSetting(setting, null, true);
-    }
-    syncMuteIcon();
+    // Wait for server data (or the timeout) before applying settings once, so
+    // editSetting(..., true) only ever runs a single time per setting.
+    serverSettingsReady.then(() => {
+        for (let setting in default_settings) {
+            editSetting(setting, null, true);
+        }
+        syncMuteIcon();
+    });
 
     const mute_btn = document.getElementById('mute-button');
     mute_btn.addEventListener('click', () => {
@@ -1711,11 +1770,17 @@ function editSetting(settingName, newValue = null, initial = false) {
 
     const fx_volume_slider = document.getElementById('fx-volume-slider');
     fx_volume_slider.addEventListener('input', (event) => {
-        editSetting('FXVolume', parseFloat(event.target.value));
+        editSetting('FXVolume', parseFloat(event.target.value), false, false); // visual only, no persist
+    });
+    fx_volume_slider.addEventListener('change', (event) => {
+        editSetting('FXVolume', parseFloat(event.target.value)); // persist=true (default), fires once on release
     });
 
     const bg_volume_slider = document.getElementById('bg-volume-slider');
     bg_volume_slider.addEventListener('input', (event) => {
+        editSetting('BGVolume', parseFloat(event.target.value), false, false);
+    });
+    bg_volume_slider.addEventListener('change', (event) => {
         editSetting('BGVolume', parseFloat(event.target.value));
     });
 

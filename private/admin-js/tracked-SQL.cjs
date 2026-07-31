@@ -478,6 +478,41 @@ const wipeDatabase = () => {
     console.log('Database wiped and re-initialized');
 };
 
+const getUserSettings = async (UUID) => {
+    if (!UUID || UUID.length < 30) throw new Error('Invalid UUID');
+    const row = strip(db.prepare('SELECT settings FROM users WHERE account_UUID = ?').get(UUID));
+    if (!row) return null;
+
+    try {
+        return JSON.parse(row.settings) ?? {};
+    } catch (err) {
+        console.warn('Failed to parse stored settings JSON for UUID', UUID, err.message);
+        return {};
+    }
+};
+
+const updateUserSettings = protected_sql((UUID, data) => {
+    if (!UUID || UUID.length < 30) throw new Error('Invalid UUID');
+
+    const row = strip(db.prepare('SELECT settings FROM users WHERE account_UUID = ?').get(UUID));
+    if (!row) throw new Error('User not found');
+
+    let existing = {};
+    try {
+        existing = JSON.parse(row.settings) ?? {};
+    } catch (_) {
+        existing = {};
+    }
+
+    const merged = { ...existing, ...data };
+
+    const info = db.prepare('UPDATE users SET settings = ? WHERE account_UUID = ?')
+        .run(JSON.stringify(merged), UUID);
+    if (info.changes === 0) throw new Error('User not found');
+
+    return true;
+});
+
 
 module.exports = {
     get db() { return db; },              // persistent Database instance  — used by hard-db.cjs (forcePush / hardReset)
@@ -524,6 +559,8 @@ module.exports = {
     getStaticUserDataByUUID,
     checkUsername,
     checkPassword,
+    getUserSettings,
+    updateUserSettings
 };
 
 

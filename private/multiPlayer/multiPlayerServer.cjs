@@ -408,7 +408,7 @@ function registerMatchHandlers(player, match) {
 
     for (const key of immutableKeys) {
       const incomingVal = data.frontEndHandler[key];
-      const trustedVal  = player.frontEndHandler[key];
+      const trustedVal = player.frontEndHandler[key];
 
       if (tamperCheckKeys.includes(key)) {
         const isDifferent = objectKeys.has(key)
@@ -572,8 +572,8 @@ io.on('connection', async (socket) => {
 
   const fetched_user_data = socket.UUID ? await SQL_Manager_Instance.getUserByUUID(socket.UUID) : null;
   const mp_games_Played = fetched_user_data ? (fetched_user_data.mp_games_Played || 0) : 0;
-  const mp_games_Won   = fetched_user_data ? (fetched_user_data.mp_games_Won   || 0) : 0;
-  const winRate  = mp_games_Played > 0 ? mp_games_Won / mp_games_Played : NaN;
+  const mp_games_Won = fetched_user_data ? (fetched_user_data.mp_games_Won || 0) : 0;
+  const winRate = mp_games_Played > 0 ? mp_games_Won / mp_games_Played : NaN;
   const avgScore = fetched_user_data ? (fetched_user_data.mp_average_Score ?? NaN) : NaN;
   socket.playerName = socket.guestMode ? 'Guest' : (fetched_user_data ? fetched_user_data.username : 'Unknown');
 
@@ -613,6 +613,47 @@ io.on('connection', async (socket) => {
   // Timeframe UI may emit this on init to sync a previously-saved value — just acknowledge it.
   socket.on('timeframe_update', () => {
     socket.emit('timeframe_update_response', { accepted: true });
+  });
+
+  socket.on('settings_update', async (data) => {
+
+    if (socket.guestMode) {
+
+      socket.emit('settings_update_response', { message: 'Settings update failed. Guests cannot update settings.', accepted: false });
+      return;
+    } else {
+      const GRAPHICS_OPTIONS = ['low', 'normal'];
+
+      const clean = (function (data) {
+        const result = {};
+        if (typeof data.FXVolume === 'number') result.FXVolume = Math.max(0, Math.min(1, data.FXVolume));
+        if (typeof data.BGVolume === 'number') result.BGVolume = Math.max(0, Math.min(1, data.BGVolume));
+        if (typeof data.muted === 'boolean') result.muted = data.muted;
+        if (GRAPHICS_OPTIONS.includes(data.graphics)) result.graphics = data.graphics;
+        return result;
+      })(data);
+
+      const save = await SQL_Manager_Instance.updateUserSettings(socket.UUID, clean);
+      if (!save) {
+        socket.emit('settings_update_response', { message: 'Settings update failed. Please try again later.', accepted: false });
+        return;
+      }
+      socket.emit('settings_update_response', { message: 'Settings update successful.', accepted: true });
+    }
+  })
+
+  socket.on('request_saved_settings', async () => {
+    if (socket.guestMode) {
+      socket.emit('saved_settings_response', { message: 'Request failed. Guests do not have saved settings.', accepted: false });
+      return;
+    } else {
+      const savedSettings = await SQL_Manager_Instance.getUserSettings(socket.UUID);
+      if (!savedSettings) {
+        socket.emit('saved_settings_response', { message: 'Request failed. Please try again later.', accepted: false });
+        return;
+      }
+      socket.emit('saved_settings_response', { message: 'Saved settings retrieved successfully.', accepted: true, settings: savedSettings });
+    }
   });
 
   // Cancel matchmaking: remove from queue and allow the player to re-queue.

@@ -23,6 +23,8 @@ class multiPlayerFrontend {
         //the following are client only properties, they are neglected by the server on frontendhandler transmissions
         this.FXVolume = 1;
         this.BGVolume = 0.6;
+        this.muted = false;
+        this.graphics = 'normal'; // can be 'normal' or 'low'
         this.savedMatrixHtml = null; //used to store the original HTML of the matrix header before the lose animation removes it, this allows us to restore it properly when un-animating the lose state. mainMatrixCol looses all children for animation
         this.savedMainColWidth = '58%';
         this.animating = false;
@@ -1754,3 +1756,210 @@ socket.on('disconnect', () => {
         window.location.reload();
     }
 })
+
+
+
+
+
+
+
+//settings menu
+const default_settings = {
+    FXVolume: 1,
+    BGVolume: 0.6,
+    muted: false,
+    graphics: 'normal'
+};
+
+const SERVER_SETTINGS_TIMEOUT_MS = 3000;
+
+let serverSavedSettings = undefined;
+
+// Resolves once we know whatever the server has to tell us (or we give up waiting).
+// Guests resolve immediately since there's nothing to fetch.
+const serverSettingsReady = new Promise((resolve) => {
+    socket.once('isGuestStatus', (data) => {
+        if (data.isGuest) {
+            resolve();
+            return;
+        }
+
+        const timeout = setTimeout(() => {
+            console.warn('Timed out waiting for saved settings from server; using local/default values.');
+            resolve();
+        }, SERVER_SETTINGS_TIMEOUT_MS);
+
+        socket.once('saved_settings_response', (respData) => {
+            clearTimeout(timeout);
+            if (respData.accepted) {
+                serverSavedSettings = respData.settings;
+            } else {
+                console.warn('Failed to retrieve saved settings from server:', respData.message);
+            }
+            resolve();
+        });
+
+        socket.emit('request_saved_settings');
+    });
+});
+
+function getServerSavedSetting(settingName) {
+    return serverSavedSettings?.[settingName] ?? null;
+}
+
+function debounce(fn, delay = 300) {
+    let timer;
+
+    return function (...args) {
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+            fn.apply(this, args);
+        }, delay);
+    };
+}
+
+function saveSettingToServer(settingName, newValue) {
+
+    const payload = {};
+    //prepare the json payload
+    for (let key in default_settings) {
+        if (key === settingName) {
+            // send the new value for the changed setting
+            payload[key] = newValue;
+        } else {
+            // send the current value for other settings
+            payload[key] = frontEndHandler[key];
+        }
+    }
+    socket.emit('settings_update', payload);
+}
+
+socket.on('settings_update_response', (data) => {
+    if (data.accepted) {
+        console.log('Settings update accepted by server.');
+    } else {
+        console.warn('Settings update rejected by server:', data.message);
+    }
+});
+
+function editSetting(settingName, newValue = null, initial = false, persist = true) {
+    if (newValue === null) {
+        if (!initial) {
+            newValue = default_settings[settingName];
+        } else {
+            let saved = {};
+            try {
+                saved = JSON.parse(localStorage.getItem('settings')) ?? {};
+            } catch {
+                saved = {};
+            }
+
+            newValue =
+                saved?.[settingName] ??
+                getServerSavedSetting(settingName) ??
+                default_settings[settingName];
+        }
+    }
+
+    if (typeof newValue === 'number') {
+        newValue = Math.max(0, Math.min(1, newValue));
+        newValue = parseFloat(newValue.toFixed(2));
+    }
+    frontEndHandler[settingName] = newValue;
+
+    if (!initial && persist) {
+        try {
+            localStorage.setItem('settings', JSON.stringify({
+                FXVolume: frontEndHandler.FXVolume,
+                BGVolume: frontEndHandler.BGVolume,
+                muted: frontEndHandler.muted,
+                graphics: frontEndHandler.graphics
+            }));
+        } catch (err) {
+            console.warn('Could not save settings to localStorage:', err);
+        }
+        saveSettingToServer(settingName, newValue);
+    }
+
+    // DOM updates always run, regardless of persist — this is what makes it feel live
+    if (settingName === 'FXVolume') {
+        document.documentElement.style.setProperty('--fx-volume', `"${Math.round(frontEndHandler.FXVolume * 100)}%"`);
+        document.getElementById('fx-volume-slider').value = newValue;
+    } else if (settingName === 'BGVolume') {
+        document.documentElement.style.setProperty('--bg-volume', `"${Math.round(frontEndHandler.BGVolume * 100)}%"`);
+        document.getElementById('bg-volume-slider').value = newValue;
+    } else if (settingName === 'graphics') {
+        document.getElementById('graphics-value').textContent = newValue;
+    }
+}
+
+(function () {
+    const mute_options = {
+        unmuted: '<i class="bi bi-volume-up cy-text-magenta"></i>',
+        muted: '<i class="bi bi-volume-mute cy-text-magenta"></i>'
+    };
+
+    const mute_icon = document.getElementById('mute-icon');
+    const syncMuteIcon = () => {
+        mute_icon.innerHTML = frontEndHandler.muted ? mute_options.muted : mute_options.unmuted;
+    };
+
+    // Wait for server data (or the timeout) before applying settings once, so
+    // editSetting(..., true) only ever runs a single time per setting.
+    serverSettingsReady.then(() => {
+        for (let setting in default_settings) {
+            editSetting(setting, null, true);
+        }
+        syncMuteIcon();
+    });
+
+    const mute_btn = document.getElementById('mute-button');
+    mute_btn.addEventListener('click', () => {
+        editSetting('muted', !frontEndHandler.muted);
+        syncMuteIcon();
+        //TODO implement mute functionality
+    });
+
+    const defaults_btn = document.getElementById('defaults-button');
+    defaults_btn.addEventListener('click', () => {
+        for (let setting in default_settings) {
+            editSetting(setting, null, false);
+        }
+        syncMuteIcon();
+    });
+
+    const graphics_btn = document.getElementById('graphics-button');
+    const graphics_options = ['low', 'normal'];
+    graphics_btn.addEventListener('click', () => {
+        const nextValue = frontEndHandler.graphics === graphics_options[0]
+            ? graphics_options[1]
+            : graphics_options[0];
+        editSetting('graphics', nextValue);
+    });
+
+    const fx_volume_slider = document.getElementById('fx-volume-slider');
+    fx_volume_slider.addEventListener('input', (event) => {
+        editSetting('FXVolume', parseFloat(event.target.value), false, false); // visual only, no persist
+    });
+    fx_volume_slider.addEventListener('change', (event) => {
+        editSetting('FXVolume', parseFloat(event.target.value)); // persist=true (default), fires once on release
+    });
+
+    const bg_volume_slider = document.getElementById('bg-volume-slider');
+    bg_volume_slider.addEventListener('input', (event) => {
+        editSetting('BGVolume', parseFloat(event.target.value), false, false);
+    });
+    bg_volume_slider.addEventListener('change', (event) => {
+        editSetting('BGVolume', parseFloat(event.target.value));
+    });
+
+    const close_btn = document.getElementById('close-button');
+    close_btn.addEventListener('click', () => {
+        document.getElementById('settings-div').style.display = 'none';
+    });
+
+    const settings_btn = document.getElementById('settings-button');
+    settings_btn.addEventListener('click', () => {
+        document.getElementById('settings-div').style.removeProperty('display');
+    });
+})();

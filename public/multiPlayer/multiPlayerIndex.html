@@ -107,7 +107,7 @@
                                             style="position:relative; min-height:56px;">
 
                                             <!-- gear — top left, sits in normal flow -->
-                                            <button class="icb-pre__ico-btn" aria-label="Settings"
+                                            <button id="settings-button" aria-label="Settings"
                                                 style="width:40px;height:40px;vertical-align:top;">
                                                 <svg viewBox="0 0 16 16" fill="none" xmlns="http://www.w3.org/2000/svg">
                                                   <path d="M6.5 1.5h3l.4 1.6a4.5 4.5 0 0 1 1.1.65l1.55-.5 1.5 2.6-1.2 1.1a4.6 4.6 0 0 1 0 1.1l1.2 1.1-1.5 2.6-1.55-.5a4.5 4.5 0 0 1-1.1.65l-.4 1.6h-3l-.4-1.6a4.5 4.5 0 0 1-1.1-.65l-1.55.5-1.5-2.6 1.2-1.1a4.6 4.6 0 0 1 0-1.1l-1.2-1.1 1.5-2.6 1.55.5a4.5 4.5 0 0 1 1.1-.65z" stroke="#00CCDD" stroke-width="1.2" stroke-linejoin="round"/>
@@ -316,6 +316,35 @@
     </svg>
     <!--im not gonna pretend i know how these work, but they work-->
     <!--they are in charge of color changing the cell-decoration images to the gameState-->
+
+    
+    <div id="settings-div" style="display: none;">
+        <div id="settings">
+            <div class="cy-h1">
+                Settings
+            </div>
+            <div class="settings-option">
+                <div class="cy-btn">
+                    <label for="fx-volume-slider">FX Volume</label>
+                    <input type="range" min="0" max="1" value="0.5" step="0.01" class="slider" id="fx-volume-slider">
+                </div>
+            </div>
+            <div class="settings-option">
+                <div class="cy-btn">
+                    <label for="bg-volume-slider" class="cy-text-cyan">Background Volume</label>
+                    <input type="range" min="0" max="1" value="0.5" step="0.01" class="slider" id="bg-volume-slider">
+                </div>
+            </div>
+            <div class="settings-option">
+                <button class="cy-btn" id="mute-button">Mute<span id="mute-icon"><i class="bi bi-volume-up cy-text-magenta"></i></span></button>
+                <button class="cy-btn" id="defaults-button">Revert to Defaults</button>
+                <button class="cy-btn" id="graphics-button">Graphics: <span id="graphics-value" class="cy-text-magenta">Normal</span></button>
+            </div>
+            <div class="settings-option">
+                <button class="cy-btn--magenta" id="close-button">Close</button>
+            </div>
+        </div>
+    </div>
 
 
     <!--socket connection-->

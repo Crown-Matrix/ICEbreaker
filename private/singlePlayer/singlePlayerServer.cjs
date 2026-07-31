@@ -347,7 +347,7 @@ io.on('connection', async (socket) => {
 
           // Validate the incoming data before updating the front end handler
           const immutableKeys = ['matrix', 'solutions', 'gameState', 'maxBufferSize', 'difficultyValues', 'totalSequencesUploaded', 'isGuest']; //keys that should not be directly manipulated by the client, server will always overwrite these with trusted values, anti-cheat
-          const clientOnlyKeys = ['FXVolume', 'BGVolume', 'savedMatrixHeaderHTML', 'savedMainColWidth', 'animating', 'fullscreen']; //keys that we delete from the info to avoid messing with, server does not have to care about these properties
+          const clientOnlyKeys = ['FXVolume', 'BGVolume', 'savedMatrixHeaderHTML', 'savedMainColWidth', 'animating', 'fullscreen', 'muted', 'graphics']; //keys that we delete from the info to avoid messing with, server does not have to care about these properties
           const objectKeys = new Set(['matrix', 'solutions']); // reference types need deep compare
           const tamperCheckKeys = ['matrix', 'solutions', 'gameState', 'maxBufferSize', 'isGuest']; //keys we want to specifically check for tampering attempts in the console, this can help us identify if users are trying to manipulate critical game data from the client side, while still allowing some flexibility for non-critical data that doesn't impact game integrity, this can be adjusted based on what we want to monitor for potential cheating or manipulation
 
@@ -429,6 +429,47 @@ io.on('connection', async (socket) => {
             await SQL_Manager_Instance.addEddies(username, backEndHandlerInstance.scoreToEddies(score)); //add eddies based on the score they achieved in the round, even if they lost, to reward them for their performance and encourage continued play
           }
 
+        });
+
+        socket.on('settings_update', async (data) => {
+
+          if (socket.isGuest) {
+
+            socket.emit('settings_update_response', { message: 'Settings update failed. Guests cannot update settings.', accepted: false });
+            return;
+          } else {
+            const GRAPHICS_OPTIONS = ['low', 'normal'];
+
+            const clean = (function (data) {
+              const result = {};
+              if (typeof data.FXVolume === 'number') result.FXVolume = Math.max(0, Math.min(1, data.FXVolume));
+              if (typeof data.BGVolume === 'number') result.BGVolume = Math.max(0, Math.min(1, data.BGVolume));
+              if (typeof data.muted === 'boolean') result.muted = data.muted;
+              if (GRAPHICS_OPTIONS.includes(data.graphics)) result.graphics = data.graphics;
+              return result;
+            })(data);
+
+            const save = await SQL_Manager_Instance.updateUserSettings(socket.UUID, clean);
+            if (!save) {
+              socket.emit('settings_update_response', { message: 'Settings update failed. Please try again later.', accepted: false });
+              return;
+            }
+            socket.emit('settings_update_response', { message: 'Settings update successful.', accepted: true });
+          }
+        })
+
+        socket.on('request_saved_settings', async () => {
+          if (socket.isGuest) {
+            socket.emit('saved_settings_response', { message: 'Request failed. Guests do not have saved settings.', accepted: false });
+            return;
+          } else {
+            const savedSettings = await SQL_Manager_Instance.getUserSettings(socket.UUID);
+            if (!savedSettings) {
+              socket.emit('saved_settings_response', { message: 'Request failed. Please try again later.', accepted: false });
+              return;
+            }
+            socket.emit('saved_settings_response', { message: 'Saved settings retrieved successfully.', accepted: true, settings: savedSettings });
+          }
         });
 
         socket.on('timeframe_update', (data) => {
