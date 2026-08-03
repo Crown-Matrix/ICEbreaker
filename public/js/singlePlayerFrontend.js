@@ -1716,9 +1716,17 @@ function editSetting(settingName, newValue = null, initial = false, persist = tr
     if (settingName === 'FXVolume') {
         document.documentElement.style.setProperty('--fx-volume', `"${Math.round(frontEndHandler.FXVolume * 100)}%"`);
         document.getElementById('fx-volume-slider').value = newValue;
+        audioHandler.setFXVolume(frontEndHandler.FXVolume);
     } else if (settingName === 'BGVolume') {
         document.documentElement.style.setProperty('--bg-volume', `"${Math.round(frontEndHandler.BGVolume * 100)}%"`);
         document.getElementById('bg-volume-slider').value = newValue;
+        audioHandler.setBGVolume(frontEndHandler.BGVolume);
+    } else if (settingName === 'muted') {
+        if (frontEndHandler.muted) {
+            audioHandler.muteAudio();
+        } else {
+            audioHandler.unmuteAudio();
+        }
     } else if (settingName === 'graphics') {
         document.getElementById('graphics-value').textContent = newValue;
     }
@@ -1748,7 +1756,6 @@ function editSetting(settingName, newValue = null, initial = false, persist = tr
     mute_btn.addEventListener('click', () => {
         editSetting('muted', !frontEndHandler.muted);
         syncMuteIcon();
-        //TODO implement mute functionality
     });
 
     const defaults_btn = document.getElementById('defaults-button');
