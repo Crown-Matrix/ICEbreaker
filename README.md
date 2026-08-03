@@ -396,5 +396,4 @@ In ```private/Server-Imports/General/path_alias.json```, multiple paths have bee
 
 # Planned Features (not yet active)
 - **Admin Panel** - route & api structure initialized - awaiting full frontend implementation
-- **Friends** — Tables and SQL functions complete, no routes or UI yet
 - **Account tiers** — VIP (emotes, costs eddies or IRL money), PREMIUM (emotes + animation skips + opponent distractions, IRL money only), ADMIN (full access to everything including admin endpoints, not regular-user obtainable)

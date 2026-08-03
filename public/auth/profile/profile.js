@@ -1,31 +1,147 @@
-// client-side account profile view - profilee.js
+// client-side account profile view - profile.js
 
-const username = localStorage.getItem('x-userdata-username');
+const STORAGE_KEYS = {
+    username: 'x-userdata-username',
+    accountCreationDate: 'x-userdata-accountcreationdate',
+    friendship: 'icebreaker.profile.friendship'
+};
+
+const NO_DATA = 'NO DATA';
+const REQUEST_SENT_STATUS = 'Request sent';
+const FRIEND_STATUS = {
+    online: 'Online',
+    offline: 'Offline'
+};
+
+const ACCOUNT_TIERS = {
+    0: { name: 'Novice', color: '#FFE600' },
+    1: { name: 'VIP', color: '#00FFFF' },
+    2: { name: 'Premium', color: '#9D00FF' },
+    3: { name: 'Admin', color: 'var(--cy-magenta)' }
+};
+
+const DEFAULT_FRIENDSHIP_STATE = {
+    incoming: [],
+    outgoing: [],
+    friends: [],
+    pendingRemove: []
+};
+
+const FIELD_CONFIG = {
+    username: { id: 'username', label: 'Username', type: 'text' },
+    sp_games_Played: { id: 'sp_games_Played', label: 'Games Played', type: 'number' },
+    mp_games_Played: { id: 'mp_games_Played', label: 'Games Played', type: 'number' },
+    mp_games_Won: { id: 'mp_games_Won', label: 'Games Won', type: 'number' },
+    sp_games_Finished: { id: 'sp_games_Finished', label: 'Games Finished', type: 'number' },
+    mp_games_Finished: { id: 'mp_games_Finished', label: 'Games Finished', type: 'number' },
+    sp_average_Score: { id: 'sp_average_score', label: 'Average Score', type: 'score' },
+    mp_average_Score: { id: 'mp_average_score', label: 'Average Score', type: 'score' },
+    account_Creation_Date: { id: 'account_Creation_Date', label: 'Account Creation Date', type: 'date' },
+    last_Login_Date: { id: 'last_Login_Date', label: 'Last Login Date', type: 'date' }
+};
+
+const tabGroups = {
+    account: 'account',
+    singleplayer: 'singleplayer',
+    multiplayer: 'multiplayer',
+    friends: 'friends'
+};
+
+const dom = {
+    usernameTitle: document.getElementById('username-title'),
+    systemStatus: document.getElementById('system-status'),
+    syncOverlay: document.getElementById('syncOverlay'),
+    statFrame: document.getElementById('stat-frame'),
+    tabButtons: {
+        account: document.getElementById('account-tab'),
+        singleplayer: document.getElementById('singleplayer-tab'),
+        multiplayer: document.getElementById('multiplayer-tab'),
+        friends: document.getElementById('friends-tab')
+    },
+    friendshipSummary: document.getElementById('friendship-summary'),
+    requestInput: document.getElementById('friend-search-input'),
+    requestSendButton: document.getElementById('friend-search-clear'),
+    requestStatusPanel: document.getElementById('friend-search-results'),
+    friendshipIncomingList: document.getElementById('friend-incoming-list'),
+    friendshipOutgoingList: document.getElementById('friend-outgoing-list'),
+    friendshipList: document.getElementById('friend-list'),
+    friendshipOpenBtn: document.getElementById('friendship-open-btn'),
+    friendshipCloseBtn: document.getElementById('friendship-close-btn'),
+    friendshipToast: document.getElementById('friendship-toast'),
+    eddies: document.getElementById('eddies'),
+    tierValue: document.getElementById('tier-value')
+};
+
+const username = localStorage.getItem(STORAGE_KEYS.username) || '';
 document.documentElement.style.setProperty('--username', `'${username}'`);
-document.getElementById('username-title').textContent = username;
-const accountCreationDate = localStorage.getItem('x-userdata-accountcreationdate');
-const system_status_element = document.getElementById('system-status');
-system_status_element.setAttribute('pending', '');
+if (dom.usernameTitle) dom.usernameTitle.textContent = username;
+if (dom.systemStatus) dom.systemStatus.setAttribute('pending', '');
+if (username) document.title = `Profile - ${username}`;
 
+let friendshipState = loadFriendshipState();
 
-if (username) {
-    document.title = `Profile - ${username}`;
+init();
+
+function init() {
+    setupTabs();
+    setupFriendshipUI();
+    renderFriendshipSystem();
+    updateProfileData();
+    syncFriendshipsFromServer();
+}
+
+async function syncFriendshipsFromServer() {
+    try {
+        const res = await fetch('/profile/api/friends');
+        if (!res.ok) return;
+        const data = await res.json();
+        setFriendshipState({
+            incoming: (data.incoming || []).map(entry => ({
+                name:   entry.username,
+                status: entry.created_at ? formatDate(entry.created_at) : 'Awaiting response'
+            })),
+            outgoing: (data.outgoing || []).map(entry => ({
+                name:   entry.username,
+                status: entry.created_at ? formatDate(entry.created_at) : 'Request sent'
+            })),
+            friends: (data.friends || []).map(name => ({ name, status: 'Offline' })),
+            pendingRemove: []
+        });
+    } catch { /* silent — local state stays as-is */ }
+}
+
+function setupTabs() {
+    if (!dom.statFrame) return;
+
+    Object.entries(dom.tabButtons).forEach(([key, element]) => {
+        if (!element) return;
+        element.addEventListener('click', () => showTabGroup(tabGroups[key]));
+    });
+
+    dom.tabButtons.account?.click();
+}
+
+function showTabGroup(group) {
+    dom.statFrame.querySelectorAll('.stat-card[group]').forEach(element => {
+        element.style.display = element.getAttribute('group') === group ? 'block' : 'none';
+    });
 }
 
 async function fetchUserData() {
-    const res = await fetch(`/profile/api/user/${username}`)
-    if (!res.ok) {
-        if (res.status == 401 || res.status == 404) {
-            localStorage.removeItem('x-userdata-username'); //prevents redirect loops
-            localStorage.removeItem('x-userdata-accountcreationdate');
+    const response = await fetch(`/profile/api/user/${username}`);
+
+    if (!response.ok) {
+        if (response.status === 401 || response.status === 404) {
+            localStorage.removeItem(STORAGE_KEYS.username);
+            localStorage.removeItem(STORAGE_KEYS.accountCreationDate);
             window.location.href = '/login';
-            return
+            return null;
         }
-        console.error('Failed to fetch user data:', res.statusText);
+        console.error('Failed to fetch user data:', response.statusText);
         return null;
     }
-    const userData = await res.json();
-    return userData;
+
+    return response.json();
 }
 
 async function updateProfileData() {
@@ -34,290 +150,536 @@ async function updateProfileData() {
         console.error('No user data available to update profile.');
         return;
     }
-    document.dispatchEvent(new CustomEvent("profileDataUpdate", {
-        detail: userProfileData
 
-    }));
-};
+    document.dispatchEvent(new CustomEvent('profileDataUpdate', { detail: userProfileData }));
+}
 
+function loadFriendshipState() {
+    try {
+        const raw = localStorage.getItem(STORAGE_KEYS.friendship);
+        if (!raw) return structuredClone(DEFAULT_FRIENDSHIP_STATE);
 
-
-// Initial profile data update
-updateProfileData();
-
-
-const ACCOUNT_TIERS = { //so i can change it easily later if ever needed
-
-    0: {
-        name: "Novice",
-        color: "#FFE600"
-    },
-    1: {
-        name: "VIP",
-        color: "#00FFFF"
-    },
-    2: {
-        name: "Premium",
-        color: "#9D00FF"
-    },
-    3: {
-        name: "Admin",
-        color: "var(--cy-magenta)"
+        const parsed = JSON.parse(raw);
+        return {
+            incoming: sanitizeFriendEntries(parsed.incoming),
+            outgoing: sanitizeFriendEntries(parsed.outgoing),
+            friends: sanitizeFriendEntries(parsed.friends, true),
+            pendingRemove: Array.isArray(parsed.pendingRemove)
+                ? parsed.pendingRemove.map(normalizeName).filter(Boolean)
+                : []
+        };
+    } catch {
+        return structuredClone(DEFAULT_FRIENDSHIP_STATE);
     }
-};
+}
 
-const buttons = {
-    account: {
-        element: document.getElementById('account-tab'),
-        group: 'account'
-    },
-    singleplayer: {
-        element: document.getElementById('singleplayer-tab'),
-        group: 'singleplayer'
-    },
-    multiplayer: {
-        element: document.getElementById('multiplayer-tab'),
-        group: 'multiplayer'
-    },
-    friends: {
-        element: document.getElementById('friends-tab'),
-        group: 'friends'
+function sanitizeFriendEntries(list, enforceFriendStatus = false) {
+    if (!Array.isArray(list)) return [];
+
+    return list
+        .map(entry => ({
+            name: normalizeName(entry?.name),
+            status: normalizeName(entry?.status)
+        }))
+        .filter(entry => entry.name)
+        .map(entry => {
+            if (!enforceFriendStatus) return entry;
+            return {
+                ...entry,
+                status: entry.status === FRIEND_STATUS.online ? FRIEND_STATUS.online : FRIEND_STATUS.offline
+            };
+        });
+}
+
+function saveFriendshipState() {
+    localStorage.setItem(STORAGE_KEYS.friendship, JSON.stringify(friendshipState));
+}
+
+function normalizeName(value) {
+    return String(value ?? '').trim();
+}
+
+function namesMatch(left, right) {
+    return normalizeName(left).toLowerCase() === normalizeName(right).toLowerCase();
+}
+
+function isKnownFriend(name) {
+    return friendshipState.friends.some(entry => namesMatch(entry.name, name))
+        || friendshipState.incoming.some(entry => namesMatch(entry.name, name))
+        || friendshipState.outgoing.some(entry => namesMatch(entry.name, name));
+}
+
+function isPendingRemoval(name) {
+    return friendshipState.pendingRemove.some(entry => namesMatch(entry, name));
+}
+
+function createFriendshipResult(ok, reason = '') {
+    return { ok, reason };
+}
+
+function upsertEntry(listName, name, status, position = 'front') {
+    const normalizedName = normalizeName(name);
+    if (!normalizedName) return false;
+
+    friendshipState[listName] = friendshipState[listName].filter(entry => !namesMatch(entry.name, normalizedName));
+    const nextEntry = { name: normalizedName, status: normalizeName(status) };
+
+    if (position === 'front') {
+        friendshipState[listName].unshift(nextEntry);
+    } else {
+        friendshipState[listName].push(nextEntry);
     }
-};
+    return true;
+}
 
-const statFrame = document.getElementById('stat-frame');
-Object.values(buttons).forEach(button => {
-    button.element.addEventListener('click', () => {
-        statFrame.querySelectorAll(".stat-card[group]").forEach(element => {
-            element.style.display = element.getAttribute("group") == button.group ? "block" : "none";
-        })
-    })
-})
+function removeFromList(listName, name) {
+    const beforeLength = friendshipState[listName].length;
+    friendshipState[listName] = friendshipState[listName].filter(entry => !namesMatch(entry.name, name));
+    return friendshipState[listName].length !== beforeLength;
+}
 
-document.getElementById('account-tab').click(); //default tab
+function addOutgoingRequest(name, status = REQUEST_SENT_STATUS) {
+    const target = normalizeName(name);
+    if (!target) return createFriendshipResult(false, 'Enter a username first.');
+    if (namesMatch(target, username)) return createFriendshipResult(false, 'You cannot send a request to yourself.');
+    if (isKnownFriend(target)) return createFriendshipResult(false, `${target} is already in your friendship lists.`);
 
+    upsertEntry('outgoing', target, status);
+    saveFriendshipState();
+    renderFriendshipSystem();
+    return createFriendshipResult(true, `Request sent to ${target}.`);
+}
 
-const fields = {
+function addIncomingRequest(name, status = 'Awaiting response') {
+    const target = normalizeName(name);
+    if (!target) return createFriendshipResult(false, 'Missing username.');
+    if (isKnownFriend(target)) return createFriendshipResult(false, `${target} already exists in friendship lists.`);
 
-    username: {
-        id: "username",
-        name: "Username",
-        type: "text"
-    },
+    upsertEntry('incoming', target, status);
+    saveFriendshipState();
+    renderFriendshipSystem();
+    return createFriendshipResult(true, `${target} added to incoming requests.`);
+}
 
-    sp_games_Played: {
-        id: "sp_games_Played",
-        name: "Games Played",
-        type: "number"
-    },
+function addFriend(name, status = FRIEND_STATUS.offline) {
+    const target = normalizeName(name);
+    if (!target) return createFriendshipResult(false, 'Missing username.');
+    if (namesMatch(target, username)) return createFriendshipResult(false, 'You cannot add yourself.');
 
-    mp_games_Played: {
-        id: "mp_games_Played",
-        name: "Games Played",
-        type: "number"
-    },
+    removeFromList('incoming', target);
+    removeFromList('outgoing', target);
+    friendshipState.pendingRemove = friendshipState.pendingRemove.filter(entry => !namesMatch(entry, target));
+    upsertEntry('friends', target, status === FRIEND_STATUS.online ? FRIEND_STATUS.online : FRIEND_STATUS.offline);
+    saveFriendshipState();
+    renderFriendshipSystem();
+    return createFriendshipResult(true, `${target} added to friends.`);
+}
 
-    mp_games_Won: {
-        id: "mp_games_Won",
-        name: "Games Won",
-        type: "number"
-    },
+function setFriendStatus(name, status) {
+    const target = normalizeName(name);
+    if (!target) return createFriendshipResult(false, 'Missing username.');
+    const index = friendshipState.friends.findIndex(entry => namesMatch(entry.name, target));
+    if (index === -1) return createFriendshipResult(false, `${target} is not in your friend list.`);
 
-    sp_games_Finished: {
-        id: "sp_games_Finished",
-        name: "Games Finished",
-        type: "number"
-    },
+    friendshipState.friends[index] = {
+        ...friendshipState.friends[index],
+        status: status === FRIEND_STATUS.online ? FRIEND_STATUS.online : FRIEND_STATUS.offline
+    };
+    saveFriendshipState();
+    renderFriendshipSystem();
+    return createFriendshipResult(true, `${target} status updated.`);
+}
 
-    mp_games_Finished: {
-        id: "mp_games_Finished",
-        name: "Games Finished",
-        type: "number"
-    },
+function removeIncomingRequest(name) {
+    const removed = removeFromList('incoming', name);
+    saveFriendshipState();
+    renderFriendshipSystem();
+    return removed
+        ? createFriendshipResult(true, `${normalizeName(name)} removed from incoming requests.`)
+        : createFriendshipResult(false, `${normalizeName(name)} was not in incoming requests.`);
+}
 
-    sp_average_Score: {
-        id: "sp_average_score",
-        name: "Average Score",
-        type: "score"
-    },
+function removeOutgoingRequest(name) {
+    const removed = removeFromList('outgoing', name);
+    saveFriendshipState();
+    renderFriendshipSystem();
+    return removed
+        ? createFriendshipResult(true, `${normalizeName(name)} removed from outgoing requests.`)
+        : createFriendshipResult(false, `${normalizeName(name)} was not in outgoing requests.`);
+}
 
-    mp_average_Score: {
-        id: "mp_average_score",
-        name: "Average Score",
-        type: "score"
-    },
+function removeFriend(name) {
+    const target = normalizeName(name);
+    const removed = removeFromList('friends', target);
+    friendshipState.pendingRemove = friendshipState.pendingRemove.filter(entry => !namesMatch(entry, target));
+    saveFriendshipState();
+    renderFriendshipSystem();
+    return removed
+        ? createFriendshipResult(true, `${target} removed from friends.`)
+        : createFriendshipResult(false, `${target} was not in your friend list.`);
+}
 
-    account_Creation_Date: {
-        id: "account_Creation_Date",
-        name: "Account Creation Date",
-        type: "date"
-    },
+function acceptIncomingRequest(name) {
+    const target = normalizeName(name);
+    const wasIncoming = removeFromList('incoming', target);
+    if (!wasIncoming) return createFriendshipResult(false, `${target} was not in incoming requests.`);
+    return addFriend(target, FRIEND_STATUS.online);
+}
 
-    last_Login_Date: {
-        id: "last_Login_Date",
-        name: "Last Login Date",
-        type: "date"
-    },
-};
+function declineIncomingRequest(name) {
+    return removeIncomingRequest(name);
+}
 
+function cancelOutgoingRequest(name) {
+    return removeOutgoingRequest(name);
+}
 
+function markFriendForRemoval(name) {
+    const target = normalizeName(name);
+    if (!target) return createFriendshipResult(false, 'Missing username.');
+    if (!friendshipState.friends.some(entry => namesMatch(entry.name, target))) {
+        return createFriendshipResult(false, `${target} is not in your friend list.`);
+    }
+
+    if (isPendingRemoval(target)) {
+        return removeFriend(target);
+    }
+
+    friendshipState.pendingRemove = [
+        ...friendshipState.pendingRemove.filter(entry => !namesMatch(entry, target)),
+        target
+    ];
+    saveFriendshipState();
+    renderFriendshipSystem();
+    return createFriendshipResult(true, `Click remove again to confirm deleting ${target}.`);
+}
+
+function setFriendshipState(nextState) {
+    friendshipState = {
+        incoming: sanitizeFriendEntries(nextState?.incoming),
+        outgoing: sanitizeFriendEntries(nextState?.outgoing),
+        friends: sanitizeFriendEntries(nextState?.friends, true),
+        pendingRemove: Array.isArray(nextState?.pendingRemove)
+            ? nextState.pendingRemove.map(normalizeName).filter(Boolean)
+            : []
+    };
+    saveFriendshipState();
+    renderFriendshipSystem();
+    return createFriendshipResult(true, 'Friendship state replaced.');
+}
+
+function getFriendshipState() {
+    return structuredClone(friendshipState);
+}
+
+function renderFriendshipList(container, items, kind, emptyLabel) {
+    if (!container) return;
+    if (!items.length) {
+        container.innerHTML = `<div class="friendship-empty">${emptyLabel}</div>`;
+        return;
+    }
+
+    container.innerHTML = items.map(item => {
+        const actions = getFriendActions(kind, item.name);
+        return `
+            <div class="friendship-entry">
+                <div class="friendship-entry-main">
+                    <span class="friendship-name">${item.name}</span>
+                    <span class="friendship-meta">${item.status}</span>
+                </div>
+                <div class="friendship-actions">
+                    ${actions.map(button => `
+                        <button type="button" class="${button.className || ''}" data-friend-action="${button.action}" data-friend-name="${item.name}">
+                            ${button.label}
+                        </button>
+                    `).join('')}
+                </div>
+            </div>
+        `;
+    }).join('');
+}
+
+function getFriendActions(kind, name) {
+    if (kind === 'incoming') {
+        return [
+            { action: 'accept', label: 'Accept' },
+            { action: 'decline', label: 'Decline' }
+        ];
+    }
+    if (kind === 'outgoing') {
+        return [{ action: 'cancel', label: 'Cancel' }];
+    }
+    if (kind === 'friends') {
+        const confirm = isPendingRemoval(name);
+        return [{
+            action: 'remove',
+            label: confirm ? 'Confirm?' : 'Remove',
+            className: confirm ? 'friend-action-remove-confirm' : ''
+        }];
+    }
+    return [];
+}
+
+function renderRequestComposerStatus(customMessage = '') {
+    if (!dom.requestStatusPanel) return;
+
+    const inputValue = normalizeName(dom.requestInput?.value);
+    if (customMessage) {
+        dom.requestStatusPanel.innerHTML = `<div class="friendship-empty">${customMessage}</div>`;
+        return;
+    }
+
+    if (!inputValue) {
+        dom.requestStatusPanel.innerHTML = '<div class="friendship-empty">Enter a username and press Send.</div>';
+        return;
+    }
+
+    dom.requestStatusPanel.innerHTML = `<div class="friendship-empty">Ready to send request to ${inputValue}.</div>`;
+}
+
+function renderFriendshipSystem() {
+    if (dom.friendshipSummary) {
+        dom.friendshipSummary.textContent = `${friendshipState.friends.length} Friends`;
+    }
+
+    renderFriendshipList(dom.friendshipIncomingList, friendshipState.incoming, 'incoming', 'No incoming requests.');
+    renderFriendshipList(dom.friendshipOutgoingList, friendshipState.outgoing, 'outgoing', 'No outgoing requests.');
+    renderFriendshipList(dom.friendshipList, friendshipState.friends, 'friends', 'No friends yet.');
+    renderRequestComposerStatus();
+}
+
+function setupFriendshipUI() {
+    dom.friendshipOpenBtn?.addEventListener('click', toggleFriendshipToast);
+    dom.friendshipCloseBtn?.addEventListener('click', closeFriendshipToast);
+
+    document.addEventListener('keydown', event => {
+        if (event.key === 'Escape') closeFriendshipToast();
+    });
+
+    document.addEventListener('click', handleFriendshipOutsideClick);
+    document.addEventListener('click', handleFriendActionClick);
+
+    dom.requestInput?.addEventListener('input', () => {
+        renderRequestComposerStatus();
+    });
+
+    dom.requestInput?.addEventListener('keydown', event => {
+        if (event.key === 'Enter') {
+            event.preventDefault();
+            handleSendRequestFromInput();
+        }
+    });
+
+    dom.requestSendButton?.addEventListener('click', handleSendRequestFromInput);
+}
+
+async function handleSendRequestFromInput() {
+    const targetName = normalizeName(dom.requestInput?.value);
+    if (!targetName) {
+        renderRequestComposerStatus('Enter a username first.');
+        return;
+    }
+    if (namesMatch(targetName, username)) {
+        renderRequestComposerStatus('You cannot send a request to yourself.');
+        return;
+    }
+    if (isKnownFriend(targetName)) {
+        renderRequestComposerStatus(`${targetName} is already in your friendship lists.`);
+        return;
+    }
+
+    renderRequestComposerStatus('Sending request...');
+    try {
+        const res = await fetch('/profile/api/friends/request', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username: targetName })
+        });
+        const data = await res.json();
+        if (res.ok) {
+            const result = addOutgoingRequest(targetName);
+            renderRequestComposerStatus(result.reason);
+            if (result.ok && dom.requestInput) dom.requestInput.value = '';
+        } else {
+            renderRequestComposerStatus(data.error || 'Failed to send request.');
+        }
+    } catch {
+        renderRequestComposerStatus('Network error. Try again.');
+    }
+}
+
+function toggleFriendshipToast() {
+    if (!dom.friendshipToast) return;
+    if (dom.friendshipToast.hidden) {
+        openFriendshipToast();
+    } else {
+        closeFriendshipToast();
+    }
+}
+
+function openFriendshipToast() {
+    if (!dom.friendshipToast) return;
+    dom.friendshipToast.hidden = false;
+    requestAnimationFrame(() => dom.requestInput?.focus());
+}
+
+function closeFriendshipToast() {
+    if (dom.friendshipToast) dom.friendshipToast.hidden = true;
+}
+
+function handleFriendshipOutsideClick(event) {
+    if (!dom.friendshipToast || dom.friendshipToast.hidden) return;
+    if (event.target.closest('#friendship-toast') || event.target.closest('#friendship-open-btn')) return;
+    closeFriendshipToast();
+}
+
+async function handleFriendActionClick(event) {
+    const button = event.target.closest('[data-friend-action]');
+    if (!button) return;
+
+    const action = button.getAttribute('data-friend-action');
+    const friendName = normalizeName(button.getAttribute('data-friend-name'));
+    if (!action || !friendName) return;
+
+    if (action === 'accept') {
+        try {
+            const res = await fetch('/profile/api/friends/accept', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: friendName })
+            });
+            if (res.ok) acceptIncomingRequest(friendName);
+        } catch { /* network error — leave local state unchanged */ }
+        return;
+    }
+    if (action === 'decline') {
+        try {
+            const res = await fetch('/profile/api/friends/decline', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: friendName })
+            });
+            if (res.ok) declineIncomingRequest(friendName);
+        } catch { /* network error */ }
+        return;
+    }
+    if (action === 'cancel') {
+        try {
+            const res = await fetch('/profile/api/friends/cancel', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: friendName })
+            });
+            if (res.ok) cancelOutgoingRequest(friendName);
+        } catch { /* network error */ }
+        return;
+    }
+    if (action === 'remove') {
+        if (isPendingRemoval(friendName)) {
+            // Second click — confirmed; call server then remove locally
+            try {
+                const res = await fetch('/profile/api/friends/remove', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ username: friendName })
+                });
+                if (res.ok) markFriendForRemoval(friendName); // now executes removeFriend() locally
+            } catch { /* network error */ }
+        } else {
+            // First click — just mark as pending confirmation, no API call yet
+            markFriendForRemoval(friendName);
+        }
+    }
+}
 
 function formatNumber(value) {
-
     return Number(value || 0).toLocaleString();
-
 }
-
-
 
 function formatScore(value) {
-
-    if (value === null || value === undefined)
-        return "NO DATA";
-
+    if (value === null || value === undefined) return NO_DATA;
     return formatNumber(value);
-
 }
 
-
-
-function formatDate(value, time = true) {
-
-    if (!value)
-        return "NO DATA";
+function formatDate(value, includeTime = true) {
+    if (!value) return NO_DATA;
 
     const config = {
-        dateStyle: "long",
-        ...(time && { timeStyle: "short" })
+        dateStyle: 'long',
+        ...(includeTime && { timeStyle: 'short' })
     };
 
-    const date = new Date(value.replace(" ", "T") + "Z"); //the .replace just clarifys that server gives back utc
-
+    const date = new Date(value.replace(' ', 'T') + 'Z');
     const today = new Date();
     const yesterday = new Date(today);
     yesterday.setDate(today.getDate() - 1);
 
-    const localeDate = d => d.toLocaleDateString(undefined, {
-        dateStyle: "long"
-    });
+    const toLocaleDate = input => input.toLocaleDateString(undefined, { dateStyle: 'long' });
+    const todayLabel = toLocaleDate(today);
+    const yesterdayLabel = toLocaleDate(yesterday);
 
     let formatted = date.toLocaleString(undefined, config);
-
-    if (localeDate(date) === localeDate(today))
-        return formatted.replace(localeDate(today), "Today");
-
-    if (localeDate(date) === localeDate(yesterday))
-        return formatted.replace(localeDate(yesterday), "Yesterday");
-
+    if (toLocaleDate(date) === todayLabel) return formatted.replace(todayLabel, 'Today');
+    if (toLocaleDate(date) === yesterdayLabel) return formatted.replace(yesterdayLabel, 'Yesterday');
     return formatted;
 }
 
-
-
 function updateProfile(data) {
+    Object.keys(FIELD_CONFIG).forEach(key => {
+        const config = FIELD_CONFIG[key];
+        const element = document.getElementById(config.id);
+        const statText = element?.querySelector('.stat-p');
+        if (!statText) return;
 
-    Object.keys(fields).forEach(key => {
+        statText.textContent = `${config.label}: ${formatFieldValue(config, data[key])}`;
+    });
 
-        const config = fields[key];
+    const eddiesText = dom.eddies?.querySelector('.stat-p');
+    if (eddiesText) {
+        eddiesText.textContent = `₿ ${formatNumber(data.eddies)} EDDIES`;
+    }
 
+    const tier = ACCOUNT_TIERS[data.account_tier] || ACCOUNT_TIERS[0];
+    if (!dom.tierValue) return;
+    dom.tierValue.textContent = tier.name.toUpperCase();
+    dom.tierValue.style.color = tier.color;
+    dom.tierValue.style.borderColor = tier.color;
+}
 
-        const element = document.getElementById(config.id)
+function formatFieldValue(config, value) {
+    if (config.type === 'score') return formatScore(value);
+    if (config.type === 'date') return formatDate(value, config.id === 'last_Login_Date');
+    if (config.type === 'number') return formatNumber(value);
+    return value ?? NO_DATA;
+}
 
-        if (!element)
-            return;
+window.profileFriendship = {
+    getState: getFriendshipState,
+    setState: setFriendshipState,
+    addOutgoingRequest,
+    addIncomingRequest,
+    addFriend,
+    setFriendStatus,
+    removeIncomingRequest,
+    removeOutgoingRequest,
+    removeFriend,
+    acceptIncomingRequest,
+    declineIncomingRequest,
+    cancelOutgoingRequest,
+    markFriendForRemoval,
+    render: renderFriendshipSystem
+};
 
+document.addEventListener('profileDataUpdate', event => {
+    if (!dom.syncOverlay) return;
+    dom.syncOverlay.classList.add('sync-active');
 
-        const element_text = element.querySelector('.stat-p');
-        
-
-
-        switch (config.type) {
-
-            case "score":
-
-                element_text.textContent = config.name + ": " +
-                    formatScore(data[key]);
-
-                break;
-
-            case "date":
-
-                if (config.id === 'last_Login_Date') {
-                    element_text.textContent = config.name + ": " + formatDate(data[key], true)
-                } else { // account creation date
-                    element_text.textContent = config.name + ": " + formatDate(data[key], false);
-                }
-                break;
-
-            case "number":
-
-                element_text.textContent = config.name + ": " +
-                    formatNumber(data[key]);
-
-                break;
-            default:
-
-                element_text.textContent = config.name + ": " +
-                    data[key] ?? "NO DATA";
-
+    setTimeout(() => {
+        updateProfile(event.detail);
+        dom.syncOverlay.classList.remove('sync-active');
+        if (dom.systemStatus) {
+            dom.systemStatus.removeAttribute('pending');
+            dom.systemStatus.textContent = '● CONNECTION VERIFIED';
         }
-
-    });
-
-    document.getElementById("eddies").querySelector('.stat-p')
-        .textContent =
-        `₿ ${formatNumber(data.eddies)} EDDIES`;
-
-    const tier =
-        ACCOUNT_TIERS[data.account_tier] ??
-        ACCOUNT_TIERS[0];
-
-
-    const tierElement =
-        document.getElementById("tier-value")
-
-    tierElement.textContent =
-        tier.name.toUpperCase();
-
-
-    tierElement.style.color =
-        tier.color;
-
-    tierElement.style.borderColor =
-        tier.color;
-}
-
-document.addEventListener(
-    "profileDataUpdate",
-    event => {
-        const overlay =
-            document.getElementById("syncOverlay");
-        overlay.classList.add("sync-active");
-        setTimeout(() => {
-
-            updateProfile(event.detail);
-
-            overlay.classList.remove("sync-active");
-
-            system_status_element.removeAttribute('pending');
-            system_status_element.textContent = "● CONNECTION VERIFIED";
-
-        }, 350)}
-);
-
-if (new URLSearchParams(window.location.search).has('demo')) {
-    updateProfile({
-        username: 'ghost_runner',
-        sp_games_played: 42,
-        sp_games_Finished: 38,
-        sp_average_score: 812.4,
-        mp_games_Played: 130,
-        mp_games_Won: 67,
-        mp_games_Finished: 121,
-        mp_average_score: 940.2,
-        account_Creation_Date: '2025-11-02 14:22:10',
-        last_login_date: '2026-07-10 09:15:00',
-        account_tier: 2,
-        eddies: 15420
-    });
-}
+    }, 350);
+});

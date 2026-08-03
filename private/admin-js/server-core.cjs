@@ -463,6 +463,168 @@ app.get('/profile/api/user/:username', async (req, res) => {
   res.status(200).json(user_info);
 });
 
+// ── Friendship endpoints ──────────────────────────────────────────────────────
+// All routes: authenticated via sessionToken, lowCost rate-limited
+
+const friendLimiters = [
+  ipLimiter_lowCost_shortTerm,
+  ipLimiter_lowCost_longTerm,
+  sessionTokenLimiter_lowCost_shortTerm,
+  sessionTokenLimiter_lowCost_longTerm
+];
+
+// Shared auth helper for friendship routes
+async function resolveFriendshipSession(req, res) {
+  const sessionToken = req.cookies.sessionToken;
+  const UUID = sessionToken ? await SQL_Manager_Instance.sessionTokenToUUID(sessionToken) : null;
+  if (!UUID) {
+    res.status(401).json({ error: 'Unauthorized. Please log in.' });
+    return null;
+  }
+  const user = SQL_Manager_Instance.getUserByUUID(UUID);
+  if (!user) {
+    res.status(401).json({ error: 'Unauthorized. User not found.' });
+    return null;
+  }
+  return user; // has .id (integer PK) and .username
+}
+
+// GET /profile/api/friends — fetch the caller's full friendship state
+app.get('/profile/api/friends', friendLimiters, async (req, res) => {
+  try {
+    const me = await resolveFriendshipSession(req, res);
+    if (!me) return;
+
+    const state = await SQL_Manager_Instance.getFriendships(me.id);
+    return res.status(200).json(state);
+  } catch (err) {
+    console.error('GET /profile/api/friends error:', err);
+    return res.status(500).json({ error: 'Server error.' });
+  }
+});
+
+// POST /profile/api/friends/request — send a friend request
+app.post('/profile/api/friends/request', friendLimiters, async (req, res) => {
+  try {
+    const me = await resolveFriendshipSession(req, res);
+    if (!me) return;
+
+    const { username: targetUsername } = req.body;
+    if (!targetUsername || typeof targetUsername !== 'string') {
+      return res.status(400).json({ error: 'username is required.' });
+    }
+
+    const target = SQL_Manager_Instance.getUserByUsername(targetUsername.trim());
+    if (!target) return res.status(404).json({ error: 'User not found.' });
+    if (target.id === me.id) return res.status(400).json({ error: 'You cannot send a request to yourself.' });
+
+    const result = await SQL_Manager_Instance.sendFriendRequest(me.id, target.id);
+    if (result === false) return res.status(409).json({ error: 'Friend request already sent.' });
+
+    return res.status(200).json({ message: result === true ? 'Request sent.' : 'Already friends.' });
+  } catch (err) {
+    console.error('POST /profile/api/friends/request error:', err);
+    return res.status(500).json({ error: 'Server error.' });
+  }
+});
+
+// POST /profile/api/friends/accept — accept an incoming request
+app.post('/profile/api/friends/accept', friendLimiters, async (req, res) => {
+  try {
+    const me = await resolveFriendshipSession(req, res);
+    if (!me) return;
+
+    const { username: targetUsername } = req.body;
+    if (!targetUsername || typeof targetUsername !== 'string') {
+      return res.status(400).json({ error: 'username is required.' });
+    }
+
+    const target = SQL_Manager_Instance.getUserByUsername(targetUsername.trim());
+    if (!target) return res.status(404).json({ error: 'User not found.' });
+
+    const result = await SQL_Manager_Instance.acceptFriendRequest(me.id, target.id);
+    if (!result) return res.status(404).json({ error: 'No pending request found.' });
+
+    return res.status(200).json({ message: 'Friend request accepted.' });
+  } catch (err) {
+    console.error('POST /profile/api/friends/accept error:', err);
+    return res.status(500).json({ error: 'Server error.' });
+  }
+});
+
+// POST /profile/api/friends/decline — decline an incoming request
+app.post('/profile/api/friends/decline', friendLimiters, async (req, res) => {
+  try {
+    const me = await resolveFriendshipSession(req, res);
+    if (!me) return;
+
+    const { username: targetUsername } = req.body;
+    if (!targetUsername || typeof targetUsername !== 'string') {
+      return res.status(400).json({ error: 'username is required.' });
+    }
+
+    const target = SQL_Manager_Instance.getUserByUsername(targetUsername.trim());
+    if (!target) return res.status(404).json({ error: 'User not found.' });
+
+    const result = await SQL_Manager_Instance.declineFriendRequest(me.id, target.id);
+    if (!result) return res.status(404).json({ error: 'No pending request found.' });
+
+    return res.status(200).json({ message: 'Friend request declined.' });
+  } catch (err) {
+    console.error('POST /profile/api/friends/decline error:', err);
+    return res.status(500).json({ error: 'Server error.' });
+  }
+});
+
+// POST /profile/api/friends/cancel — cancel an outgoing request
+app.post('/profile/api/friends/cancel', friendLimiters, async (req, res) => {
+  try {
+    const me = await resolveFriendshipSession(req, res);
+    if (!me) return;
+
+    const { username: targetUsername } = req.body;
+    if (!targetUsername || typeof targetUsername !== 'string') {
+      return res.status(400).json({ error: 'username is required.' });
+    }
+
+    const target = SQL_Manager_Instance.getUserByUsername(targetUsername.trim());
+    if (!target) return res.status(404).json({ error: 'User not found.' });
+
+    const result = await SQL_Manager_Instance.cancelFriendRequest(me.id, target.id);
+    if (!result) return res.status(404).json({ error: 'No pending outgoing request found.' });
+
+    return res.status(200).json({ message: 'Friend request cancelled.' });
+  } catch (err) {
+    console.error('POST /profile/api/friends/cancel error:', err);
+    return res.status(500).json({ error: 'Server error.' });
+  }
+});
+
+// POST /profile/api/friends/remove — remove an accepted friend
+app.post('/profile/api/friends/remove', friendLimiters, async (req, res) => {
+  try {
+    const me = await resolveFriendshipSession(req, res);
+    if (!me) return;
+
+    const { username: targetUsername } = req.body;
+    if (!targetUsername || typeof targetUsername !== 'string') {
+      return res.status(400).json({ error: 'username is required.' });
+    }
+
+    const target = SQL_Manager_Instance.getUserByUsername(targetUsername.trim());
+    if (!target) return res.status(404).json({ error: 'User not found.' });
+
+    const result = await SQL_Manager_Instance.removeFriend(me.id, target.id);
+    if (!result) return res.status(404).json({ error: 'You are not friends with this user.' });
+
+    return res.status(200).json({ message: 'Friend removed.' });
+  } catch (err) {
+    console.error('POST /profile/api/friends/remove error:', err);
+    return res.status(500).json({ error: 'Server error.' });
+  }
+});
+// ── End friendship endpoints ──────────────────────────────────────────────────
+
 
 
 app.post('/log-out', async (req, res) => {

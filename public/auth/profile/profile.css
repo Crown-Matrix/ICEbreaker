@@ -416,10 +416,18 @@
     background-image: url('./decorations/narrow-red-div-background.png');
     background-position: center;
     background-repeat: no-repeat;
-    background-size: contain;
+    background-size: 100% 100%;
     padding: 1rem;
     width: 100%;
 
+  }
+
+  .stat-card[group="friends"] {
+    position: relative;
+    overflow: visible;
+    padding: 1rem 0.85rem;
+    z-index: 3;
+    width: 60%;
   }
 
   .stat-p {
@@ -451,6 +459,10 @@
       --lg-wrap: 'wrap';
     }
 
+    .friendship-grid {
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
   }
 
   @media (max-width: 991px) {
@@ -470,11 +482,57 @@
       letter-spacing: 4px;
       line-height: 3;
     }
+
+    .frame-body {
+      padding: 3rem 0 4rem 0;
+    }
+
+    .frame-body>.container-fluid {
+      width: 92%;
+    }
+
+    .friendship-grid {
+      grid-template-columns: 1fr;
+    }
+
+    .friendship-wide {
+      grid-column: auto;
+    }
+
+    .friendship-toast {
+      width: min(94vw, 42rem);
+    }
   }
 
   @media (max-width: 576px) {
     .topbar-right {
       text-wrap: nowrap;
+    }
+
+    .frame-body {
+      padding: 2rem 0 2.5rem 0;
+    }
+
+    .friendship-head {
+      align-items: flex-start;
+    }
+
+    .friendship-entry {
+      flex-direction: column;
+      align-items: flex-start;
+    }
+
+    .friendship-actions {
+      width: 100%;
+      justify-content: flex-start;
+    }
+
+    .friendship-toast {
+      padding: 0.7rem;
+    }
+
+    .friendship-toast-head {
+      margin-bottom: 0.65rem;
     }
   }
 
@@ -528,6 +586,238 @@
     width: 80%;
   }
 
+  .friendship-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.85rem;
+    flex-wrap: wrap;
+  }
+
+  .friendship-title {
+    max-width: 100%;
+    font-size: clamp(0.85rem, 1.2vw, 1.05rem);
+  }
+
+  .friendship-badge {
+    font-family: var(--cy-font-mono);
+    font-size: clamp(0.72rem, 1.1vw, 0.95rem);
+    color: var(--cy-yellow);
+    border: 1px solid rgba(255, 230, 0, 0.45);
+    padding: 0.25rem 0.55rem;
+    border-radius: 999px;
+    background: rgba(255, 230, 0, 0.08);
+    white-space: nowrap;
+  }
+
+  .friendship-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 0.75rem;
+  }
+
+  .friendship-launcher {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    width: 100%;
+    box-sizing: border-box;
+    justify-content: space-evenly;
+  }
+
+  .friendship-open-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: fit-content;
+    max-width: 100%;
+    border: 1px solid var(--cy-cyan);
+    background: rgba(0, 255, 255, 0.08);
+    color: var(--cy-cyan);
+    font-family: var(--cy-font-mono);
+    border-radius: 999px;
+    font-size: clamp(0.72rem, 1vw, 0.92rem);
+    white-space: nowrap;
+    justify-self: end;
+  }
+
+  .friendship-open-btn:hover {
+    background: rgba(0, 255, 255, 0.16);
+  }
+
+  .friendship-toast {
+    position: fixed;
+    left: 50%;
+    top: 50%;
+    transform: translate(-50%, -50%);
+    z-index: 10000;
+    width: min(48rem, 94vw);
+    max-height: min(78vh, 44rem);
+    overflow: auto;
+    border: 1px solid rgba(0, 255, 255, 0.35);
+    border-radius: 12px;
+    background: rgba(4, 6, 12, 0.98);
+    box-shadow: 0 0 28px rgba(0, 0, 0, 0.55), 0 0 18px rgba(0, 255, 255, 0.14);
+    padding: 0.85rem;
+  }
+
+  .friendship-toast[hidden] {
+    display: none;
+  }
+
+  .friendship-toast-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 0.85rem;
+  }
+
+  .friendship-head-copy {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: wrap;
+  }
+
+  .friendship-close-btn {
+    border: 1px solid var(--cy-magenta);
+    background: rgba(255, 45, 120, 0.08);
+    color: var(--cy-magenta);
+    font-family: var(--cy-font-display);
+    font-size: 1.1rem;
+    line-height: 1;
+    width: 2rem;
+    height: 2rem;
+    border-radius: 50%;
+    flex: none;
+  }
+
+  .friendship-close-btn:hover {
+    background: rgba(255, 45, 120, 0.16);
+  }
+
+  .friendship-panel {
+    min-width: 0;
+    text-align: left;
+    border: 1px solid rgba(0, 255, 255, 0.16);
+    border-radius: 8px;
+    background: rgba(10, 9, 15, 0.45);
+    padding: 0.75rem;
+  }
+
+  .friendship-wide {
+    grid-column: 1 / -1;
+  }
+
+  .friendship-label {
+    margin: 0 0 0.6rem;
+    color: var(--cy-yellow);
+    font-family: var(--cy-font-display);
+    font-size: clamp(0.72rem, 1.05vw, 0.9rem);
+    letter-spacing: 0.08em;
+  }
+
+  .friendship-searchbar {
+    display: flex;
+    gap: 0.5rem;
+    flex-wrap: wrap;
+  }
+
+  #friend-search-input {
+    flex: 1 1 12rem;
+    min-width: 0;
+    background: rgb(10, 9, 15);
+    border: 2px solid #00FFFF;
+    outline: none;
+    color: #ffff33;
+    text-shadow: 0 0 6px rgba(255, 255, 51, 0.5);
+    letter-spacing: 1.5px;
+    border-radius: 6px;
+    caret-color: #ffff33;
+    padding: 0.45rem 0.65rem;
+  }
+
+  #friend-search-clear {
+    flex: 0 0 auto;
+    border: 1px solid var(--cy-magenta);
+    background: rgba(255, 45, 120, 0.08);
+    color: var(--cy-magenta);
+    font-family: var(--cy-font-mono);
+    border-radius: 999px;
+    padding: 0.35rem 0.75rem;
+  }
+
+  .friendship-list {
+    display: grid;
+    gap: 0.5rem;
+  }
+
+  .friendship-entry {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 0.65rem;
+    border: 1px solid rgba(0, 255, 255, 0.22);
+    border-radius: 8px;
+    padding: 0.5rem 0.65rem;
+    background: rgba(4, 6, 12, 0.72);
+    min-width: 0;
+  }
+
+  .friendship-entry-main {
+    min-width: 0;
+    display: grid;
+    gap: 0.15rem;
+  }
+
+  .friendship-name {
+    color: var(--cy-cyan);
+    font-family: var(--cy-font-display);
+    font-size: clamp(0.8rem, 1.1vw, 1rem);
+    word-break: break-word;
+  }
+
+  .friendship-meta {
+    color: var(--cy-white-dim);
+    font-family: var(--cy-font-mono);
+    font-size: clamp(0.62rem, 0.9vw, 0.8rem);
+  }
+
+  .friendship-actions {
+    display: flex;
+    gap: 0.4rem;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+  }
+
+  .friendship-actions button {
+    border: 1px solid var(--cy-cyan);
+    background: rgba(0, 255, 255, 0.08);
+    color: var(--cy-cyan);
+    font-family: var(--cy-font-mono);
+    border-radius: 999px;
+    padding: 0.28rem 0.6rem;
+    font-size: clamp(0.62rem, 0.9vw, 0.78rem);
+  }
+
+  .friend-action-remove-confirm {
+    border-color: var(--cy-red) !important;
+    background: rgba(255, 71, 57, 0.16) !important;
+    color: var(--cy-red) !important;
+  }
+
+  .friend-action-remove-confirm:hover {
+    background: rgba(255, 71, 57, 0.26) !important;
+  }
+
+  .friendship-empty {
+    color: rgba(255, 230, 0, 0.55);
+    font-family: var(--cy-font-mono);
+    font-size: clamp(0.62rem, 0.95vw, 0.82rem);
+  }
+
   #syncOverlay {
 
     position: fixed;
@@ -560,4 +850,3 @@
 
     display: flex !important;
   }
-

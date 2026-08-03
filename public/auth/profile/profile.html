@@ -106,7 +106,49 @@
                         <p class="stat-p">last_Login_Date</p>
                       </div>
 
-                      
+                      <div class="stat-card" id="friendship-window" group="friends">
+                        <div class="friendship-launcher d-flex flex-sm-row flex-column">
+                          <p class="stat-p friendship-title">Friendship Terminal</p>
+                          <button type="button" id="friendship-open-btn" class="friendship-open-btn">Open Friends</button>
+                        </div>
+                        <div id="friendship-toast" class="friendship-toast" hidden>
+                          <div class="friendship-toast-head">
+                            <div class="friendship-head-copy">
+                              <p class="stat-p friendship-title">Friendship Terminal</p>
+                              <span class="friendship-badge" id="friendship-summary">0 Friends</span>
+                            </div>
+                            <button type="button" id="friendship-close-btn" class="friendship-close-btn" aria-label="Close friendship toast">X</button>
+                          </div>
+
+                          <div class="friendship-grid">
+                            <section class="friendship-panel friendship-search-panel">
+                              <p class="friendship-label">Send Request</p>
+                              <div class="friendship-searchbar">
+                                <input type="text" id="friend-search-input" placeholder="Enter username..." autocomplete="off">
+                                <button type="button" id="friend-search-clear">Send</button>
+                              </div>
+                              <div id="friend-search-results" class="friendship-list"></div>
+                            </section>
+
+                            <section class="friendship-panel">
+                              <p class="friendship-label">Incoming Requests</p>
+                              <div id="friend-incoming-list" class="friendship-list"></div>
+                            </section>
+
+                            <section class="friendship-panel">
+                              <p class="friendship-label">Outgoing Requests</p>
+                              <div id="friend-outgoing-list" class="friendship-list"></div>
+                            </section>
+
+                            <section class="friendship-panel friendship-wide">
+                              <p class="friendship-label">Friends</p>
+                              <div id="friend-list" class="friendship-list"></div>
+                            </section>
+                          </div>
+                        </div>
+                      </div>
+
+             
                     </div>
                     <div id='tab-list'
                       class="col-12 col-lg-3  d-flex flex-row flex-lg-column justify-content-center container-lg order-lg-last order-first mb-3 mb-lg-0 text-wrap text-lg-nowrap">

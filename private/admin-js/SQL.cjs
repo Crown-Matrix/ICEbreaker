@@ -341,6 +341,56 @@ const acceptFriendRequest = protected_sql((userId, friendId) => {
     }
 });
 
+const declineFriendRequest = protected_sql((recipientId, senderId) => {
+    // recipientId is declining the pending request that senderId sent
+    const result = db.prepare(
+        "DELETE FROM friends WHERE user_id = ? AND friend_id = ? AND status = 'pending'"
+    ).run(senderId, recipientId);
+    return result.changes > 0;
+});
+
+const cancelFriendRequest = protected_sql((senderId, recipientId) => {
+    // senderId is cancelling the pending request they sent to recipientId
+    const result = db.prepare(
+        "DELETE FROM friends WHERE user_id = ? AND friend_id = ? AND status = 'pending'"
+    ).run(senderId, recipientId);
+    return result.changes > 0;
+});
+
+const removeFriend = protected_sql((userId, friendId) => {
+    const result = db.prepare(
+        "DELETE FROM friends WHERE ((user_id = ? AND friend_id = ?) OR (user_id = ? AND friend_id = ?)) AND status = 'accepted'"
+    ).run(userId, friendId, friendId, userId);
+    return result.changes > 0;
+});
+
+const getFriendships = (userId) => {
+    const incoming = db.prepare(`
+        SELECT u.username, f.created_at FROM friends f
+        JOIN users u ON u.id = f.user_id
+        WHERE f.friend_id = ? AND f.status = 'pending'
+    `).all(userId);
+
+    const outgoing = db.prepare(`
+        SELECT u.username, f.created_at FROM friends f
+        JOIN users u ON u.id = f.friend_id
+        WHERE f.user_id = ? AND f.status = 'pending'
+    `).all(userId);
+
+    const friends = db.prepare(`
+        SELECT CASE WHEN f.user_id = ? THEN u2.username ELSE u1.username END AS username
+        FROM friends f
+        JOIN users u1 ON u1.id = f.user_id
+        JOIN users u2 ON u2.id = f.friend_id
+        WHERE (f.user_id = ? OR f.friend_id = ?) AND f.status = 'accepted'
+    `).all(userId, userId, userId);
+
+    return {
+        incoming: incoming.map(r => ({ username: r.username, created_at: r.created_at })),
+        outgoing: outgoing.map(r => ({ username: r.username, created_at: r.created_at })),
+        friends: friends.map(r => r.username)
+    };
+};
 
 const friendsCount = (userId) => db.prepare(`
     SELECT COUNT(*) AS count FROM friends 
@@ -680,6 +730,10 @@ module.exports = {
     friendsCount,
     sendFriendRequest,
     acceptFriendRequest,
+    declineFriendRequest,
+    cancelFriendRequest,
+    removeFriend,
+    getFriendships,
     scoreToEddies,
     wipeDatabase,
     getUsernameFromUUID,
