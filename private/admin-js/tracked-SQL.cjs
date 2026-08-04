@@ -37,14 +37,11 @@ function openDb() {
 }
 
 let db = openDb();
-let hasBootstrapped = false;
 
 // call this once, right after the first successful sync
 function applyPragmas() {
-    if (hasBootstrapped) return;
     db.pragma('journal_mode = WAL');
     db.pragma('foreign_keys = ON');
-    hasBootstrapped = true;
 }
 
 const STREAM_ERROR = /stream not found|STREAM_EXPIRED|stream has expired|HRANA_CLOSED/i;

@@ -14,7 +14,7 @@ db.pragma('foreign_keys = ON');
 
 
 function hashPassword(password, override_safety = false) {
-    if (!(checkPassword(password) || ovverride_safety)) {
+    if (!(checkPassword(password) || override_safety)) {
         throw new Error('Invalid password')
     }
     const SALT_ROUNDS = 12;
@@ -403,13 +403,15 @@ const friendsCount = (userId) => db.prepare(`
 
 const wipeDatabase = () => {
     db.pragma('foreign_keys = OFF');
-    db.prepare('DROP TABLE IF EXISTS friends').run();
-    db.prepare('DROP TABLE IF EXISTS users').run();
+    db.transaction(() => {
+        db.prepare('DROP TABLE IF EXISTS friends').run();
+        db.prepare('DROP TABLE IF EXISTS sessions').run();
+        db.prepare('DROP TABLE IF EXISTS banned').run();
+        db.prepare('DROP TABLE IF EXISTS users').run();
+    })();
     db.pragma('foreign_keys = ON');
-    initializeUserTable();
-    initializeFriendsTable();
-    initializeSessionsDatabase();
-    initializeBannedTable();
+    db.pragma('journal_mode = WAL');
+    initializeAllTables();
     console.log('Database wiped and re-initialized');
 }
 

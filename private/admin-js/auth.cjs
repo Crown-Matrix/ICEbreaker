@@ -1,6 +1,7 @@
 
 
 // middleware compatibility for express
+//auth.cjs
 
 
 // grabs cookie from request

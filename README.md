@@ -40,6 +40,8 @@
 
 ![SHA-512](https://img.shields.io/badge/Session%20Auth%20Tokens-SHA--512%20Tokens-FF6B6B&logo=letsencrypt&logoColor=white)
 
+![Turso](https://img.shields.io/badge/Turso-libSQL%20Cloud-4FF8D2)
+
 <img src="https://img.shields.io/badge/Shell_Script-121011?logo=gnu-bash&logoColor=white" alt="Shell Script">
 
 </div>
@@ -285,6 +287,14 @@ npm install
     + Whether or not to disable the rate limiting (for testing purposes)
 8. PROXY_HOP_AMOUNT = POSITIVE INTEGER
     + Express configuration for how many proxy hops to allow, must be set to exactly how many proxys are being used
+9. USE_TURSO_DATABASE= "true"/"false"
+    + Whether to use Turso (libSQL cloud) or local SQLite as the database backend
+10. LAST_SQL_MODE= "true"/"false"/"undefined"
+    + Tracks which SQL mode was active on the last run; managed automatically — do not set manually
+11. TURSO_DATABASE_URL= URL
+    + Turso database URL; required when USE_TURSO_DATABASE is true
+12. TURSO_AUTH_TOKEN= TOKEN
+    + Turso authentication token; required when USE_TURSO_DATABASE is true
 
 ---
 # Architecture
@@ -308,13 +318,11 @@ D <--> G[SQLite3\nDatabase]
 
 Original Overview - [ICEBreaker-Architecture](https://github.com/crown-matrix/ICEbreaker/blob/main/personal/ICEBreaker_Architecture.png)
 
-> **Note:** the diagram above reflects the target architecture. The multi-player server's connection/session scaffolding is wired up, but its game logic is still being built — see [Planned Features](#planned-features-not-yet-active).
-
 ## Routes
 
 | Method | Path | Description |
 |---|---|---|
-| `GET` | `/` | Redirect to `/singlePlayer` |
+| `GET` | `/` | Serves the game cover page |
 | `GET` | `/singlePlayer` | Reference/lobby page |
 | `GET` | `/singlePlayer/result` | Post-game results |
 | `GET` | `/multiPlayer/` | Reference/lobby page |
@@ -327,12 +335,19 @@ Original Overview - [ICEBreaker-Architecture](https://github.com/crown-matrix/IC
 | `POST` | `/sign-up` | Registration handler |
 | `POST` | `/log-out` | Logout + clear cookie |
 | `GET` | `/profile` | View your signed-in account |
+| `GET` | `/profile/api/user/:username` | Public profile data lookup |
+| `GET` | `/profile/api/friends` | Fetch your friends list |
+| `POST` | `/profile/api/friends/request` | Send a friend request |
+| `POST` | `/profile/api/friends/accept` | Accept a friend request |
+| `POST` | `/profile/api/friends/decline` | Decline a friend request |
+| `POST` | `/profile/api/friends/cancel` | Cancel an outgoing friend request |
+| `POST` | `/profile/api/friends/remove` | Remove a friend |
 | `GET` | `/banned` | Ban notice page |
 | `GET` | `/admin-panel` | admin-panel html page
 | `GET` | `/admin-panel/api` | admin-panel api endpoint , takes subendpoints for specific desired data
 | `GET` | `/admin-panel/api/[singlePlayer,multiPlayer,all(default)]/[os,analytics,all(default)]` | subendpoint key
 
-### Alias System:
+    ### Alias System:
 In ```private/Server-Imports/General/path_alias.json```, multiple paths have been aliased, allowing a user to request a synonym of an endpoint and be redirected(with permanent status 308) to the correct endpoint
 
 
@@ -348,7 +363,7 @@ In ```private/Server-Imports/General/path_alias.json```, multiple paths have bee
 ### Authentication
 | Layer | Technology | Details |
 |---|---|---|
-| Session tokens | `crypto.randomUUID` + `crypto.hash('sha512')` | Opaque 64-char hex token |
+| Session tokens | `crypto.randomUUID` + `crypto.hash('sha512')` | Opaque 128-char hex token |
 | Password hashing | bcrypt | 12 salt rounds |
 | Cookie transport | `cookie-parser` | httpOnly, Secure, SameSite=Strict |
 | Session lifetime | SQLite `sessions` table | 7-day expiry, validated automatically on each request |
@@ -356,8 +371,8 @@ In ```private/Server-Imports/General/path_alias.json```, multiple paths have bee
 ### Database
 | Layer | Technology | Details |
 |---|---|---|
-| Engine | SQLite | File: `private/database/ICEbreaker.db` |
-| Bindings | `better-sqlite3` | Fully synchronous API |
+| Engine | SQLite / Turso (libSQL) | Local: `private/database/ICEbreaker.db`; Cloud: Turso replica sync |
+| Bindings | `better-sqlite3` / `libsql` | Synchronous local API; async cloud API; mode set via `USE_TURSO_DATABASE` |
 | Config | WAL journal mode & Foreign constraints | `PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON` |
 | Schema | 4 tables | `users`, `sessions`, `friends`, `banned` |
 
@@ -366,8 +381,8 @@ In ```private/Server-Imports/General/path_alias.json```, multiple paths have bee
 |---|---|---|
 | Markup | Vanilla HTML5 | No SSR; Express serves static files |
 | Styling | Bootstrap 5.3 + custom CSS | `vibe-cyberpunk.css` — full cyberpunk design system |
-| JS | Vanilla ESM | `SinglePlayerFrontend` class (~1575 lines); no framework |
-| JS | Vanilla ESM | `multiPlayerFrontend` class (~1737 lines); no framework |
+| JS | Vanilla ESM | `SinglePlayerFrontend` class (~1802 lines); no framework |
+| JS | Vanilla ESM | `multiPlayerFrontend` class (~1971 lines); no framework |
 | Navigation | Custom SPA | `goToPage()` fetches HTML, replaces `<head>`/`<body>`, re-runs scripts; state via `sessionStorage` |
 | Game logic | `codeMatrix.js` | Matrix generation, solution injection, buffer checking |
 | Audio | `audio.js` | Sound effects and background music management |
@@ -389,8 +404,9 @@ In ```private/Server-Imports/General/path_alias.json```, multiple paths have bee
 | Shell scripts | `personal/shell/` — startup, DB init, env init, kill, filemap, etc. |
 | macOS integration | `main.sh` opens a new Terminal tab for the admin REPL; auto-opens admin panel; configurable in .env |
 | Admin REPL | `readline`-based eval console in `main.cjs` with live access to `db`, `sql`, `auth` |
-| Environment | `.env` file with `ICEBREAKER_PORT`, `AUTO_KILL_PREVIOUS_PROCESS`, `MAC_TAB`, `ADMIN_OPEN` |
+| Environment | `.env` file — see [Environment Variable Usage](#environment-variable-usage) for all supported variables |
 | TEST_MODE | `disables auth ; unlocks applicable parts of the application for testing purposes` |
+| DISABLE_RATE_LIMIT | `Disables all rate limiting ; for testing purposes` |
 
 
 

@@ -190,8 +190,8 @@ const hardDB = require(join(__dirname, './hard-db.cjs'));
 
 if (SQL_TYPE === 'turso') {
   console.log('Using Turso database for SQL operations.');
-  
-  
+
+
   if (process.env.LAST_SQL_MODE === 'false') { //undefined is intentionally grouped with true, and will not trigger this sync up, as that means there are no local changes to sync up yet
     console.log('Last SQL mode was not Turso, performing initial sync...');
     hardDB.runResetWal(); //reset WAL before force push, to avoid "database is locked" errors
@@ -709,11 +709,11 @@ app.post('/sign-up', async (req, res) => {
       return res.status(400).json({ message: newUUID.ErrorMessage });
     }
 
-    SQL_Manager_Instance.auth.sendStaticUserDataAsHeader(res, await SQL_Manager_Instance.getStaticUserDataByUUID(newUUID));
-    return res.status(201).cookie('sessionToken', await SQL_Manager_Instance.createSessionTokenForUUID(newUUID)).json({
+    SQL_Manager_Instance.auth.sendSessionTokenAsCookie(res, await SQL_Manager_Instance.createSessionTokenForUUID(newUUID));
+    return res.status(201).json({
       message: 'User created successfully.',
       UUID: newUUID,
-    })
+    });
   } else {
     return res.status(409).json({ message: 'username already taken!' })
   }
