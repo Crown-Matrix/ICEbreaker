@@ -143,11 +143,6 @@
     font-size: min(5cqw, 1.5rem) !important;
   }
 
-  .avatar-icon {
-    width: min(5cqw, 42px) !important;
-    height: min(5cqw, 42px) !important;
-  }
-
   .page-tag-sub {
     font-size: min(0.68rem, 3cqw) !important;
   }
@@ -211,9 +206,9 @@
     gap: var(--cy-space-md);
   }
 
-  .avatar-icon {
-    width: 42px;
-    height: 42px;
+  .back-btn {
+    width: min(5cqw, 42px) !important;
+    height: min(5cqw, 42px) !important;
     flex: none;
     border-radius: 50%;
     border: 2px solid var(--cy-cyan);
@@ -222,6 +217,7 @@
     justify-content: center;
     color: var(--cy-cyan);
     box-shadow: var(--cy-glow-cyan);
+    cursor: pointer !important;
   }
 
   .brand {
@@ -849,4 +845,47 @@
   .sync-active {
 
     display: flex !important;
+  }
+
+  /* ── Challenge badge on Open Friends button ── */
+  .challenge-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 1.1rem;
+    height: 1.1rem;
+    padding: 0 0.3rem;
+    border-radius: 999px;
+    background: var(--cy-red, #FF2D78);
+    color: #fff;
+    font-size: 0.65rem;
+    font-family: var(--cy-font-mono);
+    font-weight: 700;
+    line-height: 1;
+    vertical-align: middle;
+    margin-left: 0.35rem;
+    animation: badgePulse 1.8s ease-in-out infinite;
+  }
+
+  @keyframes badgePulse {
+    0%, 100% { box-shadow: 0 0 4px 1px rgba(255, 45, 120, 0.55); }
+    50%       { box-shadow: 0 0 10px 3px rgba(255, 45, 120, 0.85); }
+  }
+
+  /* ── Challenge action buttons ── */
+  .challenge-btn {
+    border-color: var(--cy-red, #FF2D78) !important;
+    color: var(--cy-red, #FF2D78) !important;
+    background: rgba(255, 45, 120, 0.08) !important;
+  }
+
+  .challenge-btn:hover {
+    background: rgba(255, 45, 120, 0.18) !important;
+    box-shadow: 0 0 6px rgba(255, 45, 120, 0.5);
+  }
+
+  .challenge-btn-sent {
+    border-color: rgba(255, 45, 120, 0.45) !important;
+    color: rgba(255, 45, 120, 0.65) !important;
+    background: rgba(255, 45, 120, 0.04) !important;
   }

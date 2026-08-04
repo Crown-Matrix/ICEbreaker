@@ -1,169 +1,183 @@
-  <!DOCTYPE html>
-  <html lang="en">
+<!DOCTYPE html>
+<html lang="en">
 
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile - Loading</title>
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
-    <link
-      href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&amp;family=Rajdhani:wght@400;500;600;700&amp;family=Share+Tech+Mono&amp;display=swap"
-      rel="stylesheet">
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
-    <link rel="stylesheet" href="/auth/profile/profile.css">
-    
-  </head>
-  <body>
-    <div id="syncOverlay">
-      [ DATA STREAM SYNCHRONIZING ]
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Profile - Loading</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css">
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;600;700;900&amp;family=Rajdhani:wght@400;500;600;700&amp;family=Share+Tech+Mono&amp;display=swap"
+    rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+  <link rel="stylesheet" href="/auth/profile/profile.css">
+
+</head>
+
+<body>
+  <div id="syncOverlay">
+    [ DATA STREAM SYNCHRONIZING ]
+  </div>
+  <header class="topbar justify-content-center justify-content-sm-between flex-wrap flex-sm-nowrap">
+    <div class="topbar-left">
+      <div class="back-btn">
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <line x1="19" y1="12" x2="5" y2="12"></line>
+          <polyline points="12 19 5 12 12 5"></polyline>
+        </svg>
+
+      </div>
+      <div class="brand"><span class="b1">NET</span><span class="b2">RUNNER</span> <span class="b3">OS</span></div>
     </div>
-    <header class="topbar justify-content-center justify-content-sm-between flex-wrap flex-sm-nowrap">
-      <div class="topbar-left">
-        <div class="avatar-icon">
-          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <circle cx="12" cy="8" r="3.5"></circle>
-            <path d="M4.5 20c0-4.1 3.4-7 7.5-7s7.5 2.9 7.5 7"></path>
-          </svg>
-        </div>
-        <div class="brand"><span class="b1">NET</span><span class="b2">RUNNER</span> <span class="b3">OS</span></div>
+    <div class="topbar-right">
+      <div class="page-tag">
+        <div class="page-tag-title d-none d-md-block">OPERATIVE PROFILE</div>
+        <div class="page-tag-sub">// IDENTITY FILE</div>
       </div>
-      <div class="topbar-right">
-        <div class="page-tag">
-          <div class="page-tag-title d-none d-md-block">OPERATIVE PROFILE</div>
-          <div class="page-tag-sub">// IDENTITY FILE</div>
-        </div>
-        <button class="fullscreen-btn d-none d-sm-block" id="fsToggle" type="button" aria-label="Toggle fullscreen"
-          title="Toggle fullscreen">
-          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
-            stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
-            <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"></path>
-          </svg>
-        </button>
-      </div>
-    </header>
-    <div class="panel text-center d-flex flex-column align-items-center">
-      <div id='username-title'>
-        Username
-      </div>
-      <span id="system-status">● CONNECTION PENDING</span>
+      <button class="fullscreen-btn d-none d-sm-block" id="fsToggle" type="button" aria-label="Toggle fullscreen"
+        title="Toggle fullscreen">
+        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"
+          stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+          <path d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"></path>
+        </svg>
+      </button>
     </div>
-    <div id='app' class="container-fluid">
-      <div class="row">
-        <div id='col-circle-image' class="d-none d-lg-block col-2 col-lg-3">
-          <img src="/auth/profile/decorations/red-circle.png" alt="" id="circle-image">
-        </div>
-        <div id="top-decoration" class="col-12 col-lg-9">
-          <img src="/auth/profile/decorations/red-top-decoration.png" alt="" id="top-decoration-image">
-          <div id="main-content" class="col-12 col-lg-7 mt-5">
-            <div class="frame p-3 pt-0">
-              <div class="frame-body">
-                <div class="container-fluid">
-                  <div class="row">
-                    <div class="col-12 col-lg-8" id="stat-frame">
+  </header>
+  <div class="panel text-center d-flex flex-column align-items-center">
+    <div id='username-title'>
+      Username
+    </div>
+    <span id="system-status">● CONNECTION PENDING</span>
+  </div>
+  <div id='app' class="container-fluid">
+    <div class="row">
+      <div id='col-circle-image' class="d-none d-lg-block col-2 col-lg-3">
+        <img src="/auth/profile/decorations/red-circle.png" alt="" id="circle-image">
+      </div>
+      <div id="top-decoration" class="col-12 col-lg-9">
+        <img src="/auth/profile/decorations/red-top-decoration.png" alt="" id="top-decoration-image">
+        <div id="main-content" class="col-12 col-lg-7 mt-5">
+          <div class="frame p-3 pt-0">
+            <div class="frame-body">
+              <div class="container-fluid">
+                <div class="row">
+                  <div class="col-12 col-lg-8" id="stat-frame">
 
-                      <div class="stat-card" id="sp_games_Played" group="singleplayer">
-                        <p class="stat-p">sp_games_Played</p>
-                      </div>
-
-                      <div class="stat-card" id="mp_games_Played" group="multiplayer">
-                        <p class="stat-p">mp_games_Played</p>
-                      </div>
-
-                      <div class="stat-card" id="mp_games_Won" group="multiplayer">
-                        <p class="stat-p">mp_games_Won</p>
-                      </div>
-
-                      <div class="stat-card" id="sp_games_Finished" group="singleplayer">
-                        <p class="stat-p">sp_games_Finished</p>
-                      </div>
-
-                      <div class="stat-card" id="mp_games_Finished" group="multiplayer">
-                        <p class="stat-p">mp_games_Finished</p>
-                      </div>
-
-                      <div class="stat-card" id="sp_average_score" group="singleplayer">
-                        <p class="stat-p">sp_average_Score</p>
-                      </div>
-
-                      <div class="stat-card" id="mp_average_score" group="multiplayer">
-                        <p class="stat-p">mp_average_Score</p>
-                      </div>
-
-                      <div class="stat-card" id="eddies" group="account">
-                        <p class="stat-p">Eddies</p>
-                      </div>
-
-                      <div class="stat-card" id="tier" group="account">
-                        <p class="stat-p">Account Tier: <span id="tier-value"></span></p>
-                      </div>
-
-                      <div class="stat-card" id="account_Creation_Date" group="account">
-                        <p class="stat-p">account_Creation_Date</p>
-                      </div>
-
-                      <div class="stat-card" id="last_Login_Date" group="account">
-                        <p class="stat-p">last_Login_Date</p>
-                      </div>
-
-                      <div class="stat-card" id="friendship-window" group="friends">
-                        <div class="friendship-launcher d-flex flex-sm-row flex-column">
-                          <p class="stat-p friendship-title">Friendship Terminal</p>
-                          <button type="button" id="friendship-open-btn" class="friendship-open-btn">Open Friends</button>
-                        </div>
-                        <div id="friendship-toast" class="friendship-toast" hidden>
-                          <div class="friendship-toast-head">
-                            <div class="friendship-head-copy">
-                              <p class="stat-p friendship-title">Friendship Terminal</p>
-                              <span class="friendship-badge" id="friendship-summary">0 Friends</span>
-                            </div>
-                            <button type="button" id="friendship-close-btn" class="friendship-close-btn" aria-label="Close friendship toast">X</button>
-                          </div>
-
-                          <div class="friendship-grid">
-                            <section class="friendship-panel friendship-search-panel">
-                              <p class="friendship-label">Send Request</p>
-                              <div class="friendship-searchbar">
-                                <input type="text" id="friend-search-input" placeholder="Enter username..." autocomplete="off">
-                                <button type="button" id="friend-search-clear">Send</button>
-                              </div>
-                              <div id="friend-search-results" class="friendship-list"></div>
-                            </section>
-
-                            <section class="friendship-panel">
-                              <p class="friendship-label">Incoming Requests</p>
-                              <div id="friend-incoming-list" class="friendship-list"></div>
-                            </section>
-
-                            <section class="friendship-panel">
-                              <p class="friendship-label">Outgoing Requests</p>
-                              <div id="friend-outgoing-list" class="friendship-list"></div>
-                            </section>
-
-                            <section class="friendship-panel friendship-wide">
-                              <p class="friendship-label">Friends</p>
-                              <div id="friend-list" class="friendship-list"></div>
-                            </section>
-                          </div>
-                        </div>
-                      </div>
-
-             
+                    <div class="stat-card" id="sp_games_Played" group="singleplayer">
+                      <p class="stat-p">sp_games_Played</p>
                     </div>
-                    <div id='tab-list'
-                      class="col-12 col-lg-3  d-flex flex-row flex-lg-column justify-content-center container-lg order-lg-last order-first mb-3 mb-lg-0 text-wrap text-lg-nowrap">
-                      <div class="tab" id="account-tab">
-                        <p>Account</p>
+
+                    <div class="stat-card" id="mp_games_Played" group="multiplayer">
+                      <p class="stat-p">mp_games_Played</p>
+                    </div>
+
+                    <div class="stat-card" id="mp_games_Won" group="multiplayer">
+                      <p class="stat-p">mp_games_Won</p>
+                    </div>
+
+                    <div class="stat-card" id="sp_games_Finished" group="singleplayer">
+                      <p class="stat-p">sp_games_Finished</p>
+                    </div>
+
+                    <div class="stat-card" id="mp_games_Finished" group="multiplayer">
+                      <p class="stat-p">mp_games_Finished</p>
+                    </div>
+
+                    <div class="stat-card" id="sp_average_score" group="singleplayer">
+                      <p class="stat-p">sp_average_Score</p>
+                    </div>
+
+                    <div class="stat-card" id="mp_average_score" group="multiplayer">
+                      <p class="stat-p">mp_average_Score</p>
+                    </div>
+
+                    <div class="stat-card" id="eddies" group="account">
+                      <p class="stat-p">Eddies</p>
+                    </div>
+
+                    <div class="stat-card" id="tier" group="account">
+                      <p class="stat-p">Account Tier: <span id="tier-value"></span></p>
+                    </div>
+
+                    <div class="stat-card" id="account_Creation_Date" group="account">
+                      <p class="stat-p">account_Creation_Date</p>
+                    </div>
+
+                    <div class="stat-card" id="last_Login_Date" group="account">
+                      <p class="stat-p">last_Login_Date</p>
+                    </div>
+
+                    <div class="stat-card" id="friendship-window" group="friends">
+                      <div class="friendship-launcher d-flex flex-sm-row flex-column">
+                        <p class="stat-p friendship-title">Friendship Terminal</p>
+                        <button type="button" id="friendship-open-btn" class="friendship-open-btn">Open Friends <span
+                            id="challenge-badge" class="challenge-badge" hidden></span></button>
                       </div>
-                      <div class="tab" id="singleplayer-tab">
-                        <p>Single Player</p>
+                      <div id="friendship-toast" class="friendship-toast" hidden>
+                        <div class="friendship-toast-head">
+                          <div class="friendship-head-copy">
+                            <p class="stat-p friendship-title">Friendship Terminal</p>
+                            <span class="friendship-badge" id="friendship-summary">0 Friends</span>
+                          </div>
+                          <button type="button" id="friendship-close-btn" class="friendship-close-btn"
+                            aria-label="Close friendship toast">X</button>
+                        </div>
+
+                        <div class="friendship-grid">
+                          <section class="friendship-panel friendship-search-panel">
+                            <p class="friendship-label">Send Request</p>
+                            <div class="friendship-searchbar">
+                              <input type="text" id="friend-search-input" placeholder="Enter username..."
+                                autocomplete="off">
+                              <button type="button" id="friend-search-clear">Send</button>
+                            </div>
+                            <div id="friend-search-results" class="friendship-list"></div>
+                          </section>
+
+                          <section class="friendship-panel">
+                            <p class="friendship-label">Incoming Requests</p>
+                            <div id="friend-incoming-list" class="friendship-list"></div>
+                          </section>
+
+                          <section class="friendship-panel">
+                            <p class="friendship-label">Outgoing Requests</p>
+                            <div id="friend-outgoing-list" class="friendship-list"></div>
+                          </section>
+
+                          <section class="friendship-panel">
+                            <p class="friendship-label">Challenges Received</p>
+                            <div id="challenge-incoming-list" class="friendship-list"></div>
+                          </section>
+
+                          <section class="friendship-panel">
+                            <p class="friendship-label">Challenges Sent</p>
+                            <div id="challenge-outgoing-list" class="friendship-list"></div>
+                          </section>
+
+                          <section class="friendship-panel friendship-wide">
+                            <p class="friendship-label">Friends</p>
+                            <div id="friend-list" class="friendship-list"></div>
+                          </section>
+                        </div>
                       </div>
-                      <div class="tab" id="multiplayer-tab">
-                        <p>Multi Player</p>
-                      </div>
-                      <div class="tab" id="friends-tab">
-                        <p>Friends</p>
-                      </div>
+                    </div>
+
+
+                  </div>
+                  <div id='tab-list'
+                    class="col-12 col-lg-3  d-flex flex-row flex-lg-column justify-content-center container-lg order-lg-last order-first mb-3 mb-lg-0 text-wrap text-lg-nowrap">
+                    <div class="tab" id="account-tab">
+                      <p>Account</p>
+                    </div>
+                    <div class="tab" id="singleplayer-tab">
+                      <p>Single Player</p>
+                    </div>
+                    <div class="tab" id="multiplayer-tab">
+                      <p>Multi Player</p>
+                    </div>
+                    <div class="tab" id="friends-tab">
+                      <p>Friends</p>
                     </div>
                   </div>
                 </div>
@@ -173,20 +187,22 @@
         </div>
       </div>
     </div>
-  </body>
-  <script>
-    var fsBtn = document.getElementById('fsToggle');
-    if (fsBtn) {
-      fsBtn.addEventListener('click', function () {
-        if (!document.fullscreenElement) {
-          document.documentElement.requestFullscreen().catch(function () { });
-        } else {
-          document.exitFullscreen().catch(function () { });
-        }
-      });
+  </div>
+</body>
+<script>
+  var fsBtn = document.getElementById('fsToggle');
+  if (fsBtn) {
+    fsBtn.addEventListener('click', function () {
+      if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(function () { });
+      } else {
+        document.exitFullscreen().catch(function () { });
+      }
+    });
 
-    }
+  }
 
-  </script>
-  <script src="/auth/profile/profile.js"></script>
-  </html>
+</script>
+<script src="/auth/profile/profile.js"></script>
+
+</html>

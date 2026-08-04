@@ -304,6 +304,7 @@ class Matchmaker {
 
   createMatch(playerA, playerB) {
     const match = new Match(playerA, playerB, this.selectedTimeFrame);
+    console.log(`Match created [${match.id}]: ${playerA.socket.playerName} vs ${playerB.socket.playerName}`);
 
     for (const player of match.players) {
       const opponent = match.getOpponent(player);
@@ -332,6 +333,73 @@ setInterval(() => {
     mm.pulse();
   }
 }, 2000);
+
+// ── Direct-challenge match handling ────────────────────────────────────────
+const pendingDirectMatches = new Map();
+// Map: matchUUID → { playerA_UUID, playerB_UUID, playerA: Player|null, playerB: Player|null, timeout: NodeJS.Timeout|null }
+const DIRECT_MATCH_TIMEOUT_MS = 30_000;
+const DIRECT_MATCH_TIMEFRAME  = 60; // direct matches always use 60 s
+
+async function handleDirectMatch(socket, player_obj, matchUUID) {
+  const matchRecord = await SQL_Manager_Instance.getDirectMatch(matchUUID);
+  if (!matchRecord) {
+    socket.emit('direct_match_error', { message: 'Match not found or already started.' });
+    return false;
+  }
+  if (matchRecord.playerA_UUID !== socket.UUID && matchRecord.playerB_UUID !== socket.UUID) {
+    socket.emit('direct_match_error', { message: 'You are not part of this match.' });
+    return false;
+  }
+
+  const mySlot    = matchRecord.playerA_UUID === socket.UUID ? 'playerA' : 'playerB';
+  const otherSlot = mySlot === 'playerA' ? 'playerB' : 'playerA';
+
+  let slot = pendingDirectMatches.get(matchUUID);
+  if (!slot) {
+    slot = { playerA_UUID: matchRecord.playerA_UUID, playerB_UUID: matchRecord.playerB_UUID, playerA: null, playerB: null, timeout: null };
+    pendingDirectMatches.set(matchUUID, slot);
+  }
+
+  // Evict any stale socket in our slot (e.g. reconnect)
+  if (slot[mySlot]) slot[mySlot].socket.emit('direct_match_error', { message: 'Another session connected for this slot.' });
+  slot[mySlot] = player_obj;
+
+  if (slot[otherSlot]) {
+    // Both present — create match immediately
+    clearTimeout(slot.timeout);
+    pendingDirectMatches.delete(matchUUID);
+    await SQL_Manager_Instance.deleteDirectMatch(matchUUID);
+    slot.playerA.selectedTimeFrame = DIRECT_MATCH_TIMEFRAME;
+    slot.playerB.selectedTimeFrame = DIRECT_MATCH_TIMEFRAME;
+    getMatchmaker(DIRECT_MATCH_TIMEFRAME).createMatch(slot.playerA, slot.playerB);
+  } else {
+    // First to arrive — wait for opponent
+    socket.emit('direct_match_waiting', { message: 'Waiting for opponent to connect...' });
+
+    slot.timeout = setTimeout(async () => {
+      const s = pendingDirectMatches.get(matchUUID);
+      if (!s) return;
+      pendingDirectMatches.delete(matchUUID);
+      await SQL_Manager_Instance.deleteDirectMatch(matchUUID);
+      const present = s.playerA || s.playerB;
+      if (present) present.socket.emit('direct_match_timeout', { message: 'Opponent did not connect in time.' });
+    }, DIRECT_MATCH_TIMEOUT_MS);
+
+    // Clean up pending slot on early disconnect
+    socket.once('disconnect', () => {
+      const s = pendingDirectMatches.get(matchUUID);
+      if (!s) return;
+      s[mySlot] = null;
+      if (!s.playerA && !s.playerB) {
+        clearTimeout(s.timeout);
+        pendingDirectMatches.delete(matchUUID);
+        SQL_Manager_Instance.deleteDirectMatch(matchUUID);
+      }
+    });
+  }
+  return true;
+}
+// ──────────────────────────────────────────────────────────────────────────
 
 // per-match game loop — registered once a Match exists for a player
 
@@ -562,10 +630,12 @@ io.use(async (socket, next) => {
 // connection / auth / matchmaking entry point
 
 io.on('connection', async (socket) => {
+  console.log('A user connected to the multiplayer server.');
 
   const sessionCookie = SQL_Manager_Instance.auth.getSessionTokenFromRequest(socket.handshake);
   socket.guestMode = !sessionCookie;
   socket.UUID = socket.guestMode ? null : await SQL_Manager_Instance.sessionTokenToUUID(sessionCookie);
+  console.log('Socket UUID:', socket.UUID);
 
   const fetched_user_data = socket.UUID ? await SQL_Manager_Instance.getUserByUUID(socket.UUID) : null;
   const mp_games_Played = fetched_user_data ? (fetched_user_data.mp_games_Played || 0) : 0;
@@ -579,6 +649,7 @@ io.on('connection', async (socket) => {
   player_obj.avgScore = avgScore;
 
   socket.on('disconnect', () => {
+    console.log('A user disconnected from the multiplayer server.');
 
     const mm = matchmakers.get(player_obj.selectedTimeFrame);
     if (mm) mm.removePlayer(player_obj);
@@ -652,6 +723,13 @@ io.on('connection', async (socket) => {
     }
   });
 
+  // Direct-match entry: if the socket connected with a matchUUID query param, bypass the queue.
+  const directMatchUUID = socket.handshake.query?.matchUUID || null;
+  if (directMatchUUID && socket.UUID) {
+    const handled = await handleDirectMatch(socket, player_obj, directMatchUUID);
+    if (handled) return; // skip normal matchmaking handlers
+  }
+
   // Cancel matchmaking: remove from queue and allow the player to re-queue.
   socket.on('cancel_matchmaking', () => {
     const mm = matchmakers.get(player_obj.selectedTimeFrame);
@@ -662,6 +740,7 @@ io.on('connection', async (socket) => {
 
   // Use .on (not .once) so the player can re-queue after cancelling.
   socket.on('matchmake', (data) => {
+    console.log('Matchmaking request received:', data);
 
     if (player_obj.currentMatch) return; // already in an active match
 

@@ -37,11 +37,14 @@ function openDb() {
 }
 
 let db = openDb();
+let hasBootstrapped = false;
 
 // call this once, right after the first successful sync
 function applyPragmas() {
+    if (hasBootstrapped) return;
     db.pragma('journal_mode = WAL');
     db.pragma('foreign_keys = ON');
+    hasBootstrapped = true;
 }
 
 const STREAM_ERROR = /stream not found|STREAM_EXPIRED|stream has expired|HRANA_CLOSED/i;
@@ -181,11 +184,39 @@ function initializeBannedTable() {
     `);
 }
 
+function initializeChallengesTable() {
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS challenges (
+            challenger_UUID TEXT NOT NULL,
+            challengee_UUID TEXT NOT NULL,
+            created_at      TEXT DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (challenger_UUID, challengee_UUID),
+            FOREIGN KEY (challenger_UUID) REFERENCES users(account_UUID) ON DELETE CASCADE,
+            FOREIGN KEY (challengee_UUID) REFERENCES users(account_UUID) ON DELETE CASCADE
+        )
+    `);
+}
+
+function initializeDirectMatchesTable() {
+    db.exec(`
+        CREATE TABLE IF NOT EXISTS direct_matches (
+            match_UUID   TEXT PRIMARY KEY,
+            playerA_UUID TEXT NOT NULL,
+            playerB_UUID TEXT NOT NULL,
+            created_at   TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (playerA_UUID) REFERENCES users(account_UUID) ON DELETE CASCADE,
+            FOREIGN KEY (playerB_UUID) REFERENCES users(account_UUID) ON DELETE CASCADE
+        )
+    `);
+}
+
 function initializeAllTables() {
     initializeUserTable();
     initializeSessionsTable();
     initializeFriendsTable();
     initializeBannedTable();
+    initializeChallengesTable();
+    initializeDirectMatchesTable();
 }
 
 //reads sectionn
@@ -560,6 +591,84 @@ const updateUserSettings = protected_sql((UUID, data) => {
     return true;
 });
 
+// ── Direct-challenge system ────────────────────────────────────────────────
+
+const sendChallenge = protected_sql((challengerUUID, challengeeUUID) => {
+    if (challengerUUID === challengeeUUID) throw new Error('Cannot challenge yourself');
+
+    const existingMatch = strip(db.prepare(`
+        SELECT match_UUID FROM direct_matches
+        WHERE (playerA_UUID = ? AND playerB_UUID = ?) OR (playerA_UUID = ? AND playerB_UUID = ?)
+    `).get(challengerUUID, challengeeUUID, challengeeUUID, challengerUUID));
+    if (existingMatch) return { matched: true, matchUUID: existingMatch.match_UUID };
+
+    const reverse = strip(db.prepare(`
+        SELECT 1 FROM challenges WHERE challenger_UUID = ? AND challengee_UUID = ?
+    `).get(challengeeUUID, challengerUUID));
+    if (reverse) {
+        const matchUUID = randomUUID();
+        db.prepare(`
+            DELETE FROM challenges
+            WHERE (challenger_UUID = ? AND challengee_UUID = ?)
+               OR (challenger_UUID = ? AND challengee_UUID = ?)
+        `).run(challengerUUID, challengeeUUID, challengeeUUID, challengerUUID);
+        db.prepare(`
+            INSERT INTO direct_matches (match_UUID, playerA_UUID, playerB_UUID) VALUES (?, ?, ?)
+        `).run(matchUUID, challengerUUID, challengeeUUID);
+        return { matched: true, matchUUID };
+    }
+
+    const existing = strip(db.prepare(`
+        SELECT 1 FROM challenges WHERE challenger_UUID = ? AND challengee_UUID = ?
+    `).get(challengerUUID, challengeeUUID));
+    if (existing) return { matched: false, alreadySent: true };
+
+    db.prepare(`INSERT INTO challenges (challenger_UUID, challengee_UUID) VALUES (?, ?)`).run(challengerUUID, challengeeUUID);
+    return { matched: false };
+});
+
+const getChallenges = async (userUUID) => {
+    const incoming = stripAll(db.prepare(`
+        SELECT u.username FROM challenges c
+        JOIN users u ON u.account_UUID = c.challenger_UUID
+        WHERE c.challengee_UUID = ?
+    `).all(userUUID));
+
+    const outgoing = stripAll(db.prepare(`
+        SELECT u.username FROM challenges c
+        JOIN users u ON u.account_UUID = c.challengee_UUID
+        WHERE c.challenger_UUID = ?
+    `).all(userUUID));
+
+    const activeMatch = strip(db.prepare(`
+        SELECT dm.match_UUID,
+               CASE WHEN dm.playerA_UUID = ? THEN u2.username ELSE u1.username END AS opponentUsername
+        FROM direct_matches dm
+        JOIN users u1 ON u1.account_UUID = dm.playerA_UUID
+        JOIN users u2 ON u2.account_UUID = dm.playerB_UUID
+        WHERE dm.playerA_UUID = ? OR dm.playerB_UUID = ?
+    `).get(userUUID, userUUID, userUUID));
+
+    return {
+        incoming: incoming.map(r => ({ username: r.username })),
+        outgoing: outgoing.map(r => ({ username: r.username })),
+        activeMatch: activeMatch ? { matchUUID: activeMatch.match_UUID, opponent: activeMatch.opponentUsername } : null
+    };
+};
+
+const cancelChallenge = (challengerUUID, challengeeUUID) => {
+    const result = db.prepare(`DELETE FROM challenges WHERE challenger_UUID = ? AND challengee_UUID = ?`).run(challengerUUID, challengeeUUID);
+    return result.changes > 0;
+};
+
+const getDirectMatch = (matchUUID) =>
+    strip(db.prepare(`SELECT * FROM direct_matches WHERE match_UUID = ?`).get(matchUUID));
+
+const deleteDirectMatch = (matchUUID) =>
+    db.prepare(`DELETE FROM direct_matches WHERE match_UUID = ?`).run(matchUUID);
+
+// ──────────────────────────────────────────────────────────────────────────
+
 
 module.exports = {
     get db() { return db; },              // persistent Database instance  — used by hard-db.cjs (forcePush / hardReset)
@@ -611,7 +720,14 @@ module.exports = {
     checkUsername,
     checkPassword,
     getUserSettings,
-    updateUserSettings
+    updateUserSettings,
+    initializeChallengesTable,
+    initializeDirectMatchesTable,
+    sendChallenge,
+    getChallenges,
+    cancelChallenge,
+    getDirectMatch,
+    deleteDirectMatch,
 };
 
 

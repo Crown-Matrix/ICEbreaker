@@ -14,7 +14,7 @@ db.pragma('foreign_keys = ON');
 
 
 function hashPassword(password, override_safety = false) {
-    if (!(checkPassword(password) || override_safety)) {
+    if (!(checkPassword(password) || ovverride_safety)) {
         throw new Error('Invalid password')
     }
     const SALT_ROUNDS = 12;
@@ -123,11 +123,39 @@ function initializeBannedTable() {
 }
 
 
+function initializeChallengesTable() {
+    db.prepare(`
+        CREATE TABLE IF NOT EXISTS challenges (
+            challenger_UUID TEXT NOT NULL,
+            challengee_UUID TEXT NOT NULL,
+            created_at      TEXT DEFAULT CURRENT_TIMESTAMP,
+            PRIMARY KEY (challenger_UUID, challengee_UUID),
+            FOREIGN KEY (challenger_UUID) REFERENCES users(account_UUID) ON DELETE CASCADE,
+            FOREIGN KEY (challengee_UUID) REFERENCES users(account_UUID) ON DELETE CASCADE
+        )
+    `).run();
+}
+
+function initializeDirectMatchesTable() {
+    db.prepare(`
+        CREATE TABLE IF NOT EXISTS direct_matches (
+            match_UUID   TEXT PRIMARY KEY,
+            playerA_UUID TEXT NOT NULL,
+            playerB_UUID TEXT NOT NULL,
+            created_at   TEXT DEFAULT CURRENT_TIMESTAMP,
+            FOREIGN KEY (playerA_UUID) REFERENCES users(account_UUID) ON DELETE CASCADE,
+            FOREIGN KEY (playerB_UUID) REFERENCES users(account_UUID) ON DELETE CASCADE
+        )
+    `).run();
+}
+
 function initializeAllTables() { //do not change this function name, unless u feel like updating it in the shell scripts as well
     initializeUserTable();
     initializeSessionsTable();
     initializeFriendsTable();
     initializeBannedTable();
+    initializeChallengesTable();
+    initializeDirectMatchesTable();
 }
 
 
@@ -403,15 +431,13 @@ const friendsCount = (userId) => db.prepare(`
 
 const wipeDatabase = () => {
     db.pragma('foreign_keys = OFF');
-    db.transaction(() => {
-        db.prepare('DROP TABLE IF EXISTS friends').run();
-        db.prepare('DROP TABLE IF EXISTS sessions').run();
-        db.prepare('DROP TABLE IF EXISTS banned').run();
-        db.prepare('DROP TABLE IF EXISTS users').run();
-    })();
+    db.prepare('DROP TABLE IF EXISTS friends').run();
+    db.prepare('DROP TABLE IF EXISTS users').run();
     db.pragma('foreign_keys = ON');
-    db.pragma('journal_mode = WAL');
-    initializeAllTables();
+    initializeUserTable();
+    initializeFriendsTable();
+    initializeSessionsDatabase();
+    initializeBannedTable();
     console.log('Database wiped and re-initialized');
 }
 
@@ -713,6 +739,87 @@ const updateUserSettings = protected_sql((UUID, data) => {
 //available data: username || UUID, score, game_finished(implied true), can also calculate eddie from score
 
 
+// ── Direct-challenge system ────────────────────────────────────────────────
+
+const sendChallenge = protected_sql((challengerUUID, challengeeUUID) => {
+    if (challengerUUID === challengeeUUID) throw new Error('Cannot challenge yourself');
+
+    // If a confirmed match already exists for this pair, return it
+    const existingMatch = db.prepare(`
+        SELECT match_UUID FROM direct_matches
+        WHERE (playerA_UUID = ? AND playerB_UUID = ?) OR (playerA_UUID = ? AND playerB_UUID = ?)
+    `).get(challengerUUID, challengeeUUID, challengeeUUID, challengerUUID);
+    if (existingMatch) return { matched: true, matchUUID: existingMatch.match_UUID };
+
+    // If the other side already challenged us → mutual, create match
+    const reverse = db.prepare(`
+        SELECT 1 FROM challenges WHERE challenger_UUID = ? AND challengee_UUID = ?
+    `).get(challengeeUUID, challengerUUID);
+    if (reverse) {
+        const matchUUID = randomUUID();
+        db.prepare(`
+            DELETE FROM challenges
+            WHERE (challenger_UUID = ? AND challengee_UUID = ?)
+               OR (challenger_UUID = ? AND challengee_UUID = ?)
+        `).run(challengerUUID, challengeeUUID, challengeeUUID, challengerUUID);
+        db.prepare(`
+            INSERT INTO direct_matches (match_UUID, playerA_UUID, playerB_UUID) VALUES (?, ?, ?)
+        `).run(matchUUID, challengerUUID, challengeeUUID);
+        return { matched: true, matchUUID };
+    }
+
+    // Already sent?
+    const existing = db.prepare(`
+        SELECT 1 FROM challenges WHERE challenger_UUID = ? AND challengee_UUID = ?
+    `).get(challengerUUID, challengeeUUID);
+    if (existing) return { matched: false, alreadySent: true };
+
+    db.prepare(`INSERT INTO challenges (challenger_UUID, challengee_UUID) VALUES (?, ?)`).run(challengerUUID, challengeeUUID);
+    return { matched: false };
+});
+
+const getChallenges = (userUUID) => {
+    const incoming = db.prepare(`
+        SELECT u.username FROM challenges c
+        JOIN users u ON u.account_UUID = c.challenger_UUID
+        WHERE c.challengee_UUID = ?
+    `).all(userUUID);
+
+    const outgoing = db.prepare(`
+        SELECT u.username FROM challenges c
+        JOIN users u ON u.account_UUID = c.challengee_UUID
+        WHERE c.challenger_UUID = ?
+    `).all(userUUID);
+
+    const activeMatch = db.prepare(`
+        SELECT dm.match_UUID,
+               CASE WHEN dm.playerA_UUID = ? THEN u2.username ELSE u1.username END AS opponentUsername
+        FROM direct_matches dm
+        JOIN users u1 ON u1.account_UUID = dm.playerA_UUID
+        JOIN users u2 ON u2.account_UUID = dm.playerB_UUID
+        WHERE dm.playerA_UUID = ? OR dm.playerB_UUID = ?
+    `).get(userUUID, userUUID, userUUID);
+
+    return {
+        incoming: incoming.map(r => ({ username: r.username })),
+        outgoing: outgoing.map(r => ({ username: r.username })),
+        activeMatch: activeMatch ? { matchUUID: activeMatch.match_UUID, opponent: activeMatch.opponentUsername } : null
+    };
+};
+
+const cancelChallenge = (challengerUUID, challengeeUUID) => {
+    const result = db.prepare(`DELETE FROM challenges WHERE challenger_UUID = ? AND challengee_UUID = ?`).run(challengerUUID, challengeeUUID);
+    return result.changes > 0;
+};
+
+const getDirectMatch = (matchUUID) =>
+    db.prepare(`SELECT * FROM direct_matches WHERE match_UUID = ?`).get(matchUUID);
+
+const deleteDirectMatch = (matchUUID) =>
+    db.prepare(`DELETE FROM direct_matches WHERE match_UUID = ?`).run(matchUUID);
+
+// ──────────────────────────────────────────────────────────────────────────
+
 module.exports = {
     sql,
     db,
@@ -762,4 +869,11 @@ module.exports = {
     checkPassword,
     getUserSettings,
     updateUserSettings,
+    initializeChallengesTable,
+    initializeDirectMatchesTable,
+    sendChallenge,
+    getChallenges,
+    cancelChallenge,
+    getDirectMatch,
+    deleteDirectMatch,
 }

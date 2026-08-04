@@ -190,8 +190,8 @@ const hardDB = require(join(__dirname, './hard-db.cjs'));
 
 if (SQL_TYPE === 'turso') {
   console.log('Using Turso database for SQL operations.');
-
-
+  
+  
   if (process.env.LAST_SQL_MODE === 'false') { //undefined is intentionally grouped with true, and will not trigger this sync up, as that means there are no local changes to sync up yet
     console.log('Last SQL mode was not Turso, performing initial sync...');
     hardDB.runResetWal(); //reset WAL before force push, to avoid "database is locked" errors
@@ -643,8 +643,58 @@ app.post('/profile/api/friends/remove', friendLimiters, async (req, res) => {
   }
 });
 
+// ── Direct-challenge routes ────────────────────────────────────────────────
 
+// GET /profile/api/challenges — fetch caller's challenge state
+app.get('/profile/api/challenges', friendLimiters, async (req, res) => {
+  try {
+    const me = await resolveFriendshipSession(req, res);
+    if (!me) return;
+    const state = await SQL_Manager_Instance.getChallenges(me.account_UUID);
+    return res.status(200).json(state);
+  } catch (err) {
+    console.error('GET /profile/api/challenges error:', err);
+    return res.status(500).json({ error: 'Server error.' });
+  }
+});
 
+// POST /profile/api/challenge/send — send a challenge (mutual → creates match)
+app.post('/profile/api/challenge/send', friendLimiters, async (req, res) => {
+  try {
+    const me = await resolveFriendshipSession(req, res);
+    if (!me) return;
+    const targetUsername = req.body?.username;
+    if (typeof targetUsername !== 'string') return res.status(400).json({ error: 'Invalid username.' });
+    const target = await SQL_Manager_Instance.getUserByUsername(targetUsername.trim());
+    if (!target) return res.status(404).json({ error: 'User not found.' });
+    if (target.account_UUID === me.account_UUID) return res.status(400).json({ error: 'Cannot challenge yourself.' });
+    const result = await SQL_Manager_Instance.sendChallenge(me.account_UUID, target.account_UUID);
+    if (result.matched) return res.status(200).json({ matched: true, matchUUID: result.matchUUID, message: 'Match created!' });
+    return res.status(200).json({ matched: false, message: result.alreadySent ? 'Challenge already sent.' : 'Challenge sent.' });
+  } catch (err) {
+    console.error('POST /profile/api/challenge/send error:', err);
+    return res.status(500).json({ error: 'Server error.' });
+  }
+});
+
+// POST /profile/api/challenge/cancel — cancel an outgoing challenge
+app.post('/profile/api/challenge/cancel', friendLimiters, async (req, res) => {
+  try {
+    const me = await resolveFriendshipSession(req, res);
+    if (!me) return;
+    const targetUsername = req.body?.username;
+    if (typeof targetUsername !== 'string') return res.status(400).json({ error: 'Invalid username.' });
+    const target = await SQL_Manager_Instance.getUserByUsername(targetUsername.trim());
+    if (!target) return res.status(404).json({ error: 'User not found.' });
+    const cancelled = await SQL_Manager_Instance.cancelChallenge(me.account_UUID, target.account_UUID);
+    return res.status(200).json({ success: cancelled, message: cancelled ? 'Challenge cancelled.' : 'No challenge found.' });
+  } catch (err) {
+    console.error('POST /profile/api/challenge/cancel error:', err);
+    return res.status(500).json({ error: 'Server error.' });
+  }
+});
+
+// ──────────────────────────────────────────────────────────────────────────
 
 app.post('/log-out', async (req, res) => {
   const sessionToken = SQL_Manager_Instance.auth.getSessionTokenFromRequest(req);
@@ -709,11 +759,11 @@ app.post('/sign-up', async (req, res) => {
       return res.status(400).json({ message: newUUID.ErrorMessage });
     }
 
-    SQL_Manager_Instance.auth.sendSessionTokenAsCookie(res, await SQL_Manager_Instance.createSessionTokenForUUID(newUUID));
-    return res.status(201).json({
+    SQL_Manager_Instance.auth.sendStaticUserDataAsHeader(res, await SQL_Manager_Instance.getStaticUserDataByUUID(newUUID));
+    return res.status(201).cookie('sessionToken', await SQL_Manager_Instance.createSessionTokenForUUID(newUUID)).json({
       message: 'User created successfully.',
       UUID: newUUID,
-    });
+    })
   } else {
     return res.status(409).json({ message: 'username already taken!' })
   }

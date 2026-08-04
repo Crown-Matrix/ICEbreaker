@@ -1469,8 +1469,12 @@ document.addEventListener('keydown', (event) => {
 });
 
 //web socket
+const directMatchUUID = sessionStorage.getItem('directMatchUUID') || null;
+if (directMatchUUID) sessionStorage.removeItem('directMatchUUID');
+
 const socket = io(window.location.origin, {
-    path: "/multiPlayer/socket"
+    path: "/multiPlayer/socket",
+    ...(directMatchUUID ? { query: { matchUUID: directMatchUUID } } : {})
 }); // Connecting to the Socket.IO server at the path
 
 socket.on('connect', () => {
@@ -1582,7 +1586,33 @@ document.getElementById('icb-pre-start-btn').addEventListener('click', () => {
     socket.emit('matchmake', { selectedTimeFrame: frontEndHandler.selectedTimeFrame });
 });
 
-
+const testing_exports = {
+    frontEndHandler,
+    resizeMatrixCol,
+    highlightRow,
+    highlightCol,
+    addCellClickListeners,
+    addCellHighlightListeners,
+    removeSelectableHighlights,
+    removeAllCellHighlights,
+    checkForSolution,
+    checkForSolutions,
+    buildSequenceList,
+    highlightCounter,
+    buildSequenceLists,
+    highlightCardNodeIndex,
+    unhighlightCardNodeIndex,
+    hideNodesTillIndex,
+    decorateCurrentNodeAtIndex,
+    matchSequence,
+    sequenceProgressHandler,
+    showAllNodes,
+    socket,
+    resetClient,
+    unAnimateRoundEnd,
+    initTimer,
+};
+Object.assign(window, testing_exports);
 
 
 
@@ -1627,6 +1657,32 @@ socket.on('matchmake_cancelled', () => {
     const cancelBtn = document.getElementById('icb-cancel-matchmaking-btn');
     if (cancelBtn) cancelBtn.style.display = 'none';
 });
+
+// Direct-match events ─────────────────────────────────────────────────────
+socket.on('direct_match_waiting', () => {
+    document.getElementById('timeframe-buttons-div').style.cssText += 'display: none !important;';
+    const startBtn = document.getElementById('icb-pre-start-btn');
+    if (startBtn) startBtn.style.display = 'none';
+    const statusText = document.querySelector('.icb-pre__rule-text');
+    if (statusText) statusText.innerText = 'Opponent connecting... (30s)';
+});
+
+socket.on('direct_match_timeout', () => {
+    const statusText = document.querySelector('.icb-pre__rule-text');
+    if (statusText) statusText.innerText = 'Opponent did not connect in time.';
+    document.getElementById('timeframe-buttons-div').style.removeProperty('display');
+    const startBtn = document.getElementById('icb-pre-start-btn');
+    if (startBtn) startBtn.style.display = '';
+});
+
+socket.on('direct_match_error', (data) => {
+    const statusText = document.querySelector('.icb-pre__rule-text');
+    if (statusText) statusText.innerText = data?.message || 'Match error.';
+    document.getElementById('timeframe-buttons-div').style.removeProperty('display');
+    const startBtn = document.getElementById('icb-pre-start-btn');
+    if (startBtn) startBtn.style.display = '';
+});
+// ─────────────────────────────────────────────────────────────────────────
 
 socket.on('matchmake_found', (data) => {
     // always hide cancel button — match either found or failed, queue is gone either way
@@ -1944,7 +2000,3 @@ function editSetting(settingName, newValue = null, initial = false, persist = tr
         document.getElementById('settings-div').style.removeProperty('display');
     });
 })();
-
-document.getElementById('profile').addEventListener('click', () => {
-    window.location.href = '/profile';
-});

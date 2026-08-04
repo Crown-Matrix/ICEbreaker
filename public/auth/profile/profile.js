@@ -79,6 +79,8 @@ if (dom.systemStatus) dom.systemStatus.setAttribute('pending', '');
 if (username) document.title = `Profile - ${username}`;
 
 let friendshipState = loadFriendshipState();
+let challengeState = { incoming: [], outgoing: [], activeMatch: null };
+let challengePollInterval = null;
 
 init();
 
@@ -88,6 +90,7 @@ function init() {
     renderFriendshipSystem();
     updateProfileData();
     syncFriendshipsFromServer();
+    startChallengePoll();
 }
 
 async function syncFriendshipsFromServer() {
@@ -109,6 +112,89 @@ async function syncFriendshipsFromServer() {
         });
     } catch { /* silent — local state stays as-is */ }
 }
+
+// ── Direct-challenge system ───────────────────────────────────────────────
+
+function navigateToDirectMatch(matchUUID) {
+    sessionStorage.setItem('directMatchUUID', matchUUID);
+    window.location.href = '/multiPlayer/multiPlayerReference.html';
+}
+
+async function syncChallengesFromServer() {
+    try {
+        const res = await fetch('/profile/api/challenges');
+        if (!res.ok) return;
+        const data = await res.json();
+        challengeState = {
+            incoming:    data.incoming    || [],
+            outgoing:    data.outgoing    || [],
+            activeMatch: data.activeMatch || null
+        };
+        renderChallengeSystem();
+        updateChallengeBadge();
+        renderFriendshipSystem(); // refresh friend-list buttons to reflect challenge state
+        if (data.activeMatch) {
+            clearInterval(challengePollInterval);
+            navigateToDirectMatch(data.activeMatch.matchUUID);
+        }
+    } catch { /* silent */ }
+}
+
+function startChallengePoll() {
+    syncChallengesFromServer();
+    challengePollInterval = setInterval(syncChallengesFromServer, 4000);
+}
+
+function renderChallengeSystem() {
+    const incomingList = document.getElementById('challenge-incoming-list');
+    const outgoingList = document.getElementById('challenge-outgoing-list');
+
+    if (incomingList) {
+        if (!challengeState.incoming.length) {
+            incomingList.innerHTML = '<div class="friendship-empty">No incoming challenges.</div>';
+        } else {
+            incomingList.innerHTML = challengeState.incoming.map(c => `
+                <div class="friendship-entry">
+                    <div class="friendship-entry-main">
+                        <span class="friendship-name">${c.username}</span>
+                        <span class="friendship-meta">Challenged you</span>
+                    </div>
+                    <div class="friendship-actions">
+                        <button type="button" class="challenge-btn" data-friend-action="challenge" data-friend-name="${c.username}">⚡ Challenge Back</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+    }
+
+    if (outgoingList) {
+        if (!challengeState.outgoing.length) {
+            outgoingList.innerHTML = '<div class="friendship-empty">No outgoing challenges.</div>';
+        } else {
+            outgoingList.innerHTML = challengeState.outgoing.map(c => `
+                <div class="friendship-entry">
+                    <div class="friendship-entry-main">
+                        <span class="friendship-name">${c.username}</span>
+                        <span class="friendship-meta">Challenge sent</span>
+                    </div>
+                    <div class="friendship-actions">
+                        <button type="button" data-friend-action="cancel-challenge" data-friend-name="${c.username}">Cancel</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+    }
+}
+
+function updateChallengeBadge() {
+    const badge = document.getElementById('challenge-badge');
+    if (!badge) return;
+    const count = challengeState.incoming.length;
+    badge.textContent = count;
+    badge.hidden = count === 0;
+}
+
+// ─────────────────────────────────────────────────────────────────────────
 
 function setupTabs() {
     if (!dom.statFrame) return;
@@ -410,12 +496,22 @@ function getFriendActions(kind, name) {
         return [{ action: 'cancel', label: 'Cancel' }];
     }
     if (kind === 'friends') {
-        const confirm = isPendingRemoval(name);
-        return [{
+        const confirm    = isPendingRemoval(name);
+        const challenged = challengeState.outgoing.some(c => c.username === name);
+        const incoming   = challengeState.incoming.some(c => c.username === name);
+        const actions = [{
             action: 'remove',
             label: confirm ? 'Confirm?' : 'Remove',
             className: confirm ? 'friend-action-remove-confirm' : ''
         }];
+        // Don't show challenge button if they already challenged us (show "Challenge Back" in the Challenges panel instead)
+        if (!incoming) {
+            actions.push(challenged
+                ? { action: 'cancel-challenge', label: '✕ Challenge', className: 'challenge-btn-sent' }
+                : { action: 'challenge',        label: '⚡ Challenge', className: 'challenge-btn' }
+            );
+        }
+        return actions;
     }
     return [];
 }
@@ -445,6 +541,8 @@ function renderFriendshipSystem() {
     renderFriendshipList(dom.friendshipIncomingList, friendshipState.incoming, 'incoming', 'No incoming requests.');
     renderFriendshipList(dom.friendshipOutgoingList, friendshipState.outgoing, 'outgoing', 'No outgoing requests.');
     renderFriendshipList(dom.friendshipList, friendshipState.friends, 'friends', 'No friends yet.');
+    renderChallengeSystem();
+    updateChallengeBadge();
     renderRequestComposerStatus();
 }
 
@@ -589,6 +687,40 @@ async function handleFriendActionClick(event) {
             // First click — just mark as pending confirmation, no API call yet
             markFriendForRemoval(friendName);
         }
+        return;
+    }
+    if (action === 'challenge') {
+        try {
+            const res = await fetch('/profile/api/challenge/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: friendName })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                if (data.matched) {
+                    navigateToDirectMatch(data.matchUUID);
+                } else if (!data.alreadySent) {
+                    challengeState.outgoing.push({ username: friendName });
+                    renderFriendshipSystem();
+                }
+            }
+        } catch { /* network error */ }
+        return;
+    }
+    if (action === 'cancel-challenge') {
+        try {
+            const res = await fetch('/profile/api/challenge/cancel', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: friendName })
+            });
+            if (res.ok) {
+                challengeState.outgoing = challengeState.outgoing.filter(c => c.username !== friendName);
+                renderFriendshipSystem();
+            }
+        } catch { /* network error */ }
+        return;
     }
 }
 
@@ -682,4 +814,11 @@ document.addEventListener('profileDataUpdate', event => {
             dom.systemStatus.textContent = '● CONNECTION VERIFIED';
         }
     }, 350);
+});
+
+
+
+
+document.querySelector('.back-btn').addEventListener('click', () => {
+    window.location.href = '/';
 });
