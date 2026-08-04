@@ -1564,33 +1564,6 @@ document.getElementById('icb-pre-start-btn').addEventListener('click', () => {
     frontEndHandler.newRound();
 });
 
-const testing_exports = {
-    frontEndHandler,
-    resizeMatrixCol,
-    highlightRow,
-    highlightCol,
-    addCellClickListeners,
-    addCellHighlightListeners,
-    removeSelectableHighlights,
-    removeAllCellHighlights,
-    checkForSolution,
-    checkForSolutions,
-    buildSequenceList,
-    highlightCounter,
-    buildSequenceLists,
-    highlightCardNodeIndex,
-    unhighlightCardNodeIndex,
-    hideNodesTillIndex,
-    decorateCurrentNodeAtIndex,
-    matchSequence,
-    sequenceProgressHandler,
-    showAllNodes,
-    socket,
-    resetClient,
-    unAnimateRoundEnd,
-    initTimer,
-};
-Object.assign(window, testing_exports);
 
 
 
@@ -1801,3 +1774,8 @@ function editSetting(settingName, newValue = null, initial = false, persist = tr
         document.getElementById('settings-div').style.removeProperty('display');
     });
 })();
+
+
+document.getElementById('profile').addEventListener('click', () => {
+    window.location.href = '/profile';
+});
