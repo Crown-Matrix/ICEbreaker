@@ -158,7 +158,7 @@
     <!-- header -->
     <div class="d-flex align-items-center justify-content-between px-3 py-2 border-bottom cy-divider">
       <span class="ov-header">// Operative Authentication</span>
-      <button class="cy-close" onclick="window.location.href='/singlePlayer'">✕</button>
+      <button class="cy-close" onclick="window.location.href='/'">✕</button>
     </div>
 
     <!-- glitch -->
@@ -284,7 +284,7 @@ if (localStorage.getItem('x-userdata-username') != null) {
             localStorage.setItem(key, decodeURIComponent(value));
           }
         });
-        setTimeout(() => window.location.replace('/singlePlayer'), 1200);
+        setTimeout(() => window.location.replace('/'), 1200);
       } else {
         shakeCard();
         showToast(data.message || 'Authentication failed.', true);
@@ -301,7 +301,7 @@ if (localStorage.getItem('x-userdata-username') != null) {
   });
 
   guestBtn.addEventListener('click', () => {
-    window.location.replace('/singlePlayer');
+    window.location.replace('/');
   });
 
   // clear error state on type
