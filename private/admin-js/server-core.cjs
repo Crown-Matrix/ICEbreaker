@@ -673,7 +673,10 @@ app.post('/profile/api/challenge/send', friendLimiters, async (req, res) => {
     const target = await SQL_Manager_Instance.getUserByUsername(targetUsername.trim());
     if (!target) return res.status(404).json({ error: 'User not found.' });
     if (target.account_UUID === me.account_UUID) return res.status(400).json({ error: 'Cannot challenge yourself.' });
-    const result = await SQL_Manager_Instance.sendChallenge(me.account_UUID, target.account_UUID);
+    // timeframe is optional — when accepting a mutual challenge the server uses the stored challenger timeframe
+    const rawTimeframe = req.body?.timeframe;
+    const timeframe = [30, 45, 60].includes(Number(rawTimeframe)) ? Number(rawTimeframe) : 60;
+    const result = await SQL_Manager_Instance.sendChallenge(me.account_UUID, target.account_UUID, timeframe);
     if (result.matched) return res.status(200).json({ matched: true, matchUUID: result.matchUUID, message: 'Match created!' });
     return res.status(200).json({ matched: false, message: result.alreadySent ? 'Challenge already sent.' : 'Challenge sent.' });
   } catch (err) {

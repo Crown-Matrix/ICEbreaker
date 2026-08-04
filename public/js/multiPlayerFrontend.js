@@ -334,10 +334,12 @@ class multiPlayerFrontend {
     }
 
     async newRound() {
+
+        document.getElementById('pre-game-menu')?.remove(); //in case it didnt delete itself on first round start, this is a failsafe
         const firstRound = this.gameState === "init";
 
         if (firstRound) {
-            document.getElementById('pre-game-menu').style.display = 'none'
+            document.getElementById('pre-game-menu')?.remove()
         }
         this.updateBackendHandler(); // serve frontend handler
 
@@ -1471,8 +1473,12 @@ document.addEventListener('keydown', (event) => {
 });
 
 //web socket
+// For direct friend-challenge matches the UUID must be sent in the handshake so the
+// server can bypass the normal matchmaking queue and pair both players automatically.
+const _directMatchUUID = sessionStorage.getItem('directMatchUUID') || null;
 const socket = io(window.location.origin, {
-    path: "/multiPlayer/socket"
+    path: "/multiPlayer/socket",
+    query: _directMatchUUID ? { matchUUID: _directMatchUUID } : {}
 }); // Connecting to the Socket.IO server at the path
 
 socket.on('connect', () => {
@@ -1491,6 +1497,20 @@ socket.on('initialization_error', (data) => {
 
 socket.on('initialization_success', (data) => {
     console.log('Initialization success from server:', data.message);
+
+    const preGameMenu = document.getElementById('pre-game-menu');
+    if (preGameMenu) {//guard against losing connection during result page view
+        preGameMenu.style.display = 'block';
+    }
+
+    // Direct friend-challenge match: skip timeframe selection and wait for the server to
+    // pair both players automatically — no "Start Run" click needed.
+    if (_directMatchUUID) {
+        document.getElementById('timeframe-buttons-div').style.cssText += 'display: none !important;';
+        document.getElementById('icb-pre-start-btn').style.display = 'none';
+        document.querySelector('.icb-pre__rule-text').innerText = 'Connecting to opponent...';
+        return; // matchmake_found fires automatically once both sockets connect
+    }
 
     //check for a pre-existing defaultTimeFrame in SessionStorage:
     (function () {
@@ -1515,14 +1535,31 @@ socket.on('initialization_success', (data) => {
             }
         });
     })();
-    const preGameMenu = document.getElementById('pre-game-menu');
-    if (preGameMenu) {//guard against loosing connection during result page view
-        preGameMenu.style.display = 'block';
-    }
 });
 
 socket.once('isGuestStatus', (data) => {
     frontEndHandler.isGuest = data.isGuest;
+});
+
+// Direct friend-challenge match events
+socket.on('direct_match_waiting', () => {
+    document.querySelector('.icb-pre__rule-text').innerText = 'Waiting for opponent...';
+});
+
+socket.on('direct_match_error', (data) => {
+    // Clear the stale UUID so the player can use normal matchmaking
+    sessionStorage.removeItem('directMatchUUID');
+    document.querySelector('.icb-pre__rule-text').innerText = data?.message || 'Match not found.';
+    // Re-show the normal matchmaking UI so the player is not stuck
+    document.getElementById('timeframe-buttons-div').style.removeProperty('display');
+    document.getElementById('icb-pre-start-btn').style.removeProperty('display');
+});
+
+socket.on('direct_match_timeout', () => {
+    sessionStorage.removeItem('directMatchUUID');
+    document.querySelector('.icb-pre__rule-text').innerText = 'Opponent did not connect in time.';
+    document.getElementById('timeframe-buttons-div').style.removeProperty('display');
+    document.getElementById('icb-pre-start-btn').style.removeProperty('display');
 });
 
 socket.on('banned', (data) => {
@@ -1640,6 +1677,9 @@ socket.on('matchmake_found', (data) => {
     // always hide cancel button — match either found or failed, queue is gone either way
     const cancelBtn = document.getElementById('icb-cancel-matchmaking-btn');
     if (cancelBtn) cancelBtn.style.display = 'none';
+
+    // Clear any direct-match UUID so a subsequent visit to this page uses normal matchmaking
+    if (_directMatchUUID) sessionStorage.removeItem('directMatchUUID');
 
     if (data.success) {
         frontEndHandler.matchEndTime = data.matchEndTime;

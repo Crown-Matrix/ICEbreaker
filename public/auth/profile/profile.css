@@ -889,3 +889,25 @@
     color: rgba(255, 45, 120, 0.65) !important;
     background: rgba(255, 45, 120, 0.04) !important;
   }
+
+  /* Inline timeframe picker shown when challenging a friend */
+  .icb-challenge-tf-btn {
+    padding: 2px 8px !important;
+    font-size: 10px !important;
+    letter-spacing: 1px !important;
+    border-color: var(--cy-cyan, #00CCDD) !important;
+    color: var(--cy-cyan, #00CCDD) !important;
+    background: transparent !important;
+  }
+
+  .icb-challenge-tf-btn:hover,
+  .icb-challenge-tf-active {
+    background: rgba(0, 204, 221, 0.15) !important;
+    box-shadow: 0 0 5px rgba(0, 204, 221, 0.4);
+  }
+
+  .icb-challenge-tf-active {
+    border-color: var(--cy-cyan, #00CCDD) !important;
+    color: #fff !important;
+    background: rgba(0, 204, 221, 0.22) !important;
+  }

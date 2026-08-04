@@ -335,9 +335,8 @@ setInterval(() => {
 
 // ── Direct-challenge match handling ────────────────────────────────────────
 const pendingDirectMatches = new Map();
-// Map: matchUUID → { playerA_UUID, playerB_UUID, playerA: Player|null, playerB: Player|null, timeout: NodeJS.Timeout|null }
+// Map: matchUUID → { playerA_UUID, playerB_UUID, timeframe, playerA: Player|null, playerB: Player|null, timeout: NodeJS.Timeout|null }
 const DIRECT_MATCH_TIMEOUT_MS = 30_000;
-const DIRECT_MATCH_TIMEFRAME  = 60; // direct matches always use 60 s
 
 async function handleDirectMatch(socket, player_obj, matchUUID) {
   const matchRecord = await SQL_Manager_Instance.getDirectMatch(matchUUID);
@@ -350,12 +349,13 @@ async function handleDirectMatch(socket, player_obj, matchUUID) {
     return false;
   }
 
+  const matchTimeframe = [30, 45, 60].includes(matchRecord.timeframe) ? matchRecord.timeframe : 60;
   const mySlot    = matchRecord.playerA_UUID === socket.UUID ? 'playerA' : 'playerB';
   const otherSlot = mySlot === 'playerA' ? 'playerB' : 'playerA';
 
   let slot = pendingDirectMatches.get(matchUUID);
   if (!slot) {
-    slot = { playerA_UUID: matchRecord.playerA_UUID, playerB_UUID: matchRecord.playerB_UUID, playerA: null, playerB: null, timeout: null };
+    slot = { playerA_UUID: matchRecord.playerA_UUID, playerB_UUID: matchRecord.playerB_UUID, timeframe: matchTimeframe, playerA: null, playerB: null, timeout: null };
     pendingDirectMatches.set(matchUUID, slot);
   }
 
@@ -364,13 +364,13 @@ async function handleDirectMatch(socket, player_obj, matchUUID) {
   slot[mySlot] = player_obj;
 
   if (slot[otherSlot]) {
-    // Both present — create match immediately
+    // Both present — create match immediately using the challenger's stored timeframe
     clearTimeout(slot.timeout);
     pendingDirectMatches.delete(matchUUID);
     await SQL_Manager_Instance.deleteDirectMatch(matchUUID);
-    slot.playerA.selectedTimeFrame = DIRECT_MATCH_TIMEFRAME;
-    slot.playerB.selectedTimeFrame = DIRECT_MATCH_TIMEFRAME;
-    getMatchmaker(DIRECT_MATCH_TIMEFRAME).createMatch(slot.playerA, slot.playerB);
+    slot.playerA.selectedTimeFrame = slot.timeframe;
+    slot.playerB.selectedTimeFrame = slot.timeframe;
+    getMatchmaker(slot.timeframe).createMatch(slot.playerA, slot.playerB);
   } else {
     // First to arrive — wait for opponent
     socket.emit('direct_match_waiting', { message: 'Waiting for opponent to connect...' });

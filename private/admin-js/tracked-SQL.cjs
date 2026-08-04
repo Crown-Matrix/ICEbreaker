@@ -189,12 +189,15 @@ function initializeChallengesTable() {
         CREATE TABLE IF NOT EXISTS challenges (
             challenger_UUID TEXT NOT NULL,
             challengee_UUID TEXT NOT NULL,
+            timeframe       INTEGER NOT NULL DEFAULT 60,
             created_at      TEXT DEFAULT CURRENT_TIMESTAMP,
             PRIMARY KEY (challenger_UUID, challengee_UUID),
             FOREIGN KEY (challenger_UUID) REFERENCES users(account_UUID) ON DELETE CASCADE,
             FOREIGN KEY (challengee_UUID) REFERENCES users(account_UUID) ON DELETE CASCADE
         )
     `);
+    // Migration: add timeframe column to existing tables that predate this schema
+    try { db.exec(`ALTER TABLE challenges ADD COLUMN timeframe INTEGER NOT NULL DEFAULT 60`); } catch {}
 }
 
 function initializeDirectMatchesTable() {
@@ -203,11 +206,14 @@ function initializeDirectMatchesTable() {
             match_UUID   TEXT PRIMARY KEY,
             playerA_UUID TEXT NOT NULL,
             playerB_UUID TEXT NOT NULL,
+            timeframe    INTEGER NOT NULL DEFAULT 60,
             created_at   TEXT DEFAULT CURRENT_TIMESTAMP,
             FOREIGN KEY (playerA_UUID) REFERENCES users(account_UUID) ON DELETE CASCADE,
             FOREIGN KEY (playerB_UUID) REFERENCES users(account_UUID) ON DELETE CASCADE
         )
     `);
+    // Migration: add timeframe column to existing tables that predate this schema
+    try { db.exec(`ALTER TABLE direct_matches ADD COLUMN timeframe INTEGER NOT NULL DEFAULT 60`); } catch {}
 }
 
 function initializeAllTables() {
@@ -593,19 +599,24 @@ const updateUserSettings = protected_sql((UUID, data) => {
 
 // ── Direct-challenge system ────────────────────────────────────────────────
 
-const sendChallenge = protected_sql((challengerUUID, challengeeUUID) => {
+const VALID_TIMEFRAMES = new Set([30, 45, 60]);
+
+const sendChallenge = protected_sql((challengerUUID, challengeeUUID, timeframe = 60) => {
     if (challengerUUID === challengeeUUID) throw new Error('Cannot challenge yourself');
+    const safeTimeframe = VALID_TIMEFRAMES.has(timeframe) ? timeframe : 60;
 
     const existingMatch = strip(db.prepare(`
-        SELECT match_UUID FROM direct_matches
+        SELECT match_UUID, timeframe FROM direct_matches
         WHERE (playerA_UUID = ? AND playerB_UUID = ?) OR (playerA_UUID = ? AND playerB_UUID = ?)
     `).get(challengerUUID, challengeeUUID, challengeeUUID, challengerUUID));
     if (existingMatch) return { matched: true, matchUUID: existingMatch.match_UUID };
 
+    // If the other side already challenged us → mutual, create match using the original challenger's timeframe
     const reverse = strip(db.prepare(`
-        SELECT 1 FROM challenges WHERE challenger_UUID = ? AND challengee_UUID = ?
+        SELECT timeframe FROM challenges WHERE challenger_UUID = ? AND challengee_UUID = ?
     `).get(challengeeUUID, challengerUUID));
     if (reverse) {
+        const matchTimeframe = VALID_TIMEFRAMES.has(reverse.timeframe) ? reverse.timeframe : 60;
         const matchUUID = randomUUID();
         db.prepare(`
             DELETE FROM challenges
@@ -613,23 +624,27 @@ const sendChallenge = protected_sql((challengerUUID, challengeeUUID) => {
                OR (challenger_UUID = ? AND challengee_UUID = ?)
         `).run(challengerUUID, challengeeUUID, challengeeUUID, challengerUUID);
         db.prepare(`
-            INSERT INTO direct_matches (match_UUID, playerA_UUID, playerB_UUID) VALUES (?, ?, ?)
-        `).run(matchUUID, challengerUUID, challengeeUUID);
+            INSERT INTO direct_matches (match_UUID, playerA_UUID, playerB_UUID, timeframe) VALUES (?, ?, ?, ?)
+        `).run(matchUUID, challengerUUID, challengeeUUID, matchTimeframe);
         return { matched: true, matchUUID };
     }
 
+    // Already sent? Update timeframe in case they re-sent with a different one.
     const existing = strip(db.prepare(`
         SELECT 1 FROM challenges WHERE challenger_UUID = ? AND challengee_UUID = ?
     `).get(challengerUUID, challengeeUUID));
-    if (existing) return { matched: false, alreadySent: true };
+    if (existing) {
+        db.prepare(`UPDATE challenges SET timeframe = ? WHERE challenger_UUID = ? AND challengee_UUID = ?`).run(safeTimeframe, challengerUUID, challengeeUUID);
+        return { matched: false, alreadySent: true };
+    }
 
-    db.prepare(`INSERT INTO challenges (challenger_UUID, challengee_UUID) VALUES (?, ?)`).run(challengerUUID, challengeeUUID);
+    db.prepare(`INSERT INTO challenges (challenger_UUID, challengee_UUID, timeframe) VALUES (?, ?, ?)`).run(challengerUUID, challengeeUUID, safeTimeframe);
     return { matched: false };
 });
 
 const getChallenges = async (userUUID) => {
     const incoming = stripAll(db.prepare(`
-        SELECT u.username FROM challenges c
+        SELECT u.username, c.timeframe FROM challenges c
         JOIN users u ON u.account_UUID = c.challenger_UUID
         WHERE c.challengee_UUID = ?
     `).all(userUUID));
@@ -650,7 +665,7 @@ const getChallenges = async (userUUID) => {
     `).get(userUUID, userUUID, userUUID));
 
     return {
-        incoming: incoming.map(r => ({ username: r.username })),
+        incoming: incoming.map(r => ({ username: r.username, timeframe: r.timeframe || 60 })),
         outgoing: outgoing.map(r => ({ username: r.username })),
         activeMatch: activeMatch ? { matchUUID: activeMatch.match_UUID, opponent: activeMatch.opponentUsername } : null
     };
@@ -729,9 +744,3 @@ module.exports = {
     getDirectMatch,
     deleteDirectMatch,
 };
-
-
-
-
-
-

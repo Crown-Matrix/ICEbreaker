@@ -78,6 +78,10 @@ let friendshipState = loadFriendshipState();
 let challengeState = { incoming: [], outgoing: [], activeMatch: null };
 let challengePollInterval = null;
 
+// Tracks which friend is showing the inline timeframe picker before sending a challenge
+let pendingChallengeTarget = null;
+let pendingChallengeTimeframe = 60;
+
 init();
 
 function init() {
@@ -160,10 +164,10 @@ function renderChallengeSystem() {
                 <div class="friendship-entry">
                     <div class="friendship-entry-main">
                         <span class="friendship-name">${c.username}</span>
-                        <span class="friendship-meta">Challenged you</span>
+                        <span class="friendship-meta">Challenged you · <strong>${c.timeframe || 60}s</strong></span>
                     </div>
                     <div class="friendship-actions">
-                        <button type="button" class="challenge-btn" data-friend-action="challenge" data-friend-name="${c.username}">⚡ Challenge Back</button>
+                        <button type="button" class="challenge-btn" data-friend-action="accept-challenge" data-friend-name="${c.username}">⚡ Accept</button>
                     </div>
                 </div>
             `).join('');
@@ -462,6 +466,29 @@ function renderFriendshipList(container, items, kind, emptyLabel) {
     }
 
     container.innerHTML = items.map(item => {
+        // Friends list: show inline timeframe picker when this friend is the pending challenge target
+        if (kind === 'friends' && pendingChallengeTarget && item.name.toLowerCase() === pendingChallengeTarget.toLowerCase()) {
+            return `
+                <div class="friendship-entry">
+                    <div class="friendship-entry-main">
+                        <span class="friendship-name">${item.name}</span>
+                        <span class="friendship-meta">Select timeframe</span>
+                    </div>
+                    <div class="friendship-actions" style="flex-direction:column;align-items:flex-end;gap:4px;">
+                        <div style="display:flex;gap:4px;">
+                            <button type="button" class="icb-challenge-tf-btn${pendingChallengeTimeframe === 30 ? ' icb-challenge-tf-active' : ''}" data-friend-action="challenge-timeframe" data-friend-name="${item.name}" data-timeframe="30">30s</button>
+                            <button type="button" class="icb-challenge-tf-btn${pendingChallengeTimeframe === 45 ? ' icb-challenge-tf-active' : ''}" data-friend-action="challenge-timeframe" data-friend-name="${item.name}" data-timeframe="45">45s</button>
+                            <button type="button" class="icb-challenge-tf-btn${pendingChallengeTimeframe === 60 ? ' icb-challenge-tf-active' : ''}" data-friend-action="challenge-timeframe" data-friend-name="${item.name}" data-timeframe="60">60s</button>
+                        </div>
+                        <div style="display:flex;gap:4px;">
+                            <button type="button" class="challenge-btn" data-friend-action="challenge-confirm" data-friend-name="${item.name}">⚡ Send</button>
+                            <button type="button" data-friend-action="challenge-cancel" data-friend-name="${item.name}">✕</button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+
         const actions = getFriendActions(kind, item.name);
         return `
             <div class="friendship-entry">
@@ -686,6 +713,48 @@ async function handleFriendActionClick(event) {
         return;
     }
     if (action === 'challenge') {
+        // Show inline timeframe picker instead of immediately sending
+        pendingChallengeTarget = friendName;
+        pendingChallengeTimeframe = 60;
+        renderFriendshipSystem();
+        return;
+    }
+    if (action === 'challenge-timeframe') {
+        const tf = parseInt(button.getAttribute('data-timeframe'), 10);
+        if ([30, 45, 60].includes(tf)) pendingChallengeTimeframe = tf;
+        renderFriendshipSystem();
+        return;
+    }
+    if (action === 'challenge-cancel') {
+        pendingChallengeTarget = null;
+        pendingChallengeTimeframe = 60;
+        renderFriendshipSystem();
+        return;
+    }
+    if (action === 'challenge-confirm') {
+        const timeframe = pendingChallengeTimeframe || 60;
+        pendingChallengeTarget = null;
+        pendingChallengeTimeframe = 60;
+        try {
+            const res = await fetch('/profile/api/challenge/send', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ username: friendName, timeframe })
+            });
+            const data = await res.json();
+            if (res.ok) {
+                if (data.matched) {
+                    navigateToDirectMatch(data.matchUUID);
+                } else if (!data.alreadySent) {
+                    challengeState.outgoing.push({ username: friendName });
+                }
+            }
+        } catch { /* network error */ }
+        renderFriendshipSystem();
+        return;
+    }
+    if (action === 'accept-challenge') {
+        // Accept the incoming challenge — server uses the challenger's stored timeframe
         try {
             const res = await fetch('/profile/api/challenge/send', {
                 method: 'POST',

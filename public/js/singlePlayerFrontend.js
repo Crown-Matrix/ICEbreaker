@@ -302,9 +302,10 @@ class SinglePlayerFrontend {
 
     async newRound() {
         const firstRound = this.gameState === "init";
+        document.getElementById('pre-game-menu')?.remove(); //in case it didnt delete itself on first round start, this is a failsafe
 
         if (firstRound) {
-            document.getElementById('pre-game-menu').style.display = 'none'
+            document.getElementById('pre-game-menu').remove()
         }
 
         this.updateBackendHandler();
