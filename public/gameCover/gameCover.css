@@ -1,14 +1,14 @@
-/* ============================================================
+/* 
    GAME COVER — Cyberpunk main menu
    Bootstrap handles the responsive grid; this file owns visuals.
-   ============================================================ */
+    */
 @import url('/css/vibe-cyberpunk.css');
 
-/* ── Colour helpers ──────────────────────────────────────── */
+/* ── Colour helpers  */
 .accent-cyan    { color: var(--cy-cyan); }
 .accent-magenta { color: var(--cy-magenta); }
 
-/* ── Base ────────────────────────────────────────────────── */
+/*  Base */
 html {
   background: var(--cy-dark-1);
 }
@@ -20,9 +20,9 @@ body {
   background: var(--cy-dark-1);
 }
 
-/* ============================================================
+/* 
    BACKGROUND LAYERS
-   ============================================================ */
+    */
 
 .bg {
   position: fixed;
@@ -92,9 +92,9 @@ body {
   );
 }
 
-/* ============================================================
+/* 
    PANELS  (Bootstrap provides width/flex; we add padding + animation)
-   ============================================================ */
+    */
 
 .panel-left {
   padding: clamp(2rem, 5vh, 3.5rem) clamp(1.5rem, 7vw, 5rem);
@@ -121,9 +121,9 @@ body {
   to { opacity: 1; }
 }
 
-/* ============================================================
+/* 
    TITLE BLOCK
-   ============================================================ */
+    */
 
 .title-block {
   display: flex;
@@ -179,9 +179,9 @@ body {
   filter: drop-shadow(0 0 4px var(--cy-cyan));
 }
 
-/* ============================================================
+/* 
    NAVIGATION
-   ============================================================ */
+    */
 
 .main-nav {
   display: flex;
@@ -290,9 +290,9 @@ body {
   display: none;
 }
 
-/* ============================================================
+/* 
    FOOTER
-   ============================================================ */
+    */
 
 .panel-footer {
   display: flex;
@@ -326,9 +326,9 @@ body {
   opacity: 0.6;
 }
 
-/* ============================================================
+/* 
    RIGHT PANEL — RING DISPLAY
-   ============================================================ */
+    */
 
 .ring-wrap {
   position: relative;
@@ -433,9 +433,9 @@ body {
   opacity: 0.4;
 }
 
-/* ============================================================
+/* 
    RIGHT PANEL — STATUS READOUT
-   ============================================================ */
+    */
 
 .status-readout {
   display: flex;
@@ -479,9 +479,9 @@ body {
   99%           { opacity: 1; }
 }
 
-/* ============================================================
+/* 
    SETTINGS POPUP  (mirrors singlePlayer/multiPlayer)
-   ============================================================ */
+    */
 
 #settings-div {
   position: fixed;
@@ -600,9 +600,9 @@ body {
   #settings { height: 80%; }
 }
 
-/* ============================================================
+/* 
    MOBILE — left panel centred, readable at any phone size
-   ============================================================ */
+    */
 
 @media (max-width: 767.98px) {
   .panel-left {
@@ -621,9 +621,9 @@ body {
   }
 }
 
-/* ============================================================
+/* 
    LANDSCAPE PHONES — compact everything to fit one screen
-   ============================================================ */
+    */
 
 @media (max-height: 500px) and (orientation: landscape) {
   .panel-left {

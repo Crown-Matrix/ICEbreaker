@@ -3,10 +3,10 @@
  * Handles: matrix rain, ring tick marks, nav routing, account button logic
  */
 
-// ── Reveal body once fonts/styles are ready ───────────────────────────────────
+// reveal body once fonts/styles are ready 
 document.body.style.visibility = 'visible';
 
-// ── Custom cursor (computer only — matches singlePlayer/multiPlayer) ──────────
+// Custom cursor (computer only — matches singlePlayer/multiPlayer) 
 (function initCursor() {
   function attachImageCursor(imgSrc, size = 32) {
     const cursor = document.createElement('img');
@@ -51,7 +51,7 @@ document.body.style.visibility = 'visible';
   }
 })();
 
-// ── Matrix rain ───────────────────────────────────────────────────────────────
+// Matrix rain 
 (function initMatrixRain() {
   const canvas = document.getElementById('matrix-rain');
   if (!canvas) return;
@@ -115,7 +115,7 @@ document.body.style.visibility = 'visible';
   requestAnimationFrame(draw);
 })();
 
-// ── Ring tick marks (generated for precision) ─────────────────────────────────
+// ── Ring tick marks (generated for precision) ───
 (function buildRingTicks() {
   const container = document.getElementById('ring-ticks');
   if (!container) return;
@@ -128,7 +128,7 @@ document.body.style.visibility = 'visible';
   }
 })();
 
-// ── Navigation ────────────────────────────────────────────────────────────────
+//  Navigation
 (function bindNav() {
   // Generic buttons with data-href
   document.querySelectorAll('.nav-item[data-href]').forEach(btn => {
@@ -159,7 +159,7 @@ document.body.style.visibility = 'visible';
   }
 })();
 
-// ── Settings popup ────────────────────────────────────────────────────────────
+// Settings popup 
 // localStorage-only persistence (no socket on this page).
 // Values are written to the same 'settings' key that singlePlayer/multiPlayer read,
 // so changes here carry over into the game.
@@ -174,7 +174,7 @@ document.body.style.visibility = 'visible';
   // In-memory mirror of the current settings (loaded below)
   const current = { ...default_settings };
 
-  // ── Load from localStorage ──────────────────────────────────────────────
+  // Load from localStorage 
   (function loadSaved() {
     try {
       const saved = JSON.parse(localStorage.getItem('settings')) ?? {};
@@ -186,7 +186,7 @@ document.body.style.visibility = 'visible';
     }
   })();
 
-  // ── Persist current state to localStorage ──────────────────────────────
+  //  Persist current state to localStorage 
   function persist() {
     try {
       localStorage.setItem('settings', JSON.stringify({ ...current }));
@@ -195,7 +195,7 @@ document.body.style.visibility = 'visible';
     }
   }
 
-  // ── Apply a single setting (DOM + memory + optionally persist) ──────────
+  // Apply a single setting (DOM + memory + optionally persist) 
   function applySetting(key, value, save = true) {
     if (typeof default_settings[key] === 'number') {
       value = parseFloat(Math.max(0, Math.min(1, value)).toFixed(2));
@@ -218,14 +218,14 @@ document.body.style.visibility = 'visible';
     if (save) persist();
   }
 
-  // ── Apply all settings to DOM (used on open) ────────────────────────────
+  //  Apply all settings to DOM (used on open)
   function applyAll(save = false) {
     for (const key in default_settings) {
       applySetting(key, current[key], save);
     }
   }
 
-  // ── Mute icon sync ──────────────────────────────────────────────────────
+  // Mute icon sync
   function syncMuteIcon() {
     const icon = document.getElementById('mute-icon');
     if (!icon) return;
@@ -234,10 +234,10 @@ document.body.style.visibility = 'visible';
       : '<i class="bi bi-volume-up cy-text-magenta"></i>';
   }
 
-  // ── Apply saved values to DOM immediately ───────────────────────────────
+  // Apply saved values to DOM immediately ─
   applyAll();
 
-  // ── Wire controls ───────────────────────────────────────────────────────
+  //  Wire controls
   const fxSlider = document.getElementById('fx-volume-slider');
   fxSlider.addEventListener('input',  e => applySetting('FXVolume', parseFloat(e.target.value), false));
   fxSlider.addEventListener('change', e => applySetting('FXVolume', parseFloat(e.target.value)));
