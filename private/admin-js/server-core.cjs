@@ -27,9 +27,15 @@ const singlePlayer = {};
 
 const multiPlayer = {};
 
+const cookieParser = require("cookie-parser");
+app.use(cookieParser()); //parse cookies from incoming requests
+app.use(express.json()); //parse JSON bodies
+
 const DISABLE_RATE_LIMIT = process.env.DISABLE_RATE_LIMIT === 'true'
 
 const { rateLimit } = require('express-rate-limit');
+
+
 
 // Common settings for all IP-based limiters
 const ipBaseOptions = {
@@ -69,7 +75,7 @@ const { createServer } = require('node:http');
 
 const path_alias = require(join(__dirname, '../Server-Imports/General/path_alias.json'))
 
-const cookieParser = require("cookie-parser");
+
 const SERVER_START_TIME = Date.now(); //used to calculate server uptime
 const coreOSInfo = {
   os: {
@@ -190,8 +196,8 @@ const hardDB = require(join(__dirname, './hard-db.cjs'));
 
 if (SQL_TYPE === 'turso') {
   console.log('Using Turso database for SQL operations.');
-  
-  
+
+
   if (process.env.LAST_SQL_MODE === 'false') { //undefined is intentionally grouped with true, and will not trigger this sync up, as that means there are no local changes to sync up yet
     console.log('Last SQL mode was not Turso, performing initial sync...');
     hardDB.runResetWal(); //reset WAL before force push, to avoid "database is locked" errors
@@ -267,8 +273,7 @@ app.use([
 app.get(['/banned', '/auth/banned'], (req, res) => {
   res.status(403).sendFile(join(__dirname, '../../public/auth/banned.html'));
 });
-app.use(cookieParser()); //parse cookies from incoming requests
-app.use(express.json()); //parse JSON bodies
+
 /*
     BAN CHECK MIDDLEWARE
     checks banned table for ip or UUID, if found, redirects to /banned page
@@ -752,20 +757,21 @@ app.post('/sign-up', async (req, res) => {
   const username_existence = await SQL_Manager_Instance.getUserByUsername(username)
 
   if (!username_existence) {
-
     const newUUID = await SQL_Manager_Instance.createUser(username, password);
-    console.log('newUUID:', newUUID);
-    if (typeof newUUID === 'object' && newUUID.ErrorCode) { //server side validation failed, return error to client
+    if (typeof newUUID === 'object' && newUUID.ErrorCode) {
       return res.status(400).json({ message: newUUID.ErrorMessage });
     }
 
+    const sessionToken = await SQL_Manager_Instance.createSessionTokenForUUID(newUUID);
+    SQL_Manager_Instance.auth.sendSessionTokenAsCookie(res, sessionToken); // <-- fix
     SQL_Manager_Instance.auth.sendStaticUserDataAsHeader(res, await SQL_Manager_Instance.getStaticUserDataByUUID(newUUID));
-    return res.status(201).cookie('sessionToken', await SQL_Manager_Instance.createSessionTokenForUUID(newUUID)).json({
+
+    return res.status(201).json({
       message: 'User created successfully.',
       UUID: newUUID,
-    })
+    });
   } else {
-    return res.status(409).json({ message: 'username already taken!' })
+    return res.status(409).json({ message: 'username already taken!' });
   }
 })
 

@@ -1,6 +1,8 @@
 //multiplayerFrontend.js
 import * as audioHandler from "/js/audio.js";
 audioHandler.initAudio();
+
+let navigatingAwayIntentionally = false;
 placeFullScreenButton();
 
 
@@ -1469,12 +1471,8 @@ document.addEventListener('keydown', (event) => {
 });
 
 //web socket
-const directMatchUUID = sessionStorage.getItem('directMatchUUID') || null;
-if (directMatchUUID) sessionStorage.removeItem('directMatchUUID');
-
 const socket = io(window.location.origin, {
-    path: "/multiPlayer/socket",
-    ...(directMatchUUID ? { query: { matchUUID: directMatchUUID } } : {})
+    path: "/multiPlayer/socket"
 }); // Connecting to the Socket.IO server at the path
 
 socket.on('connect', () => {
@@ -1581,38 +1579,18 @@ function undoInitialGameGUI() {
 }
 
 document.getElementById('icb-pre-start-btn').addEventListener('click', () => {
+    // Hide timeframe buttons immediately on click — don't wait for the matchmake_queued socket
+    // response. With poor connectivity the server round-trip can take several seconds, and the
+    // timeframe UI must not remain visible while matchmaking is in progress.
+    document.getElementById('timeframe-buttons-div').style.cssText += 'display: none !important;';
+    document.getElementById('icb-pre-start-btn').style.display = 'none';
+
     //start round — the actual GUI transition happens once a match is found (see 'matchmake_found' below),
     //since there's a "searching for a match..." waiting period before gameplay actually begins.
     socket.emit('matchmake', { selectedTimeFrame: frontEndHandler.selectedTimeFrame });
 });
 
-const testing_exports = {
-    frontEndHandler,
-    resizeMatrixCol,
-    highlightRow,
-    highlightCol,
-    addCellClickListeners,
-    addCellHighlightListeners,
-    removeSelectableHighlights,
-    removeAllCellHighlights,
-    checkForSolution,
-    checkForSolutions,
-    buildSequenceList,
-    highlightCounter,
-    buildSequenceLists,
-    highlightCardNodeIndex,
-    unhighlightCardNodeIndex,
-    hideNodesTillIndex,
-    decorateCurrentNodeAtIndex,
-    matchSequence,
-    sequenceProgressHandler,
-    showAllNodes,
-    socket,
-    resetClient,
-    unAnimateRoundEnd,
-    initTimer,
-};
-Object.assign(window, testing_exports);
+
 
 
 
@@ -1657,32 +1635,6 @@ socket.on('matchmake_cancelled', () => {
     const cancelBtn = document.getElementById('icb-cancel-matchmaking-btn');
     if (cancelBtn) cancelBtn.style.display = 'none';
 });
-
-// Direct-match events ─────────────────────────────────────────────────────
-socket.on('direct_match_waiting', () => {
-    document.getElementById('timeframe-buttons-div').style.cssText += 'display: none !important;';
-    const startBtn = document.getElementById('icb-pre-start-btn');
-    if (startBtn) startBtn.style.display = 'none';
-    const statusText = document.querySelector('.icb-pre__rule-text');
-    if (statusText) statusText.innerText = 'Opponent connecting... (30s)';
-});
-
-socket.on('direct_match_timeout', () => {
-    const statusText = document.querySelector('.icb-pre__rule-text');
-    if (statusText) statusText.innerText = 'Opponent did not connect in time.';
-    document.getElementById('timeframe-buttons-div').style.removeProperty('display');
-    const startBtn = document.getElementById('icb-pre-start-btn');
-    if (startBtn) startBtn.style.display = '';
-});
-
-socket.on('direct_match_error', (data) => {
-    const statusText = document.querySelector('.icb-pre__rule-text');
-    if (statusText) statusText.innerText = data?.message || 'Match error.';
-    document.getElementById('timeframe-buttons-div').style.removeProperty('display');
-    const startBtn = document.getElementById('icb-pre-start-btn');
-    if (startBtn) startBtn.style.display = '';
-});
-// ─────────────────────────────────────────────────────────────────────────
 
 socket.on('matchmake_found', (data) => {
     // always hide cancel button — match either found or failed, queue is gone either way
@@ -1782,7 +1734,7 @@ socket.on('match_cancelled', (data) => {
 });
 
 socket.on('disconnect', () => {
-    if (!frontEndHandler.navigatingToResult) {
+    if (!frontEndHandler.navigatingToResult && !navigatingAwayIntentionally) {
         window.location.reload();
     }
 })
@@ -2000,3 +1952,13 @@ function editSetting(settingName, newValue = null, initial = false, persist = tr
         document.getElementById('settings-div').style.removeProperty('display');
     });
 })();
+
+document.getElementById('profile').addEventListener('click', () => {
+    navigatingAwayIntentionally = true;
+    window.location.href = '/profile';
+});
+
+document.getElementById('nav-profile-btn').addEventListener('click', () => {
+    navigatingAwayIntentionally = true;
+    window.location.href = '/';
+});

@@ -134,10 +134,6 @@ body {
         display: none !important;
     }
 
-    #opponent-info {
-        width: 100% !important;
-    }
-
     #breach-time-label {
         text-align: center;
     }
@@ -294,16 +290,54 @@ body {
 
 
 
+#profile-link {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    line-height: 0;
+}
+
 #profile-picture {
     width: auto;
     max-width: 4.5em;
     max-height: 4.5em;
     aspect-ratio: 1;
     margin: -10px 0;
+    object-fit: contain;
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+#profile-picture:hover {
+    opacity: 0.8;
 }
 
 #profile {
     flex-direction: column;
+}
+
+#right-header-spacer {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    padding-right: 1.75rem;
+}
+
+.back-btn {
+    flex: none;
+    border-radius: 50%;
+    border: 2px solid var(--cy-cyan);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--cy-cyan);
+    box-shadow: 0 0 8px rgba(0, 255, 255, 0.4), 0 0 20px rgba(0, 255, 255, 0.15);
+    cursor: pointer !important;
+    transition: opacity 0.15s;
+}
+
+.back-btn:hover {
+    opacity: 0.8;
 }
 
 
@@ -544,12 +578,28 @@ body {
 
 #fullScreenButton {
     position: fixed;
-    top: 10px;
     right: 10px;
     z-index: 1000;
     color: var(--cy-cyan);
     padding: 0.25rem 0.5rem;
     border: none;
+}
+
+@media (max-width: 576px) {
+    #fullScreenButton {
+        bottom: 10px !important;
+    }
+    #nav-profile-btn {
+        position: absolute !important;
+        top: 1rem !important;
+        right: 1rem !important;
+    }
+}
+
+@media (min-width: 577px) {
+    #fullScreenButton {
+        top: 10px !important;
+    }
 }
 
 #sequences-wrapper {
@@ -1012,7 +1062,6 @@ body {
 .icb-pre__bottom-bar {
     background: rgba(0, 0, 0, 0.45);
     border-top: 1px solid rgba(0, 255, 255, 0.18);
-    justify-content: center;
 }
 
 /* ── Decorative rule ── */
@@ -1036,7 +1085,7 @@ body {
     letter-spacing: 4px;
     color: #00CCDD;
     text-transform: uppercase;
-    text-align: center;
+    white-space: nowrap;
 }
 
 /* ── Pre-game card shell end ── */
@@ -1081,7 +1130,6 @@ body {
     80%  { transform: translateX(3px)  translateY(0); }
     100% { transform: translateX(0)   translateY(0); }
 }
-
 
 
 #settings-div {

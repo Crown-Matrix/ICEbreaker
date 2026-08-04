@@ -8,10 +8,6 @@ const STORAGE_KEYS = {
 
 const NO_DATA = 'NO DATA';
 const REQUEST_SENT_STATUS = 'Request sent';
-const FRIEND_STATUS = {
-    online: 'Online',
-    offline: 'Offline'
-};
 
 const ACCOUNT_TIERS = {
     0: { name: 'Novice', color: '#FFE600' },
@@ -107,22 +103,17 @@ async function syncFriendshipsFromServer() {
                 name:   entry.username,
                 status: entry.created_at ? formatDate(entry.created_at) : 'Request sent'
             })),
-            friends: (data.friends || []).map(name => ({ name, status: 'Offline' })),
+            friends: (data.friends || []).map(name => ({ name, status: '' })),
             pendingRemove: []
         });
     } catch { /* silent — local state stays as-is */ }
 }
 
-// ── Direct-challenge system ───────────────────────────────────────────────
-
-function navigateToDirectMatch(matchUUID) {
-    sessionStorage.setItem('directMatchUUID', matchUUID);
-    window.location.href = '/multiPlayer/multiPlayerReference.html';
-}
+// Direct-challenge system
 
 async function syncChallengesFromServer() {
     try {
-        const res = await fetch('/profile/api/challenges');
+        const res = await fetch('/profile/api/challenges', { cache: 'no-store' }); // avoid stale cached response
         if (!res.ok) return;
         const data = await res.json();
         challengeState = {
@@ -132,12 +123,24 @@ async function syncChallengesFromServer() {
         };
         renderChallengeSystem();
         updateChallengeBadge();
-        renderFriendshipSystem(); // refresh friend-list buttons to reflect challenge state
+        renderFriendshipSystem();
         if (data.activeMatch) {
-            clearInterval(challengePollInterval);
             navigateToDirectMatch(data.activeMatch.matchUUID);
         }
     } catch { /* silent */ }
+}
+
+function navigateToDirectMatch(matchUUID) {
+    if (!matchUUID) return;
+
+    // We already sent this session to this exact match — don't do it again.
+    // (Prevents redirect loops when the server still reports an
+    // activeMatch that's actually stale/finished.)
+    if (sessionStorage.getItem('directMatchUUID') === matchUUID) return;
+
+    clearInterval(challengePollInterval);
+    sessionStorage.setItem('directMatchUUID', matchUUID);
+    window.location.href = '/multiPlayer/multiPlayerReference.html';
 }
 
 function startChallengePoll() {
@@ -249,7 +252,7 @@ function loadFriendshipState() {
         return {
             incoming: sanitizeFriendEntries(parsed.incoming),
             outgoing: sanitizeFriendEntries(parsed.outgoing),
-            friends: sanitizeFriendEntries(parsed.friends, true),
+            friends: sanitizeFriendEntries(parsed.friends),
             pendingRemove: Array.isArray(parsed.pendingRemove)
                 ? parsed.pendingRemove.map(normalizeName).filter(Boolean)
                 : []
@@ -259,7 +262,7 @@ function loadFriendshipState() {
     }
 }
 
-function sanitizeFriendEntries(list, enforceFriendStatus = false) {
+function sanitizeFriendEntries(list) {
     if (!Array.isArray(list)) return [];
 
     return list
@@ -267,14 +270,7 @@ function sanitizeFriendEntries(list, enforceFriendStatus = false) {
             name: normalizeName(entry?.name),
             status: normalizeName(entry?.status)
         }))
-        .filter(entry => entry.name)
-        .map(entry => {
-            if (!enforceFriendStatus) return entry;
-            return {
-                ...entry,
-                status: entry.status === FRIEND_STATUS.online ? FRIEND_STATUS.online : FRIEND_STATUS.offline
-            };
-        });
+        .filter(entry => entry.name);
 }
 
 function saveFriendshipState() {
@@ -347,7 +343,7 @@ function addIncomingRequest(name, status = 'Awaiting response') {
     return createFriendshipResult(true, `${target} added to incoming requests.`);
 }
 
-function addFriend(name, status = FRIEND_STATUS.offline) {
+function addFriend(name, status = '') {
     const target = normalizeName(name);
     if (!target) return createFriendshipResult(false, 'Missing username.');
     if (namesMatch(target, username)) return createFriendshipResult(false, 'You cannot add yourself.');
@@ -355,7 +351,7 @@ function addFriend(name, status = FRIEND_STATUS.offline) {
     removeFromList('incoming', target);
     removeFromList('outgoing', target);
     friendshipState.pendingRemove = friendshipState.pendingRemove.filter(entry => !namesMatch(entry, target));
-    upsertEntry('friends', target, status === FRIEND_STATUS.online ? FRIEND_STATUS.online : FRIEND_STATUS.offline);
+    upsertEntry('friends', target, normalizeName(status));
     saveFriendshipState();
     renderFriendshipSystem();
     return createFriendshipResult(true, `${target} added to friends.`);
@@ -369,7 +365,7 @@ function setFriendStatus(name, status) {
 
     friendshipState.friends[index] = {
         ...friendshipState.friends[index],
-        status: status === FRIEND_STATUS.online ? FRIEND_STATUS.online : FRIEND_STATUS.offline
+        status: normalizeName(status)
     };
     saveFriendshipState();
     renderFriendshipSystem();
@@ -409,7 +405,7 @@ function acceptIncomingRequest(name) {
     const target = normalizeName(name);
     const wasIncoming = removeFromList('incoming', target);
     if (!wasIncoming) return createFriendshipResult(false, `${target} was not in incoming requests.`);
-    return addFriend(target, FRIEND_STATUS.online);
+    return addFriend(target);
 }
 
 function declineIncomingRequest(name) {
@@ -444,7 +440,7 @@ function setFriendshipState(nextState) {
     friendshipState = {
         incoming: sanitizeFriendEntries(nextState?.incoming),
         outgoing: sanitizeFriendEntries(nextState?.outgoing),
-        friends: sanitizeFriendEntries(nextState?.friends, true),
+        friends: sanitizeFriendEntries(nextState?.friends),
         pendingRemove: Array.isArray(nextState?.pendingRemove)
             ? nextState.pendingRemove.map(normalizeName).filter(Boolean)
             : []

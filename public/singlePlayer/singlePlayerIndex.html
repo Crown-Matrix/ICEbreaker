@@ -23,7 +23,9 @@
     <nav>
         <div class="container-fluid cy-nav" id="profile-nav-div">
             <div id="profile" class="col-1 cy-flex">
-                <img src="/imgs/profile-placeholder.png" id="profile-picture">
+                <a href="/profile" id="profile-link">
+                    <img src="/imgs/profile-placeholder.png" id="profile-picture">
+                </a>
             </div>
             <div id="os-label" class="col-3 cy-flex profile-label">
                 <span class="cy-text-cyan">NET</span><span class="cy-text-magenta">RUNNER</span>
@@ -34,6 +36,13 @@
                 <span class="cy-text-cyan">ICE</span><span class="cy-text-magenta">BREAKER</span>
             </div>
             <div class="col-3" id="right-header-spacer">
+                <div class="back-btn" id="nav-profile-btn">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+                        stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <line x1="5" y1="19" x2="19" y2="5"></line>
+                        <polyline points="12 5 19 5 19 12"></polyline>
+                    </svg>
+                </div>
             </div>
         </div>
     </nav>
@@ -111,7 +120,7 @@
                                             </button>
 
                                             <!-- timeframe — centered via absolute so it doesn't push the logo -->
-                                            <div class="d-flex flex-column align-items-center gap-2"
+                                            <div id="timeframe-buttons-div" class="d-flex flex-column align-items-center gap-2"
                                                 style="position:absolute; left:50%; top:50%; transform:translate(-50%,-50%);">
                                                 <span class="icb-pre__tf-label">Select Timeframe</span>
                                                 <div class="icb-pre__tf-group">

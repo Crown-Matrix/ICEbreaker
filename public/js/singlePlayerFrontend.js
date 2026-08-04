@@ -1558,6 +1558,12 @@ function undoInitialGameGUI() {
 }
 
 document.getElementById('icb-pre-start-btn').addEventListener('click', () => {
+    // Hide timeframe buttons immediately on click — don't wait for any socket response.
+    // With poor connectivity the server round-trip can take several seconds, and the
+    // timeframe UI must not remain visible while the game is starting.
+    document.getElementById('timeframe-buttons-div').style.cssText += 'display: none !important;';
+    document.getElementById('icb-pre-start-btn').style.display = 'none';
+
     undoInitialGameGUI(); // remove the initial GUI styles set for the pre game menu to transition into the normal gameplay GUI
     audioHandler.stopCover();
     //start round
@@ -1778,4 +1784,8 @@ function editSetting(settingName, newValue = null, initial = false, persist = tr
 
 document.getElementById('profile').addEventListener('click', () => {
     window.location.href = '/profile';
+});
+
+document.getElementById('nav-profile-btn').addEventListener('click', () => {
+    window.location.href = '/';
 });

@@ -304,7 +304,6 @@ class Matchmaker {
 
   createMatch(playerA, playerB) {
     const match = new Match(playerA, playerB, this.selectedTimeFrame);
-    console.log(`Match created [${match.id}]: ${playerA.socket.playerName} vs ${playerB.socket.playerName}`);
 
     for (const player of match.players) {
       const opponent = match.getOpponent(player);
@@ -630,12 +629,10 @@ io.use(async (socket, next) => {
 // connection / auth / matchmaking entry point
 
 io.on('connection', async (socket) => {
-  console.log('A user connected to the multiplayer server.');
 
   const sessionCookie = SQL_Manager_Instance.auth.getSessionTokenFromRequest(socket.handshake);
   socket.guestMode = !sessionCookie;
   socket.UUID = socket.guestMode ? null : await SQL_Manager_Instance.sessionTokenToUUID(sessionCookie);
-  console.log('Socket UUID:', socket.UUID);
 
   const fetched_user_data = socket.UUID ? await SQL_Manager_Instance.getUserByUUID(socket.UUID) : null;
   const mp_games_Played = fetched_user_data ? (fetched_user_data.mp_games_Played || 0) : 0;
@@ -649,7 +646,6 @@ io.on('connection', async (socket) => {
   player_obj.avgScore = avgScore;
 
   socket.on('disconnect', () => {
-    console.log('A user disconnected from the multiplayer server.');
 
     const mm = matchmakers.get(player_obj.selectedTimeFrame);
     if (mm) mm.removePlayer(player_obj);
@@ -740,7 +736,6 @@ io.on('connection', async (socket) => {
 
   // Use .on (not .once) so the player can re-queue after cancelling.
   socket.on('matchmake', (data) => {
-    console.log('Matchmaking request received:', data);
 
     if (player_obj.currentMatch) return; // already in an active match
 
