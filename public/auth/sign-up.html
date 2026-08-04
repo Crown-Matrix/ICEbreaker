@@ -588,6 +588,13 @@
         window.location.href = '/profile'
     }
 
+    // After cardReveal finishes, lock opacity:1 as an inline style so that any
+    // later animation overriding the `animation` property cannot cause the card
+    // to revert to the CSS opacity:0 and disappear.
+    document.querySelector('.cy-card').addEventListener('animationend', function (e) {
+      if (e.animationName === 'cardReveal') this.style.opacity = '1';
+    }, { once: true });
+
 
     const usernameInput = document.getElementById('username');
     const passwordInput = document.getElementById('password');

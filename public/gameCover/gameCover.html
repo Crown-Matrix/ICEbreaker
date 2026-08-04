@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ICEbreaker</title>
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/css/bootstrap.min.css"
+    onerror="this.href='/css/bootstrap.min.css'">
+  <link href="https://fonts.googleapis.com/css2?family=Rajdhani:wght@400;600;700&family=Share+Tech+Mono&display=swap"
+    rel="stylesheet">
+  <link rel="stylesheet" href="/gameCover/gameCover.css">
+  <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.13.1/font/bootstrap-icons.min.css"
+    onerror="this.href='/css/bootstrap-icons.css'">
+  <link rel="icon" type="image/png" href="/favicon.ico">
+</head>
+
+<body>
+  <style>
+    /* Prevent FOUC */
+    body { visibility: hidden; }
+  </style>
+
+  <!-- ── Background layers (bottom → top) ─────────────────────────────── -->
+  <div class="bg" aria-hidden="true">
+    <div class="bg-void"></div>
+    <canvas id="matrix-rain" class="bg-matrix"></canvas>
+    <div class="bg-grid"></div>
+    <div class="bg-scanlines"></div>
+    <div class="bg-vignette"></div>
+  </div>
+
+  <!-- ── Main layout — Bootstrap grid ─────────────────────────────────── -->
+  <div class="container-fluid px-0 position-relative" id="layout" style="z-index: 10;">
+    <div class="row gx-0 align-items-stretch min-vh-100">
+
+      <!-- Left panel: title + navigation -->
+      <div class="col-12 col-md-5 d-flex flex-column justify-content-center panel-left" id="panel-left">
+
+        <header class="title-block">
+          <h1 class="title-wordmark">
+            <span class="title-ice">ICE</span><span class="title-breaker">BREAKER</span>
+          </h1>
+          <p class="title-subtitle">NETRUNNER <span class="accent-cyan">OS</span></p>
+          <div class="title-divider" aria-hidden="true">
+            <div class="divider-line"></div>
+            <span class="divider-node">◆</span>
+            <div class="divider-line"></div>
+          </div>
+        </header>
+
+        <nav class="main-nav" id="main-nav" aria-label="Main navigation">
+          <button class="nav-item" data-href="/singlePlayer" aria-label="Single Player">
+            <span class="nav-arrow" aria-hidden="true">▶</span>
+            <span class="nav-label">SINGLE PLAYER</span>
+            <span class="nav-scan" aria-hidden="true"></span>
+          </button>
+
+          <button class="nav-item" data-href="/multiPlayer" aria-label="Multiplayer">
+            <span class="nav-arrow" aria-hidden="true">▶</span>
+            <span class="nav-label">MULTIPLAYER</span>
+            <span class="nav-scan" aria-hidden="true"></span>
+          </button>
+
+          <button class="nav-item" id="btn-account" aria-label="Account">
+            <span class="nav-arrow" aria-hidden="true">▶</span>
+            <span class="nav-label">ACCOUNT</span>
+            <span class="nav-scan" aria-hidden="true"></span>
+          </button>
+
+          <button class="nav-item" id="btn-settings" aria-label="Settings">
+            <span class="nav-arrow" aria-hidden="true">▶</span>
+            <span class="nav-label">SETTINGS</span>
+            <span class="nav-scan" aria-hidden="true"></span>
+          </button>
+        </nav>
+
+        <footer class="panel-footer" aria-hidden="true">
+          <span class="footer-tag">// CROWN MATRIX SYSTEMS v2077</span>
+          <span class="footer-dot"></span>
+          <span class="footer-status">UPLINK_ACTIVE</span>
+        </footer>
+
+      </div>
+
+      <!-- Right panel: decorative display (hidden on mobile) -->
+      <div class="col-md-7 d-none d-md-flex flex-column align-items-center justify-content-center panel-right"
+        id="panel-right" aria-hidden="true">
+
+        <div class="ring-wrap">
+          <div class="ring ring-outer"></div>
+          <div class="ring ring-mid"></div>
+          <div class="ring ring-inner"></div>
+          <div class="ring-core">
+            <span class="ring-core-label">ICB</span>
+            <span class="ring-core-sub">v2077</span>
+          </div>
+          <div class="ring-ticks" id="ring-ticks"></div>
+        </div>
+
+        <div class="status-readout">
+          <div class="status-line" style="--i:0">
+            <span class="sl-key">BREACH_PROTOCOL</span>
+            <span class="sl-sep">:</span>
+            <span class="sl-val accent-cyan">READY</span>
+          </div>
+          <div class="status-line" style="--i:1">
+            <span class="sl-key">NET_MATRIX</span>
+            <span class="sl-sep">:</span>
+            <span class="sl-val accent-cyan">ONLINE</span>
+          </div>
+          <div class="status-line" style="--i:2">
+            <span class="sl-key">DAEMON_STATUS</span>
+            <span class="sl-sep">:</span>
+            <span class="sl-val accent-cyan">ACTIVE</span>
+          </div>
+          <div class="status-line" style="--i:3">
+            <span class="sl-key">ICE_LAYER</span>
+            <span class="sl-sep">:</span>
+            <span class="sl-val accent-magenta">VULNERABLE</span>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <!-- ── Settings popup (same structure as singlePlayer/multiPlayer) ──── -->
+  <div id="settings-div" style="display: none;">
+    <div id="settings">
+      <div class="cy-h1">Settings</div>
+
+      <div class="settings-option">
+        <div class="cy-btn">
+          <label for="fx-volume-slider">FX Volume</label>
+          <input type="range" min="0" max="1" value="0.5" step="0.01" class="slider" id="fx-volume-slider">
+        </div>
+      </div>
+
+      <div class="settings-option">
+        <div class="cy-btn">
+          <label for="bg-volume-slider" class="cy-text-cyan">Background Volume</label>
+          <input type="range" min="0" max="1" value="0.5" step="0.01" class="slider" id="bg-volume-slider">
+        </div>
+      </div>
+
+      <div class="settings-option">
+        <button class="cy-btn" id="mute-button">Mute<span id="mute-icon"><i class="bi bi-volume-up cy-text-magenta"></i></span></button>
+        <button class="cy-btn" id="defaults-button">Revert to Defaults</button>
+        <button class="cy-btn" id="graphics-button">Graphics: <span id="graphics-value" class="cy-text-magenta">Normal</span></button>
+      </div>
+
+      <div class="settings-option">
+        <button class="cy-btn--magenta" id="close-settings-button">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.8/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="/gameCover/gameCover.js" type="module"></script>
+</body>
+</html>

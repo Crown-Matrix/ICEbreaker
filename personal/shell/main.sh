@@ -40,6 +40,7 @@ source ./personal/shell/init_env.sh || exit 1
 AUTO_KILL_PREVIOUS_PROCESS=$(printenv AUTO_KILL_PREVIOUS_PROCESS)
 if [ "${AUTO_KILL_PREVIOUS_PROCESS}" == "true" ]; then
     npm run kill_main
+    echo -e "\e[38;5;208m[  Auto killed any previous processes  ] \n -------------------------------------- \n         [ Toggle this in .env ]\e\n[0m"
 fi
 
 
@@ -73,8 +74,4 @@ echo "$windowid" > /tmp/icebreaker/admin_panel_window_id.txt
 fi
 result=$?
 
-if [ "${AUTO_KILL_PREVIOUS_PROCESS}" == "true" ]; then
-    echo -e "\e[38;5;208m[  Auto killed any previous processes  ] \n -------------------------------------- \n         [ Toggle this in .env ]\e[0m"
-    echo -e "\n\n \e[1;32mServer Started Successfully...\e[0m"
-fi
 wait #for the sleep 3 to end

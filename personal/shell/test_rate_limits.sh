@@ -125,9 +125,10 @@ if [[ "$SKIP_STATIC" != "true" ]]; then
   section "Static Asset Routes  (low-cost limiter: 750 req / 30 s)"
   echo -e "  ${DIM}Note: requires ${STATIC_BURST_SIZE}-request burst to exceed the higher threshold${RESET}"
   # Use a file that won't exist — 404 still triggers the rate limiter
-  run_static_test "JS  static tree"   GET  "/js/__rl_smoke_miss__.js"
-  run_static_test "CSS static tree"   GET  "/css/__rl_smoke_miss__.css"
-  run_static_test "IMG static tree"   GET  "/imgs/__rl_smoke_miss__.png"
+  run_static_test "JS  static tree"         GET  "/js/__rl_smoke_miss__.js"
+  run_static_test "CSS static tree"         GET  "/css/__rl_smoke_miss__.css"
+  run_static_test "IMG static tree"         GET  "/imgs/__rl_smoke_miss__.png"
+  run_static_test "gameCover static tree"   GET  "/gameCover/__rl_smoke_miss__.css"
 else
   echo -e "\n  ${DIM}Static asset tests skipped (SKIP_STATIC=true)${RESET}"
 fi
@@ -135,8 +136,10 @@ fi
 # page / HTML routes
 
 section "Page / HTML Routes"
-run_test  "Root redirect"             GET   "/"
-run_test  "index.html redirect"       GET   "/index.html"
+run_test  "gameCover page (root)"             GET   "/"
+run_test  "index.html redirect"               GET   "/index.html"
+run_test  "gameCover alias (TEST_MODE)"       GET   "/gameCover"
+run_test  "gameCover.html alias (TEST_MODE)"  GET   "/gameCover.html"
 run_test  "Single-player lobby"       GET   "/singlePlayer"
 run_test  "Single-player reference"   GET   "/singlePlayer/reference"
 run_test  "Single-player result"      GET   "/singlePlayer/result"

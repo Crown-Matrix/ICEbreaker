@@ -243,6 +243,15 @@ static_cheap_paths.forEach(urlPath => {
   app.use(urlPath, express.static(join("public", urlPath)));
 });
 
+// gameCover static assets (CSS/JS) — low-cost rate limited, served from /gameCover/ at project root
+app.use('/gameCover', [
+  ipLimiter_lowCost_shortTerm,
+  ipLimiter_lowCost_longTerm,
+  sessionTokenLimiter_lowCost_shortTerm,
+  sessionTokenLimiter_lowCost_longTerm
+]);
+app.use('/gameCover', express.static(join(__dirname, '../../public/gameCover')));
+
 app.use([
   ipLimiter_highCost_shortTerm,
   ipLimiter_highCost_longTerm,
@@ -359,15 +368,26 @@ app.use((req, res, next) => {
 
 
 
-app.get('/', (req, res) => {
-  //temp redirect to single player page for testing until multiplayer is created
-  res.redirect('/singlePlayer');
-});
+// gameCover handler (shared by /, and TEST_MODE aliases)
+const gameCoverHandler = async (req, res) => {
+  // Update last-login timestamp the same way /profile does, fire-and-forget
+  const sessionToken = req.cookies.sessionToken;
+  if (sessionToken) {
+    const UUID = await SQL_Manager_Instance.sessionTokenToUUID(sessionToken);
+    if (UUID) {
+      SQL_Manager_Instance.updateLastLoginDateFromUUID(UUID); // intentionally not awaited
+    }
+  }
+  res.status(200).sendFile('gameCover.html', { root: join(__dirname, '../../public/gameCover') });
+};
 
+app.get('/', gameCoverHandler);
+app.get('/index.html', (req, res) => res.redirect('/'));
 
-app.get('/index.html', (req, res) => {
-  res.redirect('/'); // -> redirect to root, which will redirect to singlePlayer until multiplayer is created
-});
+// /gameCover and /gameCover.html are only reachable in TEST_MODE
+if (TESTING_MODE) {
+  app.get(['/gameCover', '/gameCover.html'], gameCoverHandler);
+}
 
 
 
@@ -463,8 +483,7 @@ app.get('/profile/api/user/:username', async (req, res) => {
   res.status(200).json(user_info);
 });
 
-// ── Friendship endpoints ──────────────────────────────────────────────────────
-// All routes: authenticated via sessionToken, lowCost rate-limited
+
 
 const friendLimiters = [
   ipLimiter_lowCost_shortTerm,
@@ -623,7 +642,7 @@ app.post('/profile/api/friends/remove', friendLimiters, async (req, res) => {
     return res.status(500).json({ error: 'Server error.' });
   }
 });
-// ── End friendship endpoints ──────────────────────────────────────────────────
+
 
 
 
