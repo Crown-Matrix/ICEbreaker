@@ -169,7 +169,7 @@ class SinglePlayerFrontend {
             })
             .then(html => {
                 this.url = url;
-                sessionStorage.setItem('frontEndHandler', JSON.stringify(this)); //save the current front end handler state to session storage before navigating, this allows the new page to access it and restore the state, effectively allowing us to persist the front end handler across page navigations which is necessary for the result page after the game endsb
+                sessionStorage.setItem('frontEndHandler', JSON.stringify(this)); //save the current front end handler state to session storage before navigating, this allows the new page to access it and restore the state, effectively allowing us to persist the front end handler across page navigations which is necessary for the result page after the game ends
                 history.pushState({}, "", url);
 
                 const parser = new DOMParser();
@@ -178,34 +178,50 @@ class SinglePlayerFrontend {
                 document.head.replaceWith(newDoc.head);
                 document.body.replaceWith(newDoc.body);
 
-                // Run scripts sequentially
-                const scripts = [...document.body.querySelectorAll('script')];
-                return scripts.reduce((chain, oldScript) => {
-                    return chain.then(() => new Promise((resolve, reject) => {
-                        const newScript = document.createElement('script');
+                // Strip all script tags from the swapped-in content — no script
+                // injection of any kind. Result page logic lives in _initResultPage()
+                // on this class, so no external script needs to run.
+                document.body.querySelectorAll('script').forEach(s => s.remove());
 
-                        [...oldScript.attributes].forEach(attr =>
-                            newScript.setAttribute(attr.name, attr.value)
-                        );
-                        newScript.textContent = oldScript.textContent;
+                this._initResultPage();
 
-                        if (oldScript.src) {
-                            newScript.onload = resolve;
-                            newScript.onerror = reject;
-                        } else {
-                            resolve();
-                        }
-
-                        oldScript.replaceWith(newScript);
-                    }));
-                }, Promise.resolve());
-            }).then(() => {
                 document.body.style.visibility = 'visible';
             })
             .catch(err => {
                 console.error('Failed to load page:', err);
                 window.location.replace(url);
             });
+    }
+
+    _initResultPage() {
+        const scoreToEddies = (score) => Math.floor((3 * score) / 100) + 25;
+        const score = this.score || '0';
+
+        document.querySelector('.stat-value').textContent = score;
+        document.querySelector('.stat-value.red').textContent = this.selectedTimeFrame ? String(this.selectedTimeFrame) : '60';
+        document.querySelector('#sequence-counter').textContent = this.totalSequencesUploaded || '0';
+
+        if (!this.isGuest) {
+            document.querySelector('#eddies-counter').textContent = scoreToEddies(score);
+            document.querySelector('#eddies-msg').textContent = 'Eddies Mined';
+            document.querySelector('.account-name').textContent = localStorage.getItem('x-userdata-username') || 'Unknown Operative';
+            document.querySelector('.account-tag').textContent = '// User Identified';
+        } else {
+            document.querySelector('#eddies-counter').innerHTML = `Sign-in to have<br>earned ${scoreToEddies(score)} eddies!`;
+            document.querySelector('#eddies-msg').textContent = 'Guest Account';
+            document.querySelector('.account-name').textContent = 'Ghost Operative';
+            document.querySelector('.account-tag').textContent = '// Guest Session';
+        }
+
+        document.querySelector('.play-btn').addEventListener('click', () => {
+            window.location.assign('/singlePlayer');
+        }, { once: true });
+
+        document.querySelector('.cy-close').addEventListener('click', () => {
+            this.selectedTimeFrame = undefined;
+            sessionStorage.setItem('frontEndHandler', JSON.stringify(this));
+            window.location.replace('/');
+        }, { once: true });
     }
 
     updateBufferProgress() {

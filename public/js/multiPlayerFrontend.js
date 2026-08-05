@@ -181,7 +181,7 @@ class multiPlayerFrontend {
             })
             .then(html => {
                 this.url = url;
-                sessionStorage.setItem('frontEndHandler', JSON.stringify(this)); //save the current front end handler state to session storage before navigating, this allows the new page to access it and restore the state, effectively allowing us to persist the front end handler across page navigations which is necessary for the result page after the game endsb
+                sessionStorage.setItem('frontEndHandler', JSON.stringify(this)); //save the current front end handler state to session storage before navigating, this allows the new page to access it and restore the state, effectively allowing us to persist the front end handler across page navigations which is necessary for the result page after the game ends
                 history.pushState({}, "", url);
 
                 const parser = new DOMParser();
@@ -190,34 +190,114 @@ class multiPlayerFrontend {
                 document.head.replaceWith(newDoc.head);
                 document.body.replaceWith(newDoc.body);
 
-                // Run scripts sequentially
-                const scripts = [...document.body.querySelectorAll('script')];
-                return scripts.reduce((chain, oldScript) => {
-                    return chain.then(() => new Promise((resolve, reject) => {
-                        const newScript = document.createElement('script');
+                // Strip all script tags from the swapped-in content — no script
+                // injection of any kind. Result page logic lives in _initResultPage()
+                // on this class, so no external script needs to run.
+                document.body.querySelectorAll('script').forEach(s => s.remove());
 
-                        [...oldScript.attributes].forEach(attr =>
-                            newScript.setAttribute(attr.name, attr.value)
-                        );
-                        newScript.textContent = oldScript.textContent;
+                this._initResultPage();
 
-                        if (oldScript.src) {
-                            newScript.onload = resolve;
-                            newScript.onerror = reject;
-                        } else {
-                            resolve();
-                        }
-
-                        oldScript.replaceWith(newScript);
-                    }));
-                }, Promise.resolve());
-            }).then(() => {
                 document.body.style.visibility = 'visible';
             })
             .catch(err => {
                 console.error('Failed to load page:', err);
                 window.location.replace(url);
             });
+    }
+
+    _initResultPage() {
+        const scoreToEddies = (score) => Math.floor((3 * score) / 100) + 25;
+        const score = this.score || 0;
+
+        document.getElementById('stat-val-left').textContent = score;
+        document.getElementById('sequence-counter').textContent = this.totalSequencesUploaded || '0';
+
+        const draw = this.matchDraw;
+        const won = this.matchWon;
+        let eddiesModifier = 1;
+        if (draw) eddiesModifier = 1.25;
+        else if (won) eddiesModifier = 1.5;
+
+        const eddies = Math.round(scoreToEddies(score) * eddiesModifier);
+
+        if (!this.isGuest) {
+            document.querySelector('#eddies-counter').textContent = eddies;
+            document.querySelector('#eddies-msg').textContent = 'Eddies Mined';
+            document.querySelector('.account-name').textContent = localStorage.getItem('x-userdata-username') || 'Unknown Operative';
+            document.querySelector('.account-tag').textContent = '// User Identified';
+        } else {
+            document.querySelector('#eddies-counter').innerHTML = 'Sign-in to have<br>earned ' + eddies + ' eddies!';
+            document.querySelector('#eddies-msg').textContent = 'Guest Account';
+            document.querySelector('.account-name').textContent = 'Ghost Operative';
+            document.querySelector('.account-tag').textContent = '// Guest Session';
+        }
+
+        const isMP = this.matchCancelled
+            || (this.matchWon !== null && this.matchWon !== undefined)
+            || (this.matchDraw !== null && this.matchDraw !== undefined);
+
+        if (isMP) {
+            document.getElementById('stat-label-left').textContent = 'Your Score';
+            document.getElementById('stat-label-right').textContent = 'Opp Score';
+            document.getElementById('stat-val-right').textContent = String(this.opponentFinalScore || 0);
+            document.getElementById('stat-unit-right').textContent = 'pts';
+
+            const endReason = this.matchEndReason;
+            const outcomeLabel = this.matchCancelled
+                ? 'MATCH VOIDED'
+                : endReason === 'opponent_cheating'
+                    ? 'OPPONENT DISQUALIFIED'
+                    : (draw ? 'DRAW' : (won ? 'VICTORY' : 'DEFEAT'));
+            document.getElementById('status-text-outcome').textContent = outcomeLabel + ' (x' + eddiesModifier + ' eddies)';
+
+            const iconOutcome = document.getElementById('status-icon-outcome');
+            if (won || endReason === 'opponent_cheating') {
+                iconOutcome.classList.add('cyan');
+                iconOutcome.innerHTML = '<svg viewBox="0 0 12 12" fill="none" stroke-width="1.8"><path d="M2 6l3 3 5-5" stroke="#00CCDD" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+            } else if (draw) {
+                iconOutcome.style.borderColor = 'rgba(255,215,0,0.4)';
+                iconOutcome.style.background = 'rgba(255,215,0,0.06)';
+                iconOutcome.innerHTML = '<svg viewBox="0 0 12 12" fill="none" stroke-width="1.8"><path d="M2 6h8" stroke="#FFD700" stroke-linecap="round"/></svg>';
+            }
+
+            const oppName = this.opponent || 'Unknown';
+            const opponentSubtitle = endReason === 'opponent_disconnected'
+                ? 'Opponent disconnected'
+                : endReason === 'opponent_cheating'
+                    ? 'Opponent disqualified'
+                    : 'vs  ' + oppName;
+            document.getElementById('status-text-opponent').textContent = opponentSubtitle;
+
+            const scoreDiff = (this.finalScore || 0) - (this.opponentFinalScore || 0);
+            const metricCells = document.querySelectorAll('.metric-cell');
+            if (metricCells[2]) {
+                const valEl = metricCells[2].querySelector('.metric-val');
+                const lblEl = metricCells[2].querySelector('.metric-lbl');
+                valEl.textContent = (scoreDiff >= 0 ? '+' : '') + scoreDiff;
+                lblEl.textContent = 'Score Lead';
+                valEl.classList.remove('muted');
+                if (scoreDiff > 0) valEl.classList.add('green');
+                else if (scoreDiff < 0) valEl.classList.add('muted');
+            }
+
+            const titleSub = document.querySelector('.title-sub');
+            if (titleSub) titleSub.textContent = 'Match Complete';
+
+        } else {
+            document.getElementById('stat-label-right').textContent = 'Timeframe';
+            document.getElementById('stat-val-right').textContent = this.selectedTimeFrame ? String(this.selectedTimeFrame) : '60';
+            document.getElementById('stat-unit-right').textContent = '/ seconds';
+        }
+
+        document.querySelector('.play-btn').addEventListener('click', () => {
+            window.location.assign('/multiPlayer');
+        }, { once: true });
+
+        document.querySelector('.cy-close').addEventListener('click', () => {
+            this.selectedTimeFrame = undefined;
+            sessionStorage.setItem('frontEndHandler', JSON.stringify(this));
+            window.location.replace('/');
+        }, { once: true });
     }
 
     updateBufferProgress() {

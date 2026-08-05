@@ -64,47 +64,9 @@ import *  as audioModule from '/js/audio.js';
 
 
     function goToPage(url) {
-      fetch(url)
-        .then(res => {
-          if (res.ok) return res.text();
-          throw new Error('Network response was not ok');
-        })
-        .then(html => {
-          history.pushState({}, "", url);
-
-          const parser = new DOMParser();
-          const newDoc = parser.parseFromString(html, 'text/html');
-
-          document.head.replaceWith(newDoc.head);
-          document.body.replaceWith(newDoc.body);
-
-          // Run scripts sequentially
-          const scripts = [...document.body.querySelectorAll('script')];
-          return scripts.reduce((chain, oldScript) => {
-            return chain.then(() => new Promise((resolve, reject) => {
-              const newScript = document.createElement('script');
-
-              [...oldScript.attributes].forEach(attr =>
-                newScript.setAttribute(attr.name, attr.value)
-              );
-              newScript.textContent = oldScript.textContent;
-
-              if (oldScript.src) {
-                newScript.onload = resolve;
-                newScript.onerror = reject;
-              } else {
-                resolve();
-              }
-              oldScript.replaceWith(newScript);
-            }));
-          }, Promise.resolve());
-        }).then(() => {
-          document.body.style.visibility = 'visible';
-        })
-        .catch(err => {
-          console.error('Failed to load page:', err);
-          window.location.replace(url);
-        });
+      // The reference page has no socket or unserializable state to preserve,
+      // so a real navigation is safe and avoids any dynamic script injection.
+      window.location.assign(url);
     }
     function handleKeydown(event) {
       if (event.type === 'keydown' && (['Control', 'Shift', 'Alt', 'Meta', 'Escape', 'CapsLock', 'Tab'].includes(event.key) || event.key[0] === 'F')) {

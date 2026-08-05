@@ -1,51 +1,7 @@
-function goToPage(url) {
-    fetch(url)
-        .then(res => {
-            if (res.ok) return res.text();
-            throw new Error('Network response was not ok');
-        })
-        .then(html => {
-            history.pushState({}, "", url);
-
-            const parser = new DOMParser();
-            const newDoc = parser.parseFromString(html, 'text/html');
-
-            document.head.replaceWith(newDoc.head);
-            document.body.replaceWith(newDoc.body);
-
-            // Run scripts sequentially
-            const scripts = [...document.body.querySelectorAll('script')];
-            return scripts.reduce((chain, oldScript) => {
-                return chain.then(() => new Promise((resolve, reject) => {
-                    const newScript = document.createElement('script');
-
-                    [...oldScript.attributes].forEach(attr =>
-                        newScript.setAttribute(attr.name, attr.value)
-                    );
-                    newScript.textContent = oldScript.textContent;
-
-                    if (oldScript.src) {
-                        newScript.onload = resolve;
-                        newScript.onerror = reject;
-                    } else {
-                        resolve();
-                    }
-                    oldScript.replaceWith(newScript);
-                }));
-            }, Promise.resolve());
-        }).then(() => {
-            document.body.style.visibility = 'visible';
-        })
-        .catch(err => {
-            console.error('Failed to load page:', err);
-            window.location.replace(url);
-        });
-}
-document.querySelector('.play-btn').addEventListener('click', () => {
-    console.log('Play Again clicked');
-    window.location.replace('/singlePlayer');
-}, { once: true });
-
+// This script runs when singlePlayerResult.html is loaded directly (e.g. page
+// refresh or direct URL access). When navigating via goToPage(), the frontend
+// class handles result rendering itself via _initResultPage() — this file is
+// not loaded or injected in that path.
 
 function scoreToEddies(score) {
     // formula: eddies = ((3/100) * score) + 25: y = mx + b, where m = 3/100 (3 eddies per multiple of 100) and b = 25 (base eddies for participating in the round)
@@ -54,6 +10,10 @@ function scoreToEddies(score) {
     return eddies;
 }
 
+document.querySelector('.play-btn').addEventListener('click', () => {
+    console.log('Play Again clicked');
+    window.location.assign('/singlePlayer');
+}, { once: true });
 
 
 // logic to fill text with sessionStorage data:
@@ -82,7 +42,7 @@ if (frontEndHandler) {
 
 } else {
     console.warn('No frontEndHandler data found in sessionStorage');
-    goToPage('/singlePlayer');
+    window.location.assign('/singlePlayer');
 }
 
 
@@ -91,4 +51,3 @@ document.querySelector('.cy-close').addEventListener('click', () => {
     sessionStorage.setItem('frontEndHandler', JSON.stringify(frontEndHandler))
     window.location.replace('/');
 }, { once: true });
-
