@@ -142,7 +142,7 @@ app.use(helmet({
         (req, res) => `wss://${req.get('host')}`
       ]
     },
-    reportOnly: true //this should only be enabled in explicit testing
+    //reportOnly: true //this should only be enabled in explicit testing
     //im leaving in on for now until goToPage() is replaced by something else, because it uses inline scripts and will be blocked by CSP
   },
   frameguard: { action: 'deny' }, // sets X-Frame-Options: DENY

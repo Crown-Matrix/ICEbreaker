@@ -1515,6 +1515,8 @@ socket.on('initialization_success', (data) => {
     if (preGameMenu) {//guard against loosing connection during result page view
         preGameMenu.style.display = 'block';
     }
+    // reveal body now that initialization succeeded
+    document.body.style.visibility = 'visible';
 });
 
 socket.once('isGuestStatus', (data) => {
@@ -1806,3 +1808,7 @@ document.getElementById('profile').addEventListener('click', () => {
 document.getElementById('nav-profile-btn').addEventListener('click', () => {
     window.location.href = '/';
 });
+
+window.addEventListener('load', () => { // the body should already be visible by this point, but jus in case 
+    document.body.style.visibility = 'visible';
+}, { once: true });

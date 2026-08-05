@@ -390,6 +390,33 @@ In `private/Server-Imports/General/path_alias.json`, multiple paths have been al
 | Password hashing | bcrypt | 12 salt rounds |
 | Cookie transport | `cookie-parser` | httpOnly, Secure, SameSite=Strict |
 | Session lifetime | SQLite `sessions` table | 7-day expiry, validated automatically on each request |
+| HTTP security/performance headers | CSP_directives(allowed file sources),frameGuard, etc | Basic-moderate XSS protection |
+
+### Caching & Indexing
+
+Server-controlled cache/index rules (configured in private/admin-js/server-core.cjs):
+
+- X-Robots-Tag (noindex): sets `X-Robots-Tag: noindex, nofollow` for paths where crawlers should not index pages:
+  - `/admin-panel`
+  - `/banned`
+  - `/auth/banned`
+  - `/singlePlayer/result`
+  - `/multiPlayer/result`
+  - `/auth/checkForUsername`
+  - `/profile`
+
+- Cache-Control: `no-store` — responses must not be stored by browsers or intermediate caches (sensitive data):
+  - `/profile`
+  - `/admin-panel`
+  - `/auth/checkForUsername`
+
+- Cache-Control: `no-cache` — responses should be validated before reuse (freshness required):
+  - `/singlePlayer/result`
+  - `/multiPlayer/result`
+  - `/banned`
+  - `/auth/banned`
+  - `/js`, `/css`, `/imgs` (static assets — set directly on their static middleware, not through the path-list mechanism above)
+
 
 ### Database
 
@@ -398,7 +425,7 @@ In `private/Server-Imports/General/path_alias.json`, multiple paths have been al
 | Engine | SQLite / Turso (libSQL) | Local: `private/database/ICEbreaker.db`; Cloud: Turso replica sync |
 | Bindings | `better-sqlite3` / `libsql` | Synchronous local API; async cloud API; mode set via `USE_TURSO_DATABASE` |
 | Config | WAL journal mode & Foreign constraints | `PRAGMA journal_mode = WAL; PRAGMA foreign_keys = ON` |
-| Schema | 4 tables | `users`, `sessions`, `friends`, `banned` |
+| Schema | 6 tables | `users`, `sessions`, `friends`, `banned`, `challenges`, `direct_matches` |
 
 ### Frontend
 
@@ -434,6 +461,7 @@ In `private/Server-Imports/General/path_alias.json`, multiple paths have been al
 | Environment | `.env` file — see [Environment Variable Usage](#environment-variable-usage) for all supported variables |
 | TEST_MODE | `disables auth ; unlocks applicable parts of the application for testing purposes` |
 | DISABLE_RATE_LIMIT | `Disables all rate limiting ; for testing purposes` |
+| verify-csp-hashes.cjs | `Prints out the sha-384 of inline scripts of a given file for file integrity implementation` |
 
 ---
 
