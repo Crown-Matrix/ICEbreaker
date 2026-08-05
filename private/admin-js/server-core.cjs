@@ -6,6 +6,50 @@ const codeMatrix = require("../../public/js/codeMatrix.js");
 
 const express = require('express');
 const app = express();
+
+const helmet = require('helmet');
+
+app.use(helmet({
+  contentSecurityPolicy: {
+    directives: {
+      defaultSrc: [
+        "'self'",
+        "https://cdn.jsdelivr.net",
+        "https://cdn.socket.io",
+        "https://fonts.googleapis.com",
+        "https://fonts.gstatic.com",
+        "data:"
+      ],
+      scriptSrc: [
+        "'self'",
+        "https://cdn.jsdelivr.net",
+        "https://cdn.socket.io",
+        "'unsafe-inline'"
+      ],
+      scriptSrcAttr: ["'unsafe-inline'"],
+      styleSrc: [
+        "'self'",
+        "https://cdn.jsdelivr.net",
+        "https://fonts.googleapis.com",
+        "'unsafe-inline'"
+      ],
+      fontSrc: [
+        "'self'",
+        "https://fonts.gstatic.com",
+        "https://cdn.jsdelivr.net"
+      ],
+      imgSrc: ["'self'", "data:"],
+      connectSrc: [
+        "'self'",
+        "https://cdn.jsdelivr.net",
+        "https://cdn.socket.io",
+        (req, res) => `wss://${req.get('host')}`
+      ]
+    }
+  }
+}));
+
+
 app.set('trust proxy', process.env.PROXY_HOP_AMOUNT ? parseInt(process.env.PROXY_HOP_AMOUNT) : 0);
 const os = require('node:os');
 

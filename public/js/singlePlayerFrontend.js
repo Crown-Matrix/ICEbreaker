@@ -305,7 +305,7 @@ class SinglePlayerFrontend {
         document.getElementById('pre-game-menu')?.remove(); //in case it didnt delete itself on first round start, this is a failsafe
 
         if (firstRound) {
-            document.getElementById('pre-game-menu').remove()
+            document.getElementById('pre-game-menu')?.remove()
         }
 
         this.updateBackendHandler();
