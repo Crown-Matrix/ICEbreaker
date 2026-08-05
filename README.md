@@ -465,6 +465,7 @@ Server-controlled cache/index rules (configured in private/admin-js/server-core.
 | TEST_MODE | `disables auth ; unlocks applicable parts of the application for testing purposes` |
 | DISABLE_RATE_LIMIT | `Disables all rate limiting ; for testing purposes` |
 | verify-csp-hashes.cjs | `Prints out the sha-384 of inline scripts of a given file for file integrity implementation` |
+| Auto npm audit | `runs npm audit along with ```bash npm run main``` to verify security for packages |
 
 ---
 

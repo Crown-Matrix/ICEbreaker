@@ -19,7 +19,9 @@ npm config set fund false
 
 echo -e "\e[1;32m[  Running npm audit fix to verify security  ]\e[0m"
 echo -e "\e[1;32m----------------------------------------------\e[0m"
+
 npm audit fix || true #fix any vulnerabilities before starting the server
+
 echo -e "\e[1;32m\n----------------------------------------------\e[0m\n"
 
 
