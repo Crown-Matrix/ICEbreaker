@@ -1,0 +1,12 @@
+User-agent: *
+Allow: /
+
+Disallow: /singlePlayer/result
+Disallow: /multiPlayer/result
+Disallow: /auth/checkForUsername/
+Disallow: /profile
+Disallow: /banned
+Disallow: /admin-panel
+
+
+# sitemap intentionally left out

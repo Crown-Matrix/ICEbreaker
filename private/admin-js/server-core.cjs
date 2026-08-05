@@ -611,6 +611,10 @@ app.get('/admin-panel/api/:endpoint{/:subendpoint}', (req, res) => {
   }
 });
 
+app.get('/robots.txt', (req, res) => {
+  res.status(200).sendFile('robots.txt', { root: './public', maxAge: 86400000 }); // 24h
+});
+
 app.use(express.static('public')); //only after ban check middleware, so banned users cant access static files
 
 

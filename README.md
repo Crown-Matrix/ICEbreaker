@@ -364,6 +364,7 @@ Original Overview - [ICEBreaker-Architecture](https://github.com/crown-matrix/IC
 | `GET` | `/admin-panel` | admin-panel html page |
 | `GET` | `/admin-panel/api` | admin-panel api endpoint, takes subendpoints for specific desired data |
 | `GET` | `/admin-panel/api/[singlePlayer,multiPlayer,all(default)]/[os,analytics,all(default)]` | subendpoint key |
+| `GET` | `/robots.txt` | Configures search engine crawler access to website pages |
 
 ### Alias System
 
@@ -416,6 +417,8 @@ Server-controlled cache/index rules (configured in private/admin-js/server-core.
   - `/banned`
   - `/auth/banned`
   - `/js`, `/css`, `/imgs` (static assets — set directly on their static middleware, not through the path-list mechanism above)
+
+-  Note: robots.txt is cached publicly for 24 hours at a time
 
 
 ### Database
@@ -474,7 +477,8 @@ Server-controlled cache/index rules (configured in private/admin-js/server-core.
 
 
 
-### Disclaimer
+
+### Note
 
 - AI was used in this project as an assistant, not as a developer.
 - Nothing was written that I didn't explicitly ask and write the backend for
