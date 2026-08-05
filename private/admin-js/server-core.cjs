@@ -117,13 +117,12 @@ app.use(helmet({
         "'self'",
         "https://cdn.jsdelivr.net",
         "https://cdn.socket.io",
-        "'unsafe-inline'",
         //these hashes are for banned.html which doesnt have external js scripts
         "'sha384-RmsNvqpsqucpqs0kYIuzsqUlUD3Non1c9nSQGpNhT2OCxLbRbJmwkkJ0FWwU7prD'",
         "'sha384-lgjtAzmFj6/4dWtqQIMgyIWjaRP9KbUCvic3Ny32AE+WRg41uwtpetCrFQbNPM8h'",
         "'sha384-xNiKZ/scBekUo5f9j3+7adYyZ/lOZddILdgYrRFvAvaa4t/6h7UJYhrgP5fBpcfF'"
       ],
-      scriptSrcAttr: ["'unsafe-inline'"],
+      scriptSrcAttr: ["'none'"],
       styleSrc: [
         "'self'",
         "https://cdn.jsdelivr.net",

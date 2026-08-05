@@ -15,6 +15,10 @@ const passwordInput = document.getElementById('password');
 const submitBtn = document.getElementById('submit-btn');
 const guestBtn = document.getElementById('guest-btn');
 
+document.querySelector('.cy-close').addEventListener('click', () => {
+    window.location.href = '/';
+});
+
 function showToast(msg, isErr = false) {
     const t = document.getElementById('toast');
     t.textContent = msg;

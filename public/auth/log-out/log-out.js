@@ -10,6 +10,14 @@ document.querySelector('.cy-card').addEventListener('animationend', function (e)
     if (e.animationName === 'cardReveal') this.style.opacity = '1';
 }, { once: true });
 
+document.getElementById('guest-access-btn').addEventListener('click', () => {
+    window.location.replace('/');
+});
+
+document.getElementById('log-in-btn').addEventListener('click', () => {
+    window.location.replace('/log-in');
+});
+
 fetch('/log-out', {
     method: 'POST',
     credentials: 'same-origin',

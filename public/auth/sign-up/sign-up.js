@@ -11,6 +11,10 @@ document.querySelector('.cy-card').addEventListener('animationend', function (e)
     if (e.animationName === 'cardReveal') this.style.opacity = '1';
 }, { once: true });
 
+document.querySelector('.cy-close').addEventListener('click', () => {
+    window.location.href = '/';
+});
+
 
 const usernameInput = document.getElementById('username');
 const passwordInput = document.getElementById('password');
