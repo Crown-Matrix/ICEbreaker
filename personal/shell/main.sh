@@ -15,6 +15,15 @@ if [[ ! ( "$pwd_dir_lower" == "icebreaker" || "$pwd_dir_lower" == "src" ) ]]; th
     exit 1
 fi
 
+npm config set fund false
+
+echo -e "\e[1;32m[  Running npm audit fix to verify security  ]\e[0m"
+echo -e "\e[1;32m----------------------------------------------\e[0m"
+npm audit fix || true #fix any vulnerabilities before starting the server
+echo -e "\e[1;32m\n----------------------------------------------\e[0m\n"
+
+
+
 env_file_path=".env" #relative to the icebreaker directory
 
 #get env contents:
@@ -42,6 +51,8 @@ if [ "${AUTO_KILL_PREVIOUS_PROCESS}" == "true" ]; then
     npm run kill_main
     echo -e "\e[38;5;208m[  Auto killed any previous processes  ] \n -------------------------------------- \n         [ Toggle this in .env ]\e\n[0m"
 fi
+
+
 
 
 MAC_TAB=$(printenv MAC_TAB)
