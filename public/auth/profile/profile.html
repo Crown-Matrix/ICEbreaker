@@ -189,20 +189,6 @@
     </div>
   </div>
 </body>
-<script>
-  var fsBtn = document.getElementById('fsToggle');
-  if (fsBtn) {
-    fsBtn.addEventListener('click', function () {
-      if (!document.fullscreenElement) {
-        document.documentElement.requestFullscreen().catch(function () { });
-      } else {
-        document.exitFullscreen().catch(function () { });
-      }
-    });
-
-  }
-
-</script>
 <script src="/auth/profile/profile.js"></script>
 
 </html>

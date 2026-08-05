@@ -298,8 +298,6 @@
 
   </style>
 </head>
-<script>
-</script>
 
 <body>
   <!-- Background layers -->
@@ -324,7 +322,7 @@
 
     <canvas id="gr-canvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;"></canvas>
 
-    <script>
+    <script>  //INLINE-SCRIPT FLAG - NEGATED - by sha-384
       (function () {
         const root = document.getElementById('glitch-root-a');
         const canvas = document.getElementById('gr-canvas');
@@ -571,7 +569,7 @@
 
     <canvas id="gr-canvas" style="position:absolute;inset:0;width:100%;height:100%;display:block;"></canvas>
 
-    <script>
+    <script> //INLINE-SCRIPT FLAG - NEGATED - by sha-384
       (function () {
         const root = document.getElementById('glitch-root-b');
         const canvas = document.getElementById('gr-canvas');
@@ -842,7 +840,7 @@
     <h1 class="access">Access Denied</h1>
     <p class="caption">Your account has been banned. If you believe this is a mistake, please contact support.</p>
     <p class="reason-caption" id="ban-reason"></p>
-    <script>
+    <script>  //INLINE-SCRIPT FLAG - NEGATED - by sha-384
       const ban_reason = localStorage.getItem('latest_ban_reason');
       if (ban_reason) {
         document.documentElement.style.setProperty('--ban-reason', `'Ban Reason: ${ban_reason}'`);

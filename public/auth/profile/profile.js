@@ -887,3 +887,18 @@ document.addEventListener('profileDataUpdate', event => {
 document.querySelector('.back-btn').addEventListener('click', () => {
     window.location.href = '/';
 });
+
+
+
+
+// inline block migration ; fs btn handling
+var fsBtn = document.getElementById('fsToggle');
+if (fsBtn) {
+    fsBtn.addEventListener('click', function () {
+        if (!document.fullscreenElement) {
+            document.documentElement.requestFullscreen().catch(function () { });
+        } else {
+            document.exitFullscreen().catch(function () { });
+        }
+    });
+}

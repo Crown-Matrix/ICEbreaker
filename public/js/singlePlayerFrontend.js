@@ -1790,3 +1790,11 @@ document.getElementById('profile').addEventListener('click', () => {
 document.getElementById('nav-profile-btn').addEventListener('click', () => {
     window.location.href = '/';
 });
+
+
+function loadLocalBootstrap() { var script = document.createElement('script'); script.src = '/js/bootstrap.bundle.min.js'; document.body.appendChild(script); }
+    // for page reloads
+    window.addEventListener('load', () => {
+    document.body.style.visibility = 'visible';
+    
+}, { once: true });

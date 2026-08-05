@@ -24,14 +24,18 @@ app.use(helmet({
         "'self'",
         "https://cdn.jsdelivr.net",
         "https://cdn.socket.io",
-        "'unsafe-inline'"
+        "'unsafe-inline'",
+        //these hashes are for banned.html which doesnt have external js scripts
+        "'sha384-RmsNvqpsqucpqs0kYIuzsqUlUD3Non1c9nSQGpNhT2OCxLbRbJmwkkJ0FWwU7prD'",
+        "'sha384-lgjtAzmFj6/4dWtqQIMgyIWjaRP9KbUCvic3Ny32AE+WRg41uwtpetCrFQbNPM8h'",
+        "'sha384-xNiKZ/scBekUo5f9j3+7adYyZ/lOZddILdgYrRFvAvaa4t/6h7UJYhrgP5fBpcfF'"
       ],
       scriptSrcAttr: ["'unsafe-inline'"],
       styleSrc: [
         "'self'",
         "https://cdn.jsdelivr.net",
         "https://fonts.googleapis.com",
-        "'unsafe-inline'"
+        "'unsafe-inline'" //TODO remove this eventually
       ],
       fontSrc: [
         "'self'",
@@ -45,7 +49,8 @@ app.use(helmet({
         "https://cdn.socket.io",
         (req, res) => `wss://${req.get('host')}`
       ]
-    }
+    },
+    reportOnly: true
   }
 }));
 
@@ -758,11 +763,11 @@ app.post('/log-out', async (req, res) => {
 });
 
 app.get('/log-out', (req, res) => {
-  res.status(200).sendFile('auth/log-out.html', { root: './public' });
+  res.status(200).sendFile('auth/log-out/log-out.html', { root: './public' });
 });
 
 app.get('/log-in', (req, res) => {
-  res.status(200).sendFile('auth/log-in.html', { root: './public' });
+  res.status(200).sendFile('auth/log-in/log-in.html', { root: './public' });
 });
 
 
@@ -791,7 +796,7 @@ app.post('/log-in', async (req, res) => {
 
 
 app.get('/sign-up', (req, res) => {
-  res.status(200).sendFile('auth/sign-up.html', { root: './public' });
+  res.status(200).sendFile('auth/sign-up/sign-up.html', { root: './public' });
 });
 
 app.post('/sign-up', async (req, res) => {

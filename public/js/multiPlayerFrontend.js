@@ -2002,3 +2002,9 @@ document.getElementById('nav-profile-btn').addEventListener('click', () => {
     navigatingAwayIntentionally = true;
     window.location.href = '/';
 });
+
+function loadLocalBootstrap() { var script = document.createElement('script'); script.src = '/js/bootstrap.bundle.min.js'; document.body.appendChild(script); }
+        // for page reloads
+        window.addEventListener('load', () => {
+            document.body.style.visibility = 'visible';
+        }, { once: true });
