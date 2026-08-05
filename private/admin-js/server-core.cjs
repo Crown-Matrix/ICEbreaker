@@ -9,9 +9,108 @@ const app = express();
 
 const helmet = require('helmet');
 
+
+
+const noIndexPaths = [
+  '/admin-panel',
+  '/banned',
+  '/auth/banned',
+  '/singlePlayer/result',
+  '/multiPlayer/result',
+  '/auth/checkForUsername',
+  '/profile'
+];
+
+app.use((req, res, next) => {
+  const shouldNoIndex = noIndexPaths.some(
+    p => req.path === p || req.path.startsWith(p + '/')
+  );
+  if (shouldNoIndex) {
+    res.setHeader('X-Robots-Tag', 'noindex, nofollow');
+  }
+  next();
+});
+
+const noStorePaths = [
+  '/profile',
+  '/admin-panel',
+  '/auth/checkForUsername'
+];
+
+app.use((req, res, next) => {
+  const shouldNoStore = noStorePaths.some(
+    p => req.path === p || req.path.startsWith(p + '/')
+  );
+  if (shouldNoStore) {
+    res.setHeader('Cache-Control', 'no-store');
+  }
+  next();
+});
+
+const noCachePaths = [
+  '/singlePlayer/result',
+  '/multiPlayer/result',
+  '/banned',
+  '/auth/banned'
+];
+app.use((req, res, next) => {
+  const shouldNoCache = noCachePaths.some(p => req.path === p || req.path.startsWith(p + '/'));
+  if (shouldNoCache) {
+    res.setHeader('Cache-Control', 'no-cache');
+  }
+  next();
+});
+
+
+
+
+
+app.use((req, res, next) => {
+  res.setHeader(
+    'Permissions-Policy',
+    [
+      'fullscreen=(self)',
+      'accelerometer=()',
+      'ambient-light-sensor=()',
+      'autoplay=()',
+      'battery=()',
+      'camera=()',
+      'display-capture=()',
+      'document-domain=()',
+      'encrypted-media=()',
+      'execution-while-not-rendered=()',
+      'execution-while-out-of-viewport=()',
+      'gamepad=()',
+      'geolocation=()',
+      'gyroscope=()',
+      'hid=()',
+      'idle-detection=()',
+      'magnetometer=()',
+      'microphone=()',
+      'midi=()',
+      'payment=()',
+      'picture-in-picture=()',
+      'publickey-credentials-get=()',
+      'screen-wake-lock=()',
+      'serial=()',
+      'speaker-selection=()',
+      'usb=()',
+      'web-share=()',
+      'xr-spatial-tracking=()'
+    ].join(', ')
+  );
+  next();
+});
+
+
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
+      frameAncestors: ["'none'"],
+      objectSrc: ["'none'"],
+      baseUri: ["'self'"],
+      formAction: ["'self'"],
+      upgradeInsecureRequests: [],
       defaultSrc: [
         "'self'",
         "https://cdn.jsdelivr.net",
@@ -50,8 +149,10 @@ app.use(helmet({
         (req, res) => `wss://${req.get('host')}`
       ]
     },
-    reportOnly: true
-  }
+    reportOnly: true //this should only be enabled in explicit testing
+    //im leaving in on for now until goToPage() is replaced by something else, because it uses inline scripts and will be blocked by CSP
+  },
+  frameguard: { action: 'deny' }, // sets X-Frame-Options: DENY
 }));
 
 
@@ -287,6 +388,8 @@ registerShutdownHandlers(SQL_Manager_Instance, SQL_TYPE);
 */
 const static_cheap_paths = ['/js', '/css', '/imgs'];
 
+
+
 app.use(static_cheap_paths, [
   ipLimiter_lowCost_shortTerm,
   ipLimiter_lowCost_longTerm,
@@ -295,7 +398,11 @@ app.use(static_cheap_paths, [
 ]);
 
 static_cheap_paths.forEach(urlPath => {
-  app.use(urlPath, express.static(join("public", urlPath)));
+  app.use(urlPath, express.static(join("public", urlPath), {
+    setHeaders: (res) => {
+      res.setHeader('Cache-Control', 'no-cache');
+    }
+  }));
 });
 
 // gameCover static assets (CSS/JS) — low-cost rate limited, served from /gameCover/ at project root
