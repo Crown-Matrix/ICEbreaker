@@ -473,6 +473,7 @@ Server-controlled cache/index rules (configured in private/admin-js/server-core.
 
 - **Admin Panel** - route & api structure initialized - awaiting full frontend implementation
 - **Account tiers** — VIP (emotes, costs eddies or IRL money), PREMIUM (emotes + animation skips + opponent distractions, IRL money only), ADMIN (full access to everything including admin endpoints, not regular-user obtainable)
+- Add prevention for css injection XSS
 
 
 
@@ -481,5 +482,5 @@ Server-controlled cache/index rules (configured in private/admin-js/server-core.
 
 ### Note
 
-- AI was used in this project as an assistant, not as a developer.
+- AI was used in this project as an **<u>assistant</u>**, not as a developer.
 - Nothing was written that I didn't explicitly ask and write the backend for

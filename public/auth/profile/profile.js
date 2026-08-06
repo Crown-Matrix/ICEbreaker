@@ -902,3 +902,9 @@ if (fsBtn) {
         }
     });
 }
+
+
+
+document.getElementById('log-out-button').addEventListener('click', () => {
+    window.location.href = '/logout';
+});

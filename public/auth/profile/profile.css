@@ -396,7 +396,7 @@
 
   #main-content {
     display: flex;
-    flex-direction: row;
+    flex-direction: column;
     flex-wrap: wrap;
     width: calc(100% - var(--bs-gutter-x));
   }
@@ -459,6 +459,27 @@
       grid-template-columns: repeat(2, minmax(0, 1fr));
     }
 
+    #log-out-btn {
+      margin-bottom: 4rem;
+      bottom: 2rem;
+    }
+  }
+
+  #log-out-btn {
+      position: relative;
+      display: flex;
+      justify-content: center;
+    }
+
+  #log-out-btn > button {
+      height: max-content;
+      width: max-content;
+      background-color: var(--cy-magenta-ghost);
+      border: 4px solid var(--cy-magenta-ghost);
+      align-content: center;
+      padding: 0 1cqw;
+      color: var(--cy-cyan);
+      text-shadow: 0 0 1cqh var(--cy-cyan);
   }
 
   @media (max-width: 991px) {
@@ -483,6 +504,15 @@
       padding: 3rem 0 4rem 0;
     }
 
+    #log-out-btn {
+      margin-top: 2rem;
+      bottom: 3rem;
+    }
+
+    .stat-p {
+      font-size: clamp(5px, 2cqi, 1.5rem) !important;
+    }
+
     .frame-body>.container-fluid {
       width: 92%;
     }
@@ -499,6 +529,8 @@
       width: min(94vw, 42rem);
     }
   }
+
+  
 
   @media (max-width: 576px) {
     .topbar-right {
