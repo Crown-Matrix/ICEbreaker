@@ -1,0 +1,75 @@
+# ICEbreaker
+
+> ICEbreaker is a browser-based cyberpunk hacking minigame (a Cyberpunk 2077 "Breach Protocol"-style puzzle): players decode a hexadecimal matrix and chain a target daemon sequence against a countdown timer. It ships single-player (vs. the clock) and real-time multiplayer (matchmaking + direct challenges) modes, its own account/session/friends system, server-authoritative anti-cheat validation, and an admin panel, on a Node.js/Express/Socket.IO backend with a vanilla-JS + Bootstrap frontend.
+
+Live deployment: https://icebreaker-u70b.onrender.com
+Repo: https://github.com/Crown-Matrix/ICEbreaker (branch: main)
+License: All Rights Reserved — source is visible for reference, not open for reuse/redistribution.
+Runtime: Node.js. Server-side modules use CommonJS (`.cjs`); frontend modules use ESM — this split is intentional and load-bearing, not an inconsistency to "fix."
+Storage: local SQLite via `better-sqlite3` (`private/database/ICEbreaker.db`), or Turso/libSQL as a swappable cloud backend, toggled with the `USE_TURSO_DATABASE` env var (see Config below). Both backends implement the same interface. `LAST_SQL_MODE` is managed automatically on each run and should not be set manually.
+Entry point: `node private/admin-js/main.cjs`, normally launched via `npm run main` → `personal/shell/main.sh` (handles `.env` loading, `npm audit fix`, DB/env init, and optionally opening the admin panel).
+
+Gotchas: the project root directory must be named `icebreaker` or `src` (case-insensitive) or the startup shell script won't accept it. All game logic and scoring are validated server-side — submitting tampered client data triggers an automatic ban, so don't assume client-side values are trustworthy when reading or extending the code.
+
+## Docs
+
+- [README.md](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/README.md): Full project overview covering gameplay, installation, environment variables, architecture, routes, features, and planned work — the authoritative reference for this codebase.
+- [.env.example](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/.env.example): Template listing every supported environment variable with default values; copy to `.env` before first run.
+
+## Gameplay
+
+- [Matrix / puzzle generation](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/public/js/codeMatrix.js): Core hacking-puzzle logic — generates the hex node matrix (nodes: 7A, 1C, BD, 55, E9, FF), injects the target solution sequence into it, and validates player-selected paths.
+- [Single-player frontend](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/public/js/singlePlayerFrontend.js): Client-side game loop, input handling, and UI state for solo runs.
+- [Single-player difficulty config](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/private/Server-Imports/singlePlayer/difficultyValues.json): Time-limit values (ms) per difficulty — easy 200, medium 300, hard 500.
+- [Multiplayer frontend](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/public/js/multiPlayerFrontend.js): Client-side game loop and UI state for matches against another player.
+- [Multiplayer difficulty config](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/private/Server-Imports/multiPlayer/difficultyValues.json): Same difficulty/time-limit values, multiplayer copy.
+- [Single-player result screen](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/public/js/singlePlayerResult.js): Post-round scoring/results display logic.
+- [Multiplayer result screen](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/public/js/multiPlayerResult.js): Post-match scoring/results display, both players.
+
+## Server & Architecture
+
+- [Architecture diagram](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/personal/ICEBreaker_Architecture.png): Original hand-drawn overview of how frontend, Express/Socket.IO middleware, single-player server, multiplayer server, and database relate.
+- [server-core.cjs](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/private/admin-js/server-core.cjs): Main Express app — security middleware (Helmet, cookie parsing, rate limiting), static file serving, ban checks, and every HTTP route (auth, profile, friends, challenges, admin API). Start here to see the full HTTP surface.
+- [singlePlayerServer.cjs](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/private/singlePlayer/singlePlayerServer.cjs): Socket.IO namespace/handlers for solo games — `start_game`, `frontEndHandler_update`, `end_game`, settings and timeframe updates, guest-mode handling.
+- [multiPlayerServer.cjs](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/private/multiPlayer/multiPlayerServer.cjs): Socket.IO handlers for matchmaking, direct/friend challenges, live match state, scoring, and opponent-facing events (`matchmake_found`, `direct_match_waiting`, `opponent_score_update`, etc).
+- [main.cjs](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/private/admin-js/main.cjs): Process entry point — creates the `/database` folder if missing, wires up single/multiplayer servers, and (when `TEST_MODE=true`) opens an interactive readline REPL with live access to `db`, `sql`, and `auth` for DB/server introspection.
+- [main.sh](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/personal/shell/main.sh): Startup script invoked by `npm run main`; sources `.env`, runs `npm audit fix`, initializes DB and env, then launches `main.cjs` via `node --env-file`.
+- [auth.cjs](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/private/admin-js/auth.cjs): Session-cookie helpers shared by Express routes and Socket.IO handshakes (httpOnly session cookie, 7-day expiry).
+- [SQL.cjs](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/private/admin-js/SQL.cjs): Local SQLite (`better-sqlite3`) data-access layer — schema init, user/session/friends/ban/challenge queries, input validation (`checkUsername`, `checkPassword`).
+- [tracked-SQL.cjs](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/private/admin-js/tracked-SQL.cjs): Turso/libSQL equivalent of SQL.cjs, same interface, for the cloud-DB deployment path.
+- [path_alias.json](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/private/Server-Imports/General/path_alias.json): Maps synonym endpoint paths to canonical routes; unrecognized aliases receive a 308 permanent redirect.
+- [backEndAdmin.cjs](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/private/Server-Imports/General/backEndAdmin.cjs): Server/OS introspection helpers (arch, uptime, etc.) surfaced to the admin panel.
+- [shutdown.cjs](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/private/admin-js/shutdown.cjs): Graceful-shutdown handler — flushes DB state (via hard-db.cjs) and persists `LAST_SQL_MODE` before exit, within a ~25s deadline for host SIGKILL.
+- [rateLimitConfig.json](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/private/Server-Imports/General/rateLimitConfig.json): Per-route rate-limit definitions used by `express-rate-limit` in server-core.cjs.
+
+## HTTP & Socket API surface
+
+- Auth: `GET/POST /log-in`, `GET/POST /sign-up`, `GET/POST /log-out`, `GET /auth/checkForUsername/:username`, `GET /banned` — see server-core.cjs.
+- Profile & social: `GET /profile`, `GET /profile/api/user/:username`, `GET /profile/api/friends`, `POST /profile/api/friends/{request,accept,decline,cancel,remove}`, `GET /profile/api/challenges`, `POST /profile/api/challenge/{send,cancel}`.
+- Game entry pages: `GET /` and `/gameCover` (landing), served from public/gameCover, public/singlePlayer, public/multiPlayer.
+- Admin: `GET /admin-panel`, `GET /admin-panel/api/:endpoint/:subendpoint?` — gated, see admin panel section below.
+- Socket.IO events (both single- and multiplayer namespaces): `initialize_data`, `start_game`/`start_game_response`, `frontEndHandler_update`, `end_game`/`end_game_response`, `settings_update`, `request_saved_settings`, `timeframe_update`; multiplayer adds `cancel_matchmaking`, `matchmake_found`, `direct_match_waiting`/`direct_match_timeout`/`direct_match_error`, `match_result`, `opponent_score_update`.
+
+## Database schema
+
+Defined in SQL.cjs / tracked-SQL.cjs (identical schema across both backends):
+- `users`: account row — username (1–19 chars), password (8–63 chars, bcrypt-hashed), account_UUID, per-mode games-played/finished/won counters, average scores, account tier, currency ("eddies").
+- `friends`: `(user_id, friend_id)` pair with `status` (pending/accepted).
+- `sessions`: `session_token` → `account_UUID`, 7-day expiry.
+- `banned`: `ip_address` and/or account `UUID`, reason, optional expiry.
+- `challenges`: pending friend-vs-friend challenge, `challenger_UUID`/`challengee_UUID`, timeframe.
+- `direct_matches`: an accepted challenge turned into a live match, `match_UUID`, both player UUIDs, timeframe.
+
+## Config
+
+- [.env.example](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/.env.example): All environment variables — `ICEBREAKER_PORT`, `AUTO_KILL_PREVIOUS_PROCESS`, `MAC_TAB`/`MAC_TAB_USE_EXEC`, `ADMIN_OPEN`, `TEST_MODE`, `DISABLE_RATE_LIMIT`, `PROXY_HOP_AMOUNT`, `USE_TURSO_DATABASE`, `LAST_SQL_MODE`, `TURSO_AUTH_TOKEN`, `TURSO_DATABASE_URL`.
+- [package.json](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/package.json): Dependencies and npm scripts (`main`, `init_db`/`db_init`, `init_env`/`env_init`, `kill_main`/`main_kill`, `archive`, `map` — all thin wrappers around scripts in `personal/shell/`).
+
+## Optional
+
+- [admin.js](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/private/admin-panel/admin.js) / [admin.html](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/private/admin-panel/admin.html): Local admin panel UI (server stats, DB inspection) — served at `/admin-panel`, gated, mainly a dev/ops tool rather than gameplay.
+- [personal/shell/](https://github.com/Crown-Matrix/ICEbreaker/tree/main/personal/shell): Bash tooling for local dev — process management, DB init/cleanup, env init, filemap generation. Not all part of the deployed app but can be with configuration.
+- [offlineResolver.js](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/public/js/offlineResolver.js): Client-side fallback/guest-mode handling when no server session is available for dev testing.
+- [Cyberpunk design system specs](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/public/css/vibe-cyberpunk-specs.txt): Documented color tokens, typography rules, and component conventions for `vibe-cyberpunk.css`.
+- [OS documentation](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/personal/os_documentation/os.md): Notes on operating-system-level behavior relevant to the shell scripts and process management.
+- [LICENSE](https://raw.githubusercontent.com/Crown-Matrix/ICEbreaker/main/LICENSE): Full license text (All Rights Reserved).

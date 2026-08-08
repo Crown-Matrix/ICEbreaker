@@ -177,3 +177,5 @@ os_documentation/
 icebreaker-context.txt
 icebreaker-links.txt
 paths.txt
+concat_files.sh
+file_concat.txt

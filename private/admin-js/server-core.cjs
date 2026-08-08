@@ -615,6 +615,10 @@ app.get('/robots.txt', (req, res) => {
   res.status(200).sendFile('robots.txt', { root: './public', maxAge: 86400000 }); // 24h
 });
 
+app.get('/llms.txt', (req, res) => {
+  res.status(200).sendFile('llms.txt', { root: './public', maxAge: 86400000 }); // 24h
+});
+
 app.use(express.static('public')); //only after ban check middleware, so banned users cant access static files
 
 
