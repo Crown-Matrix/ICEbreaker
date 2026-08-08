@@ -1,0 +1,199 @@
+
+
+@import url('/css/vibe-cyberpunk.css');
+
+:root {
+  /* 404-local accent: 50/50 mix of banned.html's Access Denied red
+     (#FF0000) and the shared --cy-magenta */
+  --glitch-red: #ff173c;
+  --glitch-glow: 0 0 8px rgba(255, 23, 60, 0.4), 0 0 20px rgba(255, 23, 60, 0.15);
+  --glitch-glow-strong: 0 0 14px rgba(255, 23, 60, 0.65), 0 0 34px rgba(255, 23, 60, 0.3);
+}
+
+html, body {
+  height: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+}
+
+body {
+  background: var(--cy-void);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+/* ── Background layers (bottom → top) ─────────────────────────────── */
+.bg {
+  position: fixed;
+  inset: 0;
+  z-index: 0;
+}
+
+.bg-void {
+  position: absolute;
+  inset: 0;
+  background: var(--cy-void);
+  background-image: radial-gradient(
+    ellipse 80% 60% at 50% 40%,
+    rgba(0, 255, 255, 0.06),
+    transparent 70%
+  );
+}
+
+.bg-grid {
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(0, 255, 255, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0, 255, 255, 0.05) 1px, transparent 1px);
+  background-size: 42px 42px;
+  animation: gridDrift 22s linear infinite;
+  mask-image: radial-gradient(ellipse 70% 60% at 50% 45%, black 40%, transparent 90%);
+}
+
+@keyframes gridDrift {
+  0%   { background-position: 0 0; }
+  100% { background-position: 42px 42px; }
+}
+
+.bg-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse 90% 80% at 50% 50%, transparent 45%, rgba(0, 0, 0, 0.9) 100%);
+}
+
+/* ── Content ──────────────────────────────────────────────────────── */
+.wrap {
+  position: relative;
+  z-index: 10;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  padding: var(--cy-space-lg);
+  max-width: 640px;
+}
+
+/* ── "404" glitch headline ───────────────────────────────────────────
+   Base glyph + glow use --glitch-red. The glitch motion (sliced,
+   offset duplicate layers below) is driven by JS in 404.js, which
+   toggles .is-glitching and sets the --gc-* custom properties on a
+   randomized idle timer, or continuously while hovered. */
+.code-glitch {
+  position: relative;
+  font-family: var(--cy-font-display);
+  font-size: clamp(5rem, 18vw, 9rem);
+  font-weight: 700;
+  letter-spacing: 0.05em;
+  line-height: 1;
+  color: var(--glitch-red);
+  text-shadow: var(--glitch-glow);
+  transition: text-shadow 0.08s linear;
+}
+
+.code-glitch.is-glitching {
+  text-shadow: var(--glitch-glow-strong);
+}
+
+.code-glitch::before,
+.code-glitch::after {
+  content: attr(data-text);
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  pointer-events: none;
+}
+
+.code-glitch.is-glitching::before {
+  opacity: 0.85;
+  color: var(--cy-cyan);
+  clip-path: polygon(0 var(--gc-clip-a, 20%), 100% var(--gc-clip-a, 20%), 100% var(--gc-clip-b, 40%), 0 var(--gc-clip-b, 40%));
+  transform: translate(var(--gc-x1, -4px), 0);
+}
+
+.code-glitch.is-glitching::after {
+  opacity: 0.85;
+  color: var(--glitch-red);
+  clip-path: polygon(0 var(--gc-clip-c, 55%), 100% var(--gc-clip-c, 55%), 100% var(--gc-clip-d, 75%), 0 var(--gc-clip-d, 75%));
+  transform: translate(var(--gc-x2, 4px), 0);
+}
+
+.headline {
+  font-family: var(--cy-font-display);
+  font-size: clamp(1.1rem, 3vw, 1.6rem);
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--cy-yellow-dim);
+  margin-top: var(--cy-space-sm);
+}
+
+.subline {
+  font-family: var(--cy-font-body);
+  color: var(--cy-text-secondary);
+  font-size: 1rem;
+  margin-top: var(--cy-space-sm);
+  max-width: 46ch;
+}
+
+/* ── Diagnostic terminal panel ───────────────────────────────────── */
+.terminal {
+  margin-top: var(--cy-space-xl);
+  width: 100%;
+  max-width: 520px;
+  text-align: left;
+  padding: var(--cy-space-md) var(--cy-space-lg);
+  position: relative;
+}
+
+.terminal .cy-scan-sweep {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  opacity: 0.7;
+}
+
+.terminal-line {
+  font-family: var(--cy-font-mono);
+  font-size: 0.8rem;
+  color: var(--cy-cyan-dim);
+  min-height: 1.4em;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+.terminal-line .caret {
+  display: inline-block;
+  width: 7px;
+  height: 1em;
+  background: var(--cy-cyan);
+  vertical-align: text-bottom;
+  margin-left: 2px;
+  animation: blink 1s step-end infinite;
+}
+
+.terminal-line--status { color: var(--cy-red-glow); }
+.terminal-line--muted  { color: var(--cy-text-muted); }
+
+/* ── CTAs ─────────────────────────────────────────────────────────── */
+.actions {
+  display: flex;
+  gap: var(--cy-space-md);
+  margin-top: var(--cy-space-xl);
+  flex-wrap: wrap;
+  justify-content: center;
+}
+
+@media (max-width: 520px) {
+  .wrap { padding: var(--cy-space-md); }
+  .terminal { padding: var(--cy-space-md); }
+}
+
+body.signal-drop {
+  filter: brightness(0.35) contrast(1.15);
+}

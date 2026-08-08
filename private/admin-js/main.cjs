@@ -31,6 +31,12 @@ const singlePlayer = require(singleFilePath)
 const multiFilePath = path.join(__dirname, '../multiPlayer/multiPlayerServer.cjs');
 const multiPlayer = require(multiFilePath)
 
+const { app } = require(path.join(__dirname, './server-core.cjs'));
+
+app.use((req, res) => {
+  res.status(404).sendFile(path.join(__dirname, '../../public/404.html'));
+});
+
 
 const singlePlayerAdminInstance = singlePlayer.backEndAdminInstance;
 const singlePlayerOsInfo = singlePlayerAdminInstance.osInfo;

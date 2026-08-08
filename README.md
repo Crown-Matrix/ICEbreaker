@@ -473,7 +473,10 @@ Server-controlled cache/index rules (configured in private/admin-js/server-core.
 
 - **Admin Panel** - route & api structure initialized - awaiting full frontend implementation
 - **Account tiers** — VIP (emotes, costs eddies or IRL money), PREMIUM (emotes + animation skips + opponent distractions, IRL money only), ADMIN (full access to everything including admin endpoints, not regular-user obtainable)
+  + already exists in server-side logic, just needs to be given obtainability via some frontend shop and write an sql function to modify a users account tier.
 - Add prevention for css injection XSS
+  + I am going to delay for the end because of how much styling reworking it will take
+- [SEO specifications](./seo-todo.md)
 
 
 
