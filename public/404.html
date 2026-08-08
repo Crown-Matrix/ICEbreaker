@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>404 — ICEbreaker</title>
+  <link rel="stylesheet" href="/css/404.css">
+  <link rel="icon" type="image/x-icon" href="/favicon.ico">
+  <script src="/js/404.js" defer></script>
+</head>
+
+<body>
+  <style>
+    /* Prevent FOUC */
+    body { visibility: hidden; }
+  </style>
+
+  <!-- Background layers -->
+  <div class="bg" aria-hidden="true">
+    <div class="bg-void"></div>
+    <div class="bg-grid"></div>
+    <div class="bg-vignette"></div>
+  </div>
+
+  <main class="wrap">
+    <div class="code-glitch" data-text="404">404</div>
+    <h1 class="headline">Signal Lost</h1>
+    <p class="subline">The route you're looking for doesn't exist on this node. It may have been moved, renamed, or never existed at all.</p>
+
+    <section class="terminal cy-card cy-card--cut-lg cy-hud-frame" aria-label="Diagnostic log">
+      <div class="cy-hud-frame__br"></div>
+      <div class="cy-hud-frame__bl"></div>
+      <div class="cy-scan-sweep" aria-hidden="true"></div>
+      <div id="diagLog"></div>
+    </section>
+
+    <div class="actions">
+      <a href="/" class="cy-btn cy-btn--solid">Return to Cover</a>
+      <button type="button" id="goBackBtn" class="cy-btn cy-btn--ghost">Go Back</button>
+    </div>
+  </main>
+</body>
+
+</html>
