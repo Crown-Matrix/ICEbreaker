@@ -65,7 +65,7 @@ async function validateUsername() {
     const v = usernameInput.value.trim();
 
     if (!v) {
-        usernameHint.textContent = '3-64 characters. Letters, numbers, underscores.';
+        usernameHint.textContent = '1-19 characters. Letters, numbers, underscores.';
         usernameHint.className = 'field-hint';
         usernameInput.className = 'cy-input';
         return false;
@@ -78,7 +78,7 @@ async function validateUsername() {
         return false;
     }
 
-    if (v.length > 20) {
+    if (v.length > 19) {
         usernameHint.textContent = 'Too long.';
         usernameHint.className = 'field-hint err';
         usernameInput.className = 'cy-input error';

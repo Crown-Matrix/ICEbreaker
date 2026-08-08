@@ -102,10 +102,10 @@ function protected_sql(func) {
 
 
 const checkUsername = (username) =>
-    username.length >= 1 && username.length <= 20 && /^[a-zA-Z0-9_-]{1,19}$/.test(username);
+    username.length >= 1 && username.length <= 19 && /^[a-zA-Z0-9_-]{1,19}$/.test(username);
 
 const checkPassword = (password) =>
-    password.length >= 8 && password.length <= 64 &&
+    password.length >= 8 && password.length <= 63 &&
     /^[a-zA-Z0-9!`@#\$%\^&\*\(\)-_=\+\[\]\{\}\\|;:'",<\.>\/\? ]{8,63}$/.test(password);
 
 function hashPassword(password, override_safety = false) {
@@ -270,10 +270,10 @@ const passwordMatch = async (username, password_attempt) => {
 
 
 const createUser = protected_sql((username, password) => {
-    if (username.length > 20)     return { ErrorCode: 1, ErrorMessage: 'Max username length exceeded' };
+    if (username.length > 19)     return { ErrorCode: 1, ErrorMessage: 'Max username length exceeded' };
     if (password.length < 8)      return { ErrorCode: 2, ErrorMessage: 'Minimum password length not met' };
     if (username.length < 1)      return { ErrorCode: 3, ErrorMessage: 'Username is required' };
-    if (password.length > 64)     return { ErrorCode: 4, ErrorMessage: 'Max password length exceeded' };
+    if (password.length > 63)     return { ErrorCode: 4, ErrorMessage: 'Max password length exceeded' };
     if (!checkUsername(username)) return { ErrorCode: 5, ErrorMessage: 'Invalid username characters' };
     if (!checkPassword(password)) return { ErrorCode: 6, ErrorMessage: 'Invalid password characters' };
 

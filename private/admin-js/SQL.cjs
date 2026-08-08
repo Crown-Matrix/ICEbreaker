@@ -25,7 +25,7 @@ function hashPassword(password, override_safety = false) {
 
 
 const checkUsername = (username) => {
-    if (username.length > 20 || username.length < 1 || !/^[a-zA-Z0-9_-]{1,19}$/.test(username)) {
+    if (username.length > 19 || username.length < 1 || !/^[a-zA-Z0-9_-]{1,19}$/.test(username)) {
         return false;
     }
     return true;
@@ -33,7 +33,7 @@ const checkUsername = (username) => {
 
 
 const checkPassword = (password) => {
-    if (password.length < 8 || password.length > 64 || !/^[a-zA-Z0-9!`@#\$%\^&\*\(\)-_=\+\[\]\{\}\\|;:'",<\.>\/\? ]{8,63}$/.test(password)) {
+    if (password.length < 8 || password.length > 63 || !/^[a-zA-Z0-9!`@#\$%\^&\*\(\)-_=\+\[\]\{\}\\|;:'",<\.>\/\? ]{8,63}$/.test(password)) {
         return false;
     }
     return true;
@@ -165,8 +165,9 @@ function initializeAllTables() { //do not change this function name, unless u fe
 }
 
 
-//max username length: 64
-//max password length: 64
+
+//max username length: 19
+//max password length: 63
 //session lifespan: 7 days
 
 function protected_sql(func) {
@@ -190,13 +191,13 @@ const getUserByUsername = (username) => db.prepare('SELECT * FROM users WHERE LO
 const createUser = protected_sql((username, password) => {
     
     
-    if ( username.length > 20) {
+    if ( username.length > 19) {
         return {ErrorCode : 1, ErrorMessage : 'Max username length exceeded'}
     } else if (password.length < 8) {
         return {ErrorCode : 2, ErrorMessage : 'Minimum password length not met'}
     } else if (username.length < 1) {
         return {ErrorCode : 3, ErrorMessage : 'Username is required'}
-    } else if (password.length > 64) {
+    } else if (password.length > 63) {
         return {ErrorCode : 4, ErrorMessage : 'Max password length exceeded'}
     } 
     if (!checkUsername(username)) {

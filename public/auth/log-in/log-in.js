@@ -43,9 +43,9 @@ document.getElementById('loginForm').addEventListener('submit', async (e) => {
     const u = usernameInput.value.trim();
     const p = passwordInput.value;
 
-    if (u.length > 20) { usernameInput.classList.add('error'); document.getElementById('username-hint').textContent = 'Handle too long.'; document.getElementById('username-hint').className = 'field-hint err'; return; }
+    if (u.length > 19) { usernameInput.classList.add('error'); document.getElementById('username-hint').textContent = 'Handle too long.'; document.getElementById('username-hint').className = 'field-hint err'; return; }
     if (u.length < 1) { usernameInput.classList.add('error'); document.getElementById('username-hint').textContent = 'Handle too short.'; document.getElementById('username-hint').className = 'field-hint err'; return; }
-    if (p.length > 64) { passwordInput.classList.add('error'); document.getElementById('password-hint').textContent = 'Access code too long.'; document.getElementById('password-hint').className = 'field-hint err'; return; }
+    if (p.length > 63) { passwordInput.classList.add('error'); document.getElementById('password-hint').textContent = 'Access code too long.'; document.getElementById('password-hint').className = 'field-hint err'; return; }
     if (p.length < 8) { passwordInput.classList.add('error'); document.getElementById('password-hint').textContent = 'Access code too short.'; document.getElementById('password-hint').className = 'field-hint err'; return; }
     if (!/^[a-zA-Z0-9_-]{1,19}$/.test(u)) { usernameInput.classList.add('error'); document.getElementById('username-hint').textContent = 'Invalid handle characters.'; document.getElementById('username-hint').className = 'field-hint err'; return; }
     if (!/^[A-Za-z0-9!`@#\$%\^&\*\(\)-_=\+\[\]\{\}\\|;:'",<\.>\/\? ]{8,63}$/.test(p)) { passwordInput.classList.add('error'); document.getElementById('password-hint').textContent = 'Invalid access code characters.'; document.getElementById('password-hint').className = 'field-hint err'; return; }
