@@ -129,12 +129,10 @@ add JSON-LD validation step, save failing examples per page type
 /public/imgs/og-image-1200x600.png   Twitter summary_large_image
 ```
 
-# no compression or static asset caching
+# no compression middleware; static caching exists but is deliberately no-cache (rate-limited paths set Cache-Control: no-cache) — revisit maxAge intentionally, don't just add blindly
 ```js
 const compression = require('compression');
 app.use(compression());
-
-app.use(express.static('public', { maxAge: '30d' }));
 ```
 
 # no preconnect/preload hints
@@ -144,10 +142,10 @@ CSP, X-Frame-Options, and HSTS are already configured via helmet — no change n
 <link rel="preconnect" href="https://cdn.jsdelivr.net">
 ```
 
-# 404.html exists but isn't wired to a real 404 status; no 5xx page yet
+# 404 status wiring already done (main.cjs catch-all: res.status(404).sendFile(...)) — no change needed there. still no 5xx page
 ```js
-app.use((req, res) => {
-  res.status(404).sendFile('404.html', { root: './public' });
+app.use((err, req, res, next) => {
+  res.status(500).sendFile('500.html', { root: './public' });
 });
 ```
 
