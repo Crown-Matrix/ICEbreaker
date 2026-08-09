@@ -20,7 +20,8 @@
     "init_env": "bash personal/shell/init_env.sh",
     "env_init": "bash personal/shell/init_env.sh",
     "kill_main": "bash personal/shell/kill_main.sh",
-    "main_kill": "bash personal/shell/kill_main.sh"
+    "main_kill": "bash personal/shell/kill_main.sh",
+    "dev": "bash personal/shell/main.sh"
   },
   "type": "module"
 }
