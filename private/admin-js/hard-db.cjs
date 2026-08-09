@@ -12,10 +12,21 @@ const TABLE_ORDER = ["users", "friends", "sessions", "banned"];
 
 const { execFileSync } = require('child_process');
 
-function runResetWal() {
+function runResetWal(db) {
     const scriptPath = join(__dirname, '../../personal/shell/SQL_CLEANUP.sh');
 
     try {
+        // Checkpoint the WAL to merge all changes into the main DB file
+        // This ensures we don't lose any data when we delete the WAL/SHM files
+        if (db) {
+            try {
+                console.log('[runResetWal] Checkpointing WAL before deletion...');
+                db.pragma('wal_checkpoint(RESTART)');
+            } catch (checkpointErr) {
+                console.warn('[runResetWal] WAL checkpoint failed (non-fatal):', checkpointErr.message);
+            }
+        }
+
         const output = execFileSync(scriptPath, {
             encoding: 'utf8',
             stdio: 'pipe',

@@ -712,6 +712,7 @@ module.exports = {
     get db() { return db; },              // persistent Database instance  — used by hard-db.cjs (forcePush / hardReset)
     sql: Database,   // Database constructor class    — used by hard-db.cjs (getRemote)
     sync,
+    reconnect: reconnectDb,               // reconnect after WAL files are deleted
     auth,
     applyPragmas,
     initializeUserTable,

@@ -342,7 +342,8 @@ if (SQL_TYPE === 'turso') {
 
   if (process.env.LAST_SQL_MODE === 'false') { //undefined is intentionally grouped with true, and will not trigger this sync up, as that means there are no local changes to sync up yet
     console.log('Last SQL mode was not Turso, performing initial sync...');
-    hardDB.runResetWal(); //reset WAL before force push, to avoid "database is locked" errors
+    hardDB.runResetWal(SQL_Manager_Instance.db); //reset WAL before force push, to avoid "database is locked" errors
+    SQL_Manager_Instance.reconnect(); // Close and reopen the connection after WAL deletion
     hardDB.forcePush(SQL_Manager_Instance.db);
   }
   (async () => {
