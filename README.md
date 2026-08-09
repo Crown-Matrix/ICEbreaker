@@ -360,11 +360,15 @@ Original Overview - [ICEBreaker-Architecture](https://github.com/crown-matrix/IC
 | `POST` | `/profile/api/friends/decline` | Decline a friend request |
 | `POST` | `/profile/api/friends/cancel` | Cancel an outgoing friend request |
 | `POST` | `/profile/api/friends/remove` | Remove a friend |
+| `GET` | `/profile/api/challenges` | Fetch your challenge state |
+| `POST` | `/profile/api/challenge/send` | Send a challenge to a friend (mutual → creates match) |
+| `POST` | `/profile/api/challenge/cancel` | Cancel an outgoing challenge |
 | `GET` | `/banned` | Ban notice page |
 | `GET` | `/admin-panel` | admin-panel html page |
 | `GET` | `/admin-panel/api` | admin-panel api endpoint, takes subendpoints for specific desired data |
 | `GET` | `/admin-panel/api/[singlePlayer,multiPlayer,all(default)]/[os,analytics,all(default)]` | subendpoint key |
 | `GET` | `/robots.txt` | Configures search engine crawler access to website pages |
+| `GET` | `/llms.txt` | Machine-readable site summary for LLM crawlers |
 
 ### Alias System
 
@@ -389,7 +393,7 @@ In `private/Server-Imports/General/path_alias.json`, multiple paths have been al
 |---|---|---|
 | Session tokens | `crypto.randomUUID` + `crypto.hash('sha512')` | Opaque 128-char hex token |
 | Password hashing | bcrypt | 12 salt rounds |
-| Cookie transport | `cookie-parser` | httpOnly, Secure, SameSite=Strict |
+| Cookie transport | `cookie-parser` | httpOnly, Secure, SameSite=Lax |
 | Session lifetime | SQLite `sessions` table | 7-day expiry, validated automatically on each request |
 | HTTP security/performance headers | CSP_directives(allowed file sources),frameGuard, etc | Basic-moderate XSS protection |
 
@@ -465,7 +469,7 @@ Server-controlled cache/index rules (configured in private/admin-js/server-core.
 | TEST_MODE | `disables auth ; unlocks applicable parts of the application for testing purposes` |
 | DISABLE_RATE_LIMIT | `Disables all rate limiting ; for testing purposes` |
 | verify-csp-hashes.cjs | `Prints out the sha-384 of inline scripts of a given file for file integrity implementation` |
-| Auto npm audit | `runs npm audit along with ```bash npm run main``` to verify security for packages |
+| Auto npm audit | `runs npm audit fix along with npm run main to automatically patch package vulnerabilities` |
 
 ---
 
@@ -477,6 +481,7 @@ Server-controlled cache/index rules (configured in private/admin-js/server-core.
 - Add prevention for css injection XSS
   + I am going to delay for the end because of how much styling reworking it will take
 - [SEO specifications](./seo-todo.md)
+- [Auth remediation checklist](./auth-todo.md)
 
 
 
