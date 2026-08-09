@@ -23,6 +23,10 @@ fetch('/log-out', {
     credentials: 'same-origin',
 }).catch((err) => {
     console.error('Logout failed:', err);
+}).then(() => {
+    localStorage.removeItem('icebreaker.profile.friendship');
+    localStorage.removeItem('latest_ban_reason');
+    //intentionally leaving out the removal of 'settings' because it can apply for guest accounts as well
 });
 
 

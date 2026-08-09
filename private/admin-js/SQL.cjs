@@ -432,6 +432,18 @@ const friendsCount = (userId) => db.prepare(`
     WHERE (user_id = ? OR friend_id = ?) AND status = 'accepted'
 `).get(userId, userId).count;
 
+// UUID-based friendship check — used to gate the direct-challenge system
+const areFriends = (userAUUID, userBUUID) => {
+    const row = db.prepare(`
+        SELECT 1 FROM friends f
+        JOIN users u1 ON u1.id = f.user_id
+        JOIN users u2 ON u2.id = f.friend_id
+        WHERE f.status = 'accepted'
+          AND ((u1.account_UUID = ? AND u2.account_UUID = ?) OR (u1.account_UUID = ? AND u2.account_UUID = ?))
+    `).get(userAUUID, userBUUID, userBUUID, userAUUID);
+    return !!row;
+};
+
 
 
 
@@ -752,6 +764,7 @@ const VALID_TIMEFRAMES = new Set([30, 45, 60]);
 
 const sendChallenge = protected_sql((challengerUUID, challengeeUUID, timeframe = 60) => {
     if (challengerUUID === challengeeUUID) throw new Error('Cannot challenge yourself');
+    if (!areFriends(challengerUUID, challengeeUUID)) throw new Error('Can only challenge friends');
     const safeTimeframe = VALID_TIMEFRAMES.has(timeframe) ? timeframe : 60;
 
     // If a confirmed match already exists for this pair, return it
@@ -832,6 +845,16 @@ const getDirectMatch = (matchUUID) =>
 const deleteDirectMatch = (matchUUID) =>
     db.prepare(`DELETE FROM direct_matches WHERE match_UUID = ?`).run(matchUUID);
 
+// Sweeps direct_matches rows that never got a live socket connection on either side
+// (e.g. a challenge was accepted but the accepting browser never opened the multiplayer
+// page) — the normal 30s in-memory timeout in multiPlayerServer.cjs only starts once a
+// socket actually connects with that matchUUID, so it can't catch this case.
+const cleanupStaleDirectMatches = (maxAgeMinutes = 2) => {
+    const cutoff = new Date(Date.now() - maxAgeMinutes * 60_000).toISOString().slice(0, 19).replace('T', ' ');
+    const result = db.prepare(`DELETE FROM direct_matches WHERE created_at < ?`).run(cutoff);
+    return result.changes;
+};
+
 
 
 module.exports = {
@@ -857,6 +880,7 @@ module.exports = {
     cancelFriendRequest,
     removeFriend,
     getFriendships,
+    areFriends,
     scoreToEddies,
     wipeDatabase,
     getUsernameFromUUID,
@@ -890,4 +914,5 @@ module.exports = {
     cancelChallenge,
     getDirectMatch,
     deleteDirectMatch,
+    cleanupStaleDirectMatches,
 }

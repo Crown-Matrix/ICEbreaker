@@ -1,4 +1,3 @@
-
 // this file exports server variables to be used by both singlePlayer and multiPlayer servers
 // they will operate on the same node process, server, and port, but will have different socketIO paths and routes
 //server-core.cjs
@@ -104,7 +103,7 @@ app.use(helmet({
       objectSrc: ["'none'"],
       baseUri: ["'self'"],
       formAction: ["'self'"],
-      upgradeInsecureRequests: [],
+      upgradeInsecureRequests: process.env.TEST_MODE === 'true' ? null : [],
       defaultSrc: [
         "'self'",
         "https://cdn.jsdelivr.net",
@@ -830,6 +829,8 @@ app.post('/profile/api/challenge/send', friendLimiters, async (req, res) => {
     const target = await SQL_Manager_Instance.getUserByUsername(targetUsername.trim());
     if (!target) return res.status(404).json({ error: 'User not found.' });
     if (target.account_UUID === me.account_UUID) return res.status(400).json({ error: 'Cannot challenge yourself.' });
+    const friends = await SQL_Manager_Instance.areFriends(me.account_UUID, target.account_UUID);
+    if (!friends) return res.status(403).json({ error: 'You can only challenge friends.' });
     // timeframe is optional — when accepting a mutual challenge the server uses the stored challenger timeframe
     const rawTimeframe = req.body?.timeframe;
     const timeframe = [30, 45, 60].includes(Number(rawTimeframe)) ? Number(rawTimeframe) : 60;

@@ -400,6 +400,21 @@ async function handleDirectMatch(socket, player_obj, matchUUID) {
 }
 // ──────────────────────────────────────────────────────────────────────────
 
+// Catches direct_matches rows that never got a live socket connection at all (the
+// per-connection DIRECT_MATCH_TIMEOUT_MS above only starts once someone connects with
+// that matchUUID — this sweep is the backstop for when nobody ever does).
+const STALE_DIRECT_MATCH_MAX_AGE_MINUTES = 2;
+const STALE_DIRECT_MATCH_SWEEP_INTERVAL_MS = 60_000;
+
+setInterval(async () => {
+  try {
+    const removed = await SQL_Manager_Instance.cleanupStaleDirectMatches(STALE_DIRECT_MATCH_MAX_AGE_MINUTES);
+    if (removed) console.log(`[direct-match sweep] removed ${removed} stale direct_matches row(s).`);
+  } catch (err) {
+    console.error('Error cleaning up stale direct_matches rows:', err);
+  }
+}, STALE_DIRECT_MATCH_SWEEP_INTERVAL_MS);
+
 // per-match game loop — registered once a Match exists for a player
 
 function registerMatchHandlers(player, match) {
