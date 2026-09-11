@@ -369,6 +369,7 @@ Original Overview - [ICEBreaker-Architecture](https://github.com/crown-matrix/IC
 | `GET` | `/admin-panel/api/[singlePlayer,multiPlayer,all(default)]/[os,analytics,all(default)]` | subendpoint key |
 | `GET` | `/robots.txt` | Configures search engine crawler access to website pages |
 | `GET` | `/llms.txt` | Machine-readable site summary for LLM crawlers |
+| `GET` | `/ping` | returns 204 (no content) to verify server activity|
 
 ### Alias System
 
@@ -421,6 +422,7 @@ Server-controlled cache/index rules (configured in private/admin-js/server-core.
   - `/banned`
   - `/auth/banned`
   - `/js`, `/css`, `/imgs` (static assets — set directly on their static middleware, not through the path-list mechanism above)
+  - `/ping` (shouldnt be cached because its whole point is to check for current responsiveness from the server)
 
 -  Note: robots.txt is cached publicly for 24 hours at a time
 
